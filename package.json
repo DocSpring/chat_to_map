@@ -1,0 +1,70 @@
+{
+  "name": "chat-to-map",
+  "version": "0.0.1",
+  "description": "Extract 'things to do' from chat exports and visualize them on a map",
+  "type": "module",
+  "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DocSpring/chat_to_map.git"
+  },
+  "keywords": [
+    "whatsapp",
+    "chat",
+    "map",
+    "activities",
+    "travel",
+    "geocoding"
+  ],
+  "author": "DocSpring",
+  "bin": {
+    "chat-to-map": "./dist/cli.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "bun run --watch src/cli.ts",
+    "build": "bun build src/index.ts --outdir dist --target node && bun build src/cli.ts --outdir dist --target node",
+    "build:binary": "bun build src/cli.ts --compile --outfile chat-to-map",
+    "check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@types/bun": "^1.2.9",
+    "@vitest/coverage-v8": "^3.0.0",
+    "jscpd": "^4.0.5",
+    "knip": "^5.74.0",
+    "lefthook": "^1.11.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "exceljs": "^4.4.0",
+    "jszip": "^3.10.1",
+    "pdfkit": "^0.17.2"
+  },
+  "peerDependencies": {
+    "openai": "^4.0.0",
+    "@anthropic-ai/sdk": "^0.39.0"
+  },
+  "peerDependenciesMeta": {
+    "openai": {
+      "optional": true
+    },
+    "@anthropic-ai/sdk": {
+      "optional": true
+    }
+  }
+}

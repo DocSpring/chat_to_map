@@ -2,7 +2,15 @@
 .env
 *.env.local
 
-# Python
+# Dependencies
+node_modules/
+bun.lockb
+
+# Build outputs
+dist/
+*.tsbuildinfo
+
+# Python (legacy)
 .venv/
 __pycache__/
 *.pyc
@@ -16,5 +24,22 @@ data/*.db
 # Output
 output/
 
+# Test coverage
+coverage/
+
 # OS
 .DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Binary builds
+chat-to-map
+chat-to-map-*
+
+# Logs
+*.log

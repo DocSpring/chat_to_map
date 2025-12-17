@@ -1,96 +1,159 @@
-# Claude Code Guidelines for WhatsApp Things To Do
+# Claude Code Guidelines for ChatToMap Core Library
 
-## Critical: TODO.md is Your Memory
+## Project Overview
 
-**UPDATE TODO.md AFTER EVERY TASK AND SUBTASK.**
+ChatToMap core library is a **pure TypeScript library** that transforms chat exports into geocoded activity suggestions. It provides shared logic for both the open-source CLI and the commercial SaaS.
 
-This is non-negotiable. TODO.md serves as:
-1. Your working memory across context compactions
-2. The user's visibility into progress
-3. A handoff document for future Claude instances
+**License:** AGPL-3.0
+**Runtime:** Bun (strict requirement)
 
-When you complete something:
-1. Mark it done in TODO.md immediately
-2. Add any new subtasks discovered
-3. Note any blockers or decisions made
+### Architecture Principle
 
-When you start something:
-1. Mark it "in progress" in TODO.md
-2. Add subtasks if the task is complex
+**Pure functions only. No IO, no progress reporting, no orchestration.**
 
-## Project Context
+The library is stateless and side-effect-free (except for API calls to external services). Orchestration (parallelization, progress, rate limiting) is the coordinator's responsibility:
+- **CLI** - Spawns its own parallel workers locally
+- **Cloudflare Workers** - ARE the parallelization units in the SaaS
 
-This project extracts "things to do" suggestions from a WhatsApp chat export. It finds all the times people said "we should do X" to each other and geocodes locations (biased to New Zealand by default).
+## Key Files
 
-### Key Files
-- `PRD.txt` - Source of truth for requirements and architecture
-- `TODO.md` - Current progress and next steps
-- `data/chat.db` - SQLite database with parsed messages
-- `src/` - All Python scripts
+| File | Purpose |
+|------|---------|
+| `src/types.ts` | All TypeScript type definitions |
+| `src/index.ts` | Public API exports |
+| `src/cli.ts` | CLI entry point (orchestrator) |
+| `src/parser/` | WhatsApp export parsing |
+| `src/extractor/` | Regex/URL candidate extraction |
+| `src/embeddings/` | OpenAI embeddings + semantic search |
+| `src/classifier/` | AI classification (Claude/OpenAI) |
+| `src/geocoder/` | Google Maps geocoding |
+| `src/export/` | CSV, Excel, JSON, Map, PDF generation |
 
-### Database Schema
-```sql
-messages (id, timestamp, sender, content, raw_line, has_media, media_type)
-urls (id, message_id, url, url_type, resolved_url, title, description)
-suggestions (id, message_id, suggestion_type, confidence, extracted_activity,
-             location_text, latitude, longitude, notes, status)
+## Python Prototype Reference
+
+The Python prototype in `src/*.py` serves as the reference implementation:
+
+| Python File | What to Learn |
+|-------------|---------------|
+| `src/parser.py` | WhatsApp export format patterns |
+| `src/suggestion_extractor.py` | Regex patterns that work |
+| `src/embeddings.py` | Semantic search approach |
+| `src/classifier.py` | Claude prompt structure |
+| `src/geocoder.py` | Geocoding approach |
+| `src/export.py` | Leaflet.js map generation |
+
+**Goal:** TypeScript version should produce identical results for the same input.
+
+## Quality Standards
+
+### Non-Negotiable Rules
+
+| Rule | Limit |
+|------|-------|
+| File length (code) | 500 lines max |
+| File length (tests) | 1000 lines max |
+| Function length | 50 lines max |
+| Line length | 100 chars max |
+| Cognitive complexity | 15 max |
+| Code duplication | Zero tolerance |
+| `any` types | Forbidden |
+| `biome-ignore` | Forbidden |
+| `--no-verify` | Forbidden |
+| **Test coverage** | **90%+ statements, 80%+ branches** |
+
+### Before Marking ANY Task Complete
+
+```bash
+task ci
 ```
 
-## Cost Optimization Rules
+This runs: typecheck, lint, check-ignores, duplication, file-length, test.
+**Must pass completely.**
 
-1. **Embeddings are cheap** - embed everything, search liberally
-2. **Claude API is expensive** - only classify pre-filtered candidates
-3. **Google Maps API** - batch requests where possible
-4. Always estimate costs before running bulk operations
+## Commands
+
+```bash
+# Development
+task dev              # Run CLI in watch mode
+task build            # Build library and CLI
+task build:binary     # Build standalone binary
+
+# Quality
+task ci               # Run ALL CI checks
+task lint             # Check linting
+task lint:fix         # Auto-fix linting
+task typecheck        # TypeScript checking
+task duplication      # Check for duplication
+task file-length      # Check file lengths
+task check-ignores    # Verify no biome-ignore
+
+# Testing
+task test             # Run tests
+task test:watch       # Run tests in watch mode
+task test:cov         # Run tests with coverage
+
+# Git hooks
+task hooks:install    # Install lefthook hooks
+task hooks:run        # Run pre-commit manually
+```
 
 ## Code Standards
 
-### Python
-- Use pathlib for file paths
-- Use sqlite3 with row_factory for database access
-- Load .env with python-dotenv
-- Type hints for function signatures
-- Docstrings for modules and complex functions
+### TypeScript
 
-### Running Scripts
-Always activate venv first:
-```bash
-source .venv/bin/activate && python src/script.py
-```
+- Strict mode enabled
+- No `any` types
+- Explicit return types on exported functions
+- Use `interface` for object types, `type` for unions/aliases
+- Use `readonly` for immutable data
+
+### Naming Conventions
+
+- Functions: `camelCase`
+- Types/Interfaces: `PascalCase`
+- Constants: `SCREAMING_SNAKE_CASE`
+- Files: `kebab-case.ts`
 
 ### Testing
-- Test API keys with `src/test_api_keys.py` before bulk operations
-- Sample small batches before processing everything
 
-## Common Patterns
+```typescript
+// Test file naming
+src/parser/whatsapp.ts        // Implementation
+src/parser/whatsapp.test.ts   // Tests
 
-### Database Access
-```python
-from pathlib import Path
-import sqlite3
-
-db_path = Path(__file__).parent.parent / "data" / "chat.db"
-conn = sqlite3.connect(db_path)
-conn.row_factory = sqlite3.Row
+// Use vitest
+import { describe, expect, it } from 'vitest'
 ```
 
-### API Keys
-```python
-from dotenv import load_dotenv
-load_dotenv(Path(__file__).parent.parent / ".env")
+## Documentation
 
-api_key = os.getenv("OPENAI_API_KEY")
-```
+| Document | Location |
+|----------|----------|
+| Core Library PRD | `project/PRD_CORE.md` |
+| CLI PRD | `project/PRD_CLI.md` |
+| Phase 8 TODO | `project/todo/PHASE_8_TODO.md` |
 
 ## What NOT to Do
 
-- Don't run all 15k messages through Claude API
-- Don't check secrets into git
-- Don't process without cost estimates
-- Don't forget to update TODO.md (seriously)
+- ❌ Add IO operations to core library functions
+- ❌ Add progress callbacks or events
+- ❌ Add database operations
+- ❌ Add rate limiting logic (coordinator's job)
+- ❌ Use `biome-ignore` comments
+- ❌ Skip `task ci` before completing work
+- ❌ Forget to update project/TODO.md
 
-## Debugging Tips
+## Dependencies
 
-- Check `data/chat.db` with sqlite3 CLI for data issues
-- URLs table has `url_type` for filtering
-- Suggestions table has `confidence` for ranking
+Core dependencies are minimal:
+- `exceljs` - Excel export
+- `jszip` - Zip file handling
+- `pdfkit` - PDF generation
+
+AI SDKs are peer dependencies (optional):
+- `openai` - Embeddings
+- `@anthropic-ai/sdk` - Classification
+
+---
+
+*Last updated: 2025-12-17*
