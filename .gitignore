@@ -43,3 +43,4 @@ chat-to-map-*
 
 # Logs
 *.log
+tmp/

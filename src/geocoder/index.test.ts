@@ -1,15 +1,45 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ClassifiedSuggestion, GeocodedSuggestion } from '../types.js'
 
-// Mock httpFetch before importing
+// Mock httpFetch before importing - explicitly re-export other functions
 const mockFetch = vi.fn()
-vi.mock('../http.js', async () => {
-  const actual = await vi.importActual<typeof import('../http.js')>('../http.js')
-  return {
-    ...actual,
-    httpFetch: mockFetch
-  }
-})
+vi.mock('../http.js', () => ({
+  httpFetch: mockFetch,
+  // Re-implement the helper functions to avoid vi.importActual
+  handleHttpError: async (response: {
+    status: number
+    text: () => Promise<string>
+    headers: { get: (name: string) => string | null }
+  }) => {
+    const errorText = await response.text()
+    if (response.status === 429) {
+      const retryAfter = response.headers.get('retry-after')
+      return {
+        ok: false,
+        error: {
+          type: 'rate_limit',
+          message: `Rate limited: ${errorText}`,
+          retryAfter: retryAfter ? Number.parseInt(retryAfter, 10) : undefined
+        }
+      }
+    }
+    if (response.status === 401) {
+      return { ok: false, error: { type: 'auth', message: `Authentication failed: ${errorText}` } }
+    }
+    return {
+      ok: false,
+      error: { type: 'network', message: `API error ${response.status}: ${errorText}` }
+    }
+  },
+  handleNetworkError: (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error)
+    return { ok: false, error: { type: 'network', message: `Network error: ${message}` } }
+  },
+  emptyResponseError: () => ({
+    ok: false,
+    error: { type: 'invalid_response', message: 'Empty response from API' }
+  })
+}))
 
 function createGeocodingResponse(
   lat: number,
