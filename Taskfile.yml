@@ -1,0 +1,118 @@
+version: "3"
+
+tasks:
+  default:
+    desc: Show available tasks
+    cmds:
+      - task --list
+
+  # === Development ===
+  dev:
+    desc: Run CLI in watch mode
+    cmds:
+      - bun run dev
+
+  build:
+    desc: Build library and CLI
+    cmds:
+      - bun run build
+
+  build:binary:
+    desc: Build standalone binary
+    cmds:
+      - bun run build:binary
+
+  # === Quality Checks ===
+  ci:
+    desc: Run all CI checks (run before marking any task complete)
+    cmds:
+      - task: typecheck
+      - task: lint
+      - task: check-ignores
+      - task: duplication
+      - task: file-length
+      - task: test
+
+  lint:
+    desc: Run Biome linter (check only)
+    cmds:
+      - bunx biome check .
+
+  lint:fix:
+    desc: Run Biome linter and auto-fix issues
+    cmds:
+      - bunx biome check --write .
+
+  format:
+    desc: Format code with Biome
+    cmds:
+      - bunx biome format --write .
+
+  typecheck:
+    desc: TypeScript type checking
+    cmds:
+      - bun run check
+
+  duplication:
+    desc: Check for code duplication
+    cmds:
+      - bunx jscpd src/
+
+  knip:
+    desc: Check for dead code (unused exports, dependencies, files)
+    cmds:
+      - bunx knip
+
+  file-length:
+    desc: Check file length limits
+    cmds:
+      - ./scripts/check_file_length.sh
+
+  check-ignores:
+    desc: Check for biome-ignore comments (zero tolerance)
+    cmds:
+      - |
+        if grep -r "biome-ignore" --include="*.ts" src/ 2>/dev/null; then
+          echo "❌ Found biome-ignore comments - these are forbidden!"
+          exit 1
+        fi
+        echo "✅ No biome-ignore comments found"
+
+  # === Testing ===
+  test:
+    desc: Run unit tests
+    cmds:
+      - bun run test
+
+  test:watch:
+    desc: Run tests in watch mode
+    cmds:
+      - bun run test:watch
+
+  test:cov:
+    desc: Run tests with coverage
+    cmds:
+      - bun run test:coverage
+
+  # === Git Hooks ===
+  hooks:install:
+    desc: Install git hooks with lefthook
+    cmds:
+      - bunx lefthook install
+
+  hooks:run:
+    desc: Run pre-commit hooks manually
+    cmds:
+      - bunx lefthook run pre-commit
+
+  # === Utilities ===
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -rf dist node_modules/.cache coverage
+
+  deps:update:
+    desc: Update all dependencies
+    cmds:
+      - bunx npm-check-updates -u
+      - bun install

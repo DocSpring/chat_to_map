@@ -4,7 +4,7 @@ Extract "things to do" suggestions from your WhatsApp chat history and visualize
 
 ![Map Preview](https://img.shields.io/badge/Output-Interactive%20Map-blue)
 ![Python](https://img.shields.io/badge/Python-3.11+-green)
-![License](https://img.shields.io/badge/License-MIT-yellow)
+![License](https://img.shields.io/badge/License-AGPL--3.0-blue)
 
 ![Screenshot](images/web_ui_screenshot.jpeg)
 
@@ -263,7 +263,7 @@ PRs welcome! Some ideas:
 
 ## License
 
-MIT
+AGPL-3.0
 
 ---
 

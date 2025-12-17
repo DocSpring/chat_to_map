@@ -1,0 +1,6 @@
+{
+  "entry": ["src/index.ts", "src/cli.ts"],
+  "project": ["src/**/*.ts"],
+  "ignore": ["src/**/*.test.ts", "src/**/*.spec.ts"],
+  "ignoreDependencies": ["@types/bun"]
+}

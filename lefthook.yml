@@ -1,0 +1,44 @@
+# Lefthook git hooks configuration
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    biome-format:
+      glob: "*.{ts,js,json}"
+      run: bunx biome format --write {staged_files}
+      stage_fixed: true
+
+    biome-lint:
+      glob: "*.{ts,js}"
+      run: bunx biome check --write {staged_files}
+      stage_fixed: true
+
+    typecheck:
+      glob: "*.ts"
+      run: bun run check
+
+    duplication:
+      glob: "*.ts"
+      run: bunx jscpd src/
+
+    # knip disabled - fails in submodule due to .git file structure
+    # knip:
+    #   glob: "*.ts"
+    #   run: bunx knip
+
+    file-length:
+      run: ./scripts/check_file_length.sh {staged_files}
+
+    biome-ignores:
+      glob: "*.ts"
+      run: |
+        if grep -l "biome-ignore" {staged_files} 2>/dev/null; then
+          echo "❌ Found biome-ignore comments in staged files - these are forbidden!"
+          exit 1
+        fi
+
+pre-push:
+  commands:
+    test:
+      run: bun run test
