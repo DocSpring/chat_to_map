@@ -161,7 +161,8 @@ describe('FilesystemCache', () => {
 
     it('should not fail when cache dir does not exist', async () => {
       const emptyCache = new FilesystemCache(join(testDir, 'nonexistent'))
-      await expect(emptyCache.clear()).resolves.not.toThrow()
+      // Should resolve without throwing
+      await emptyCache.clear()
     })
   })
 

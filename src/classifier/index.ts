@@ -17,8 +17,10 @@ import type {
   ResponseCache,
   Result
 } from '../types.js'
+import { createSmartBatches } from './batching.js'
 import { buildClassificationPrompt, parseClassificationResponse } from './prompt.js'
 
+export { createSmartBatches, groupCandidatesByProximity } from './batching.js'
 export { buildClassificationPrompt, parseClassificationResponse } from './prompt.js'
 
 const DEFAULT_BATCH_SIZE = 10
@@ -248,6 +250,9 @@ async function classifyBatch(
 /**
  * Classify candidate messages using AI.
  *
+ * Uses smart batching to keep nearby candidates together in the same batch,
+ * improving classification quality for planning discussions that span multiple messages.
+ *
  * @param candidates Candidate messages to classify
  * @param config Classifier configuration
  * @param cache Optional response cache to prevent duplicate API calls
@@ -259,12 +264,13 @@ export async function classifyMessages(
   cache?: ResponseCache
 ): Promise<Result<ClassifiedSuggestion[]>> {
   const batchSize = config.batchSize ?? DEFAULT_BATCH_SIZE
+  const proximityGap = config.proximityGap ?? 5
   const results: ClassifiedSuggestion[] = []
 
-  // Process in batches
-  for (let i = 0; i < candidates.length; i += batchSize) {
-    const batch = candidates.slice(i, i + batchSize)
+  // Use smart batching to keep nearby candidates together
+  const batches = createSmartBatches(candidates, batchSize, proximityGap)
 
+  for (const batch of batches) {
     const batchResult = await classifyBatch(batch, config, cache)
     if (!batchResult.ok) {
       return batchResult

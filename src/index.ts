@@ -23,8 +23,10 @@ export {
 export {
   buildClassificationPrompt,
   classifyMessages,
+  createSmartBatches,
   filterActivities,
   groupByCategory,
+  groupCandidatesByProximity,
   parseClassificationResponse
 } from './classifier/index.js'
 // Embeddings module

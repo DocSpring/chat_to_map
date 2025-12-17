@@ -155,6 +155,12 @@ export interface ClassifierConfig {
   readonly model?: string
   readonly batchSize?: number
   readonly contextChars?: number
+  /**
+   * Max gap between message IDs to consider them in the same discussion.
+   * Nearby messages are grouped together in batches for better context.
+   * Default: 5
+   */
+  readonly proximityGap?: number
 }
 
 export interface ClassifierResponse {
