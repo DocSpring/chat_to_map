@@ -83,6 +83,17 @@ export {
 // Scanner module (zero API cost heuristic scanning)
 export type { QuickScanOptions, QuickScanResult } from './scanner/index.js'
 export { quickScan, quickScanMessages } from './scanner/index.js'
+// Scraper module (social media metadata extraction)
+export type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './scraper/index.js'
+export {
+  detectPlatform,
+  extractTikTokVideoId,
+  resolveTikTokUrl,
+  scrapeActivityLinks,
+  scrapeTikTok,
+  scrapeUrl,
+  scrapeUrls
+} from './scraper/index.js'
 // Types
 export type {
   // Classifier types
