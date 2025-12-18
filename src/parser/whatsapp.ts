@@ -10,12 +10,15 @@
 import type { MediaType, ParsedMessage, ParserOptions, WhatsAppFormat } from '../types.js'
 
 // WhatsApp iOS format: [MM/DD/YY, H:MM:SS AM/PM] Sender: Message
+// Notes:
+// - \u200E is left-to-right mark that WhatsApp iOS exports include at line start
+// - \u202F is narrow no-break space between time and AM/PM
 const IOS_MESSAGE_PATTERN =
-  /^\[(\d{1,2}\/\d{1,2}\/\d{2,4}),\s*(\d{1,2}:\d{2}:\d{2}\s*[AP]M)\]\s*([^:]+):\s*(.*)$/
+  /^[\u200E]?\[(\d{1,2}\/\d{1,2}\/\d{2,4}),\s*(\d{1,2}:\d{2}:\d{2}[\s\u202F]*[AP]M)\]\s*([^:]+):\s*(.*)$/
 
 // WhatsApp Android format: MM/DD/YY, H:MM - Sender: Message
 const ANDROID_MESSAGE_PATTERN =
-  /^(\d{1,2}\/\d{1,2}\/\d{2,4}),\s*(\d{1,2}:\d{2})\s*-\s*([^:]+):\s*(.*)$/
+  /^[\u200E]?(\d{1,2}\/\d{1,2}\/\d{2,4}),\s*(\d{1,2}:\d{2})\s*-\s*([^:]+):\s*(.*)$/
 
 // Media placeholders in WhatsApp exports (with optional left-to-right mark)
 const MEDIA_PATTERNS: Record<MediaType, RegExp> = {
@@ -256,9 +259,11 @@ function appendToBuilder(builder: MessageBuilder, line: string): void {
  * Parse a WhatsApp chat export (synchronous, for small files).
  */
 export function parseWhatsAppChat(raw: string, options?: ParserOptions): ParsedMessage[] {
-  const format = resolveFormat(raw, options)
+  // Normalize CRLF to LF - WhatsApp exports have mixed line endings
+  const normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  const format = resolveFormat(normalized, options)
   const { pattern, parseTimestamp } = getFormatConfig(format)
-  const lines = raw.split('\n')
+  const lines = normalized.split('\n')
   const messages: ParsedMessage[] = []
 
   let currentBuilder: MessageBuilder | null = null
@@ -350,7 +355,9 @@ export async function* parseWhatsAppChatStream(
     messageId: 0
   }
 
-  for await (const line of lines) {
+  for await (const rawLine of lines) {
+    // Normalize line endings - strip any trailing CR
+    const line = rawLine.replace(/\r$/, '')
     if (state.config === null) {
       state.lineBuffer.push(line)
       if (state.lineBuffer.length >= 20) {

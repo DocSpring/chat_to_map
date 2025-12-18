@@ -57,7 +57,8 @@ describe('CLI Args', () => {
       expect(HELP_TEXT).toContain('--output-dir')
       expect(HELP_TEXT).toContain('--format')
       expect(HELP_TEXT).toContain('--region')
-      expect(HELP_TEXT).toContain('--limit')
+      expect(HELP_TEXT).toContain('--max-results')
+      expect(HELP_TEXT).toContain('--max-messages')
       expect(HELP_TEXT).toContain('--min-confidence')
       expect(HELP_TEXT).toContain('--activities-only')
       expect(HELP_TEXT).toContain('--skip-geocoding')
@@ -185,7 +186,8 @@ describe('CLI Args', () => {
       expect(args.outputDir).toBe('./chat-to-map/output')
       expect(args.formats).toEqual(['csv', 'excel', 'json', 'map', 'pdf'])
       expect(args.minConfidence).toBe(0.5)
-      expect(args.limit).toBe(10)
+      expect(args.maxResults).toBe(10)
+      expect(args.maxMessages).toBeUndefined()
       expect(args.activitiesOnly).toBe(false)
       expect(args.skipGeocoding).toBe(false)
       expect(args.quiet).toBe(false)
@@ -193,24 +195,44 @@ describe('CLI Args', () => {
       expect(args.dryRun).toBe(false)
     })
 
-    it('parses limit option with --limit', async () => {
-      process.argv = ['node', 'cli.js', 'preview', 'chat.txt', '--limit', '5']
+    it('parses max-results option with --max-results', async () => {
+      process.argv = ['node', 'cli.js', 'preview', 'chat.txt', '--max-results', '5']
 
       vi.resetModules()
       const { parseCliArgs } = await import('./args.js')
       const args = parseCliArgs()
 
-      expect(args.limit).toBe(5)
+      expect(args.maxResults).toBe(5)
     })
 
-    it('parses limit option with -n short flag', async () => {
+    it('parses max-results option with -n short flag', async () => {
       process.argv = ['node', 'cli.js', 'scan', 'chat.txt', '-n', '20']
 
       vi.resetModules()
       const { parseCliArgs } = await import('./args.js')
       const args = parseCliArgs()
 
-      expect(args.limit).toBe(20)
+      expect(args.maxResults).toBe(20)
+    })
+
+    it('parses max-messages option with --max-messages', async () => {
+      process.argv = ['node', 'cli.js', 'analyze', 'chat.txt', '--max-messages', '100']
+
+      vi.resetModules()
+      const { parseCliArgs } = await import('./args.js')
+      const args = parseCliArgs()
+
+      expect(args.maxMessages).toBe(100)
+    })
+
+    it('parses max-messages option with -m short flag', async () => {
+      process.argv = ['node', 'cli.js', 'preview', 'chat.txt', '-m', '50']
+
+      vi.resetModules()
+      const { parseCliArgs } = await import('./args.js')
+      const args = parseCliArgs()
+
+      expect(args.maxMessages).toBe(50)
     })
 
     it('parses min-confidence option', async () => {

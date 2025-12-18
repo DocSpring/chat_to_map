@@ -31,6 +31,7 @@ tasks:
       - task: check-ignores
       - task: duplication
       - task: file-length
+      - task: check-embeddings
       - task: test
 
   lint:
@@ -77,6 +78,16 @@ tasks:
           exit 1
         fi
         echo "✅ No biome-ignore comments found"
+
+  check-embeddings:
+    desc: Verify all query strings have pre-computed embeddings
+    cmds:
+      - bun scripts/check-query-embeddings.ts
+
+  generate-embeddings:
+    desc: Generate embeddings for all query strings (requires OPENAI_API_KEY)
+    cmds:
+      - bun scripts/generate-query-embeddings.ts
 
   # === Testing ===
   test:

@@ -23,10 +23,10 @@ check_file() {
 
   # Skip excluded patterns
   case "$file" in
-    *.md|*.json|*.yml|*.yaml|*.sql|*.txt|*.lock|*.css|*.html|LICENSE)
+    *.md|*.json|*.json.gz|*.yml|*.yaml|*.sql|*.txt|*.lock|*.css|*.html|*.gz|LICENSE)
       return 0
       ;;
-    *node_modules*|*dist/*|*fixtures/*)
+    *node_modules*|*dist/*|*fixtures/*|*queries/*)
       return 0
       ;;
   esac

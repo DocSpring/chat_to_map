@@ -196,6 +196,7 @@ export const URL_CONFIDENCE_MAP: Record<string, number> = {
   booking: 0.8,
   tripadvisor: 0.75,
   event: 0.85,
+  facebook_group: 0.75,
   tiktok: 0.5,
   youtube: 0.4,
   instagram: 0.35,

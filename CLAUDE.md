@@ -154,6 +154,18 @@ AI SDKs are peer dependencies (optional):
 - `openai` - Embeddings
 - `@anthropic-ai/sdk` - Classification
 
+## Default AI Models
+
+**You MUST use current model IDs.** Outdated models will fail or produce poor results.
+
+| Provider | Model ID | Purpose |
+|----------|----------|---------|
+| Anthropic | `claude-haiku-4-5` | Classification (fast, cheap) |
+| OpenAI | `gpt-5-mini` | Classification fallback |
+| OpenRouter | `anthropic/claude-haiku-4.5` | Classification via OpenRouter |
+
+**Keep these updated!** Check provider docs when models feel outdated.
+
 ---
 
-*Last updated: 2025-12-17*
+*Last updated: 2025-12-19*

@@ -7,33 +7,28 @@
 import type { CandidateMessage } from '../types.js'
 
 /**
- * Build context string from surrounding messages.
+ * Format context for display. Context already includes target marked with >>>.
  */
 function formatContext(candidate: CandidateMessage): string {
-  if (!candidate.context) {
-    return `>>> ${candidate.sender}: ${candidate.content}`
+  if (candidate.context) {
+    return candidate.context
   }
+  // Fallback if no context
+  return `>>> ${candidate.sender}: ${candidate.content}`
+}
 
-  // The context already includes surrounding messages
-  // We need to mark the target message
-  const lines = candidate.context.split('\n')
-  const result: string[] = []
-
-  for (const line of lines) {
-    // Check if this line contains the candidate message
-    if (line.includes(candidate.content.slice(0, 50))) {
-      result.push(`>>> ${line}`)
-    } else {
-      result.push(`    ${line}`)
-    }
-  }
-
-  // If we couldn't find the message in context, add it
-  if (!result.some((l) => l.startsWith('>>>'))) {
-    result.push(`>>> ${candidate.sender}: ${candidate.content}`)
-  }
-
-  return result.join('\n')
+/**
+ * Format timestamp for display in prompt.
+ */
+function formatTimestamp(date: Date): string {
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  })
 }
 
 /**
@@ -41,12 +36,12 @@ function formatContext(candidate: CandidateMessage): string {
  */
 export function buildClassificationPrompt(candidates: readonly CandidateMessage[]): string {
   const messagesText = candidates
-    .map((candidate, index) => {
+    .map((candidate) => {
       const context = formatContext(candidate)
+      const timestamp = formatTimestamp(candidate.timestamp)
       return `
 ---
-MESSAGE #${index + 1} (ID: ${candidate.messageId})
-Context:
+ID: ${candidate.messageId} | ${timestamp}
 ${context}
 ---`
     })
@@ -77,6 +72,7 @@ Ignore:
 - Romantic/intimate invitations (coming over, staying the night, "netflix and chill")
 - Adult or suggestive content (explicit messages, flirting, intimate conversations)
 - Private relationship moments - these should NEVER appear in results
+- Generic routine activities without a specific venue ("go to a coffee shop", "get dinner somewhere") - these happen daily and aren't special. But DO include unique experiences even without a specific location ("go kayaking", "try skydiving", "see a show")
 
 ${messagesText}
 
@@ -101,10 +97,7 @@ Be concise with activity descriptions (under 100 chars).
 For location, extract specific place names if mentioned.`
 }
 
-/**
- * Parse the classification response from the AI.
- */
-export function parseClassificationResponse(response: string): Array<{
+export interface ParsedClassification {
   message_id: number
   is_activity: boolean
   activity: string | null
@@ -113,50 +106,76 @@ export function parseClassificationResponse(response: string): Array<{
   category: string
   confidence: number
   is_mappable: boolean
-}> {
+}
+
+function extractJsonFromResponse(response: string): string {
   // Try to extract JSON from response (might be wrapped in ```json```)
   const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/)
-  let jsonStr: string
-
   if (jsonMatch?.[1]) {
-    jsonStr = jsonMatch[1]
-  } else {
-    // Try to find JSON array directly
-    const arrayMatch = response.match(/\[[\s\S]*\]/)
-    if (!arrayMatch) {
-      throw new Error('Could not find JSON array in response')
-    }
-    jsonStr = arrayMatch[0]
+    return jsonMatch[1]
   }
+  // Try to find JSON array directly
+  const arrayMatch = response.match(/\[[\s\S]*\]/)
+  if (!arrayMatch) {
+    throw new Error('Could not find JSON array in response')
+  }
+  return arrayMatch[0]
+}
 
+function parseItem(obj: Record<string, unknown>): ParsedClassification {
+  const location = typeof obj.location === 'string' ? obj.location : null
+  const defaultMappable = location !== null && location.trim().length > 0
+
+  return {
+    message_id: typeof obj.message_id === 'number' ? obj.message_id : 0,
+    is_activity: obj.is_activity === true,
+    activity: typeof obj.activity === 'string' ? obj.activity : null,
+    location,
+    activity_score:
+      typeof obj.activity_score === 'number' ? Math.max(0, Math.min(1, obj.activity_score)) : 0.5,
+    category: typeof obj.category === 'string' ? obj.category : 'other',
+    confidence: typeof obj.confidence === 'number' ? Math.max(0, Math.min(1, obj.confidence)) : 0.5,
+    is_mappable: typeof obj.is_mappable === 'boolean' ? obj.is_mappable : defaultMappable
+  }
+}
+
+/**
+ * Parse the classification response from the AI.
+ * @param response Raw AI response text
+ * @param expectedIds Optional array of message IDs - at least one must match
+ */
+export function parseClassificationResponse(
+  response: string,
+  expectedIds?: readonly number[]
+): ParsedClassification[] {
+  const jsonStr = extractJsonFromResponse(response)
   const parsed = JSON.parse(jsonStr) as unknown
 
   if (!Array.isArray(parsed)) {
     throw new Error('Response is not an array')
   }
 
-  return parsed.map((item: unknown) => {
+  if (parsed.length === 0) {
+    throw new Error('Response array is empty')
+  }
+
+  const results = parsed.map((item: unknown) => {
     if (typeof item !== 'object' || item === null) {
       throw new Error('Array item is not an object')
     }
-
-    const obj = item as Record<string, unknown>
-
-    // Default is_mappable based on whether location is present
-    const location = typeof obj.location === 'string' ? obj.location : null
-    const defaultMappable = location !== null && location.trim().length > 0
-
-    return {
-      message_id: typeof obj.message_id === 'number' ? obj.message_id : 0,
-      is_activity: obj.is_activity === true,
-      activity: typeof obj.activity === 'string' ? obj.activity : null,
-      location,
-      activity_score:
-        typeof obj.activity_score === 'number' ? Math.max(0, Math.min(1, obj.activity_score)) : 0.5,
-      category: typeof obj.category === 'string' ? obj.category : 'other',
-      confidence:
-        typeof obj.confidence === 'number' ? Math.max(0, Math.min(1, obj.confidence)) : 0.5,
-      is_mappable: typeof obj.is_mappable === 'boolean' ? obj.is_mappable : defaultMappable
-    }
+    return parseItem(item as Record<string, unknown>)
   })
+
+  // Validate at least one message_id matches expected
+  if (expectedIds && expectedIds.length > 0) {
+    const expectedSet = new Set(expectedIds)
+    const hasMatch = results.some((r) => expectedSet.has(r.message_id))
+    if (!hasMatch) {
+      throw new Error(
+        `AI response contains no matching message IDs. Expected: [${expectedIds.join(', ')}], got: [${results.map((r) => r.message_id).join(', ')}]`
+      )
+    }
+  }
+
+  return results
 }

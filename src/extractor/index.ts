@@ -18,11 +18,16 @@ import {
   SUGGESTION_PATTERNS,
   URL_CONFIDENCE_MAP
 } from './patterns.js'
-import { classifyUrl, isActivityUrl } from './url-classifier.js'
+import { classifyUrl, isActivityUrl, isSocialUrl } from './url-classifier.js'
 
 export { type ActivityLinkOptions, extractActivityLinks } from './activity-links.js'
 export { ACTIVITY_KEYWORDS, EXCLUSION_PATTERNS, SUGGESTION_PATTERNS } from './patterns.js'
-export { classifyUrl, extractGoogleMapsCoords, isActivityUrl } from './url-classifier.js'
+export {
+  classifyUrl,
+  extractGoogleMapsCoords,
+  isActivityUrl,
+  isSocialUrl
+} from './url-classifier.js'
 
 const DEFAULT_MIN_CONFIDENCE = 0.5
 const ACTIVITY_KEYWORD_BOOST = 0.15
@@ -69,36 +74,82 @@ function hasSuggestionPhrase(content: string): boolean {
   return phrases.some((phrase) => contentLower.includes(phrase))
 }
 
+const MAX_CONTEXT_MESSAGES = 3
+const MAX_CONTEXT_CHARS = 320
+
+interface MessageContext {
+  before: string
+  after: string
+}
+
+function truncateLine(line: string, maxChars: number): string {
+  if (line.length <= maxChars) return line
+  return `${line.slice(0, maxChars - 3)}...`
+}
+
 /**
- * Get context around a message (surrounding characters).
+ * Get context around a message (up to 3 messages / 320 chars on each side).
+ * Always includes at least one message on each side (truncated if needed).
  */
-function getMessageContext(
-  messages: readonly ParsedMessage[],
-  index: number,
-  contextChars: number
-): string {
-  const contextMessages: string[] = []
-  let totalChars = 0
+function getMessageContext(messages: readonly ParsedMessage[], index: number): MessageContext {
+  const beforeMessages: string[] = []
+  const afterMessages: string[] = []
+  let beforeChars = 0
+  let afterChars = 0
 
-  // Get messages before
-  for (let i = index - 1; i >= 0 && totalChars < contextChars / 2; i--) {
+  // Get messages before (up to 3 messages or 320 chars)
+  for (let i = index - 1; i >= 0 && beforeMessages.length < MAX_CONTEXT_MESSAGES; i--) {
     const msg = messages[i]
-    if (msg) {
-      contextMessages.unshift(`${msg.sender}: ${msg.content}`)
-      totalChars += msg.content.length
+    if (!msg) continue
+    const line = `${msg.sender}: ${msg.content}`
+
+    if (beforeMessages.length === 0) {
+      // Always include at least one message, truncated if needed
+      const truncated = truncateLine(line, MAX_CONTEXT_CHARS)
+      beforeMessages.unshift(truncated)
+      beforeChars += truncated.length
+    } else if (beforeChars + line.length <= MAX_CONTEXT_CHARS) {
+      beforeMessages.unshift(line)
+      beforeChars += line.length
+    } else {
+      break
     }
   }
 
-  // Get messages after
-  for (let i = index + 1; i < messages.length && totalChars < contextChars; i++) {
+  // Get messages after (up to 3 messages or 320 chars)
+  for (let i = index + 1; i < messages.length && afterMessages.length < MAX_CONTEXT_MESSAGES; i++) {
     const msg = messages[i]
-    if (msg) {
-      contextMessages.push(`${msg.sender}: ${msg.content}`)
-      totalChars += msg.content.length
+    if (!msg) continue
+    const line = `${msg.sender}: ${msg.content}`
+
+    if (afterMessages.length === 0) {
+      // Always include at least one message, truncated if needed
+      const truncated = truncateLine(line, MAX_CONTEXT_CHARS)
+      afterMessages.push(truncated)
+      afterChars += truncated.length
+    } else if (afterChars + line.length <= MAX_CONTEXT_CHARS) {
+      afterMessages.push(line)
+      afterChars += line.length
+    } else {
+      break
     }
   }
 
-  return contextMessages.join('\n')
+  return {
+    before: beforeMessages.join('\n'),
+    after: afterMessages.join('\n')
+  }
+}
+
+/**
+ * Build full context string: before + >>> target + after
+ */
+function buildContextString(msg: ParsedMessage, ctx: MessageContext): string {
+  const parts: string[] = []
+  if (ctx.before) parts.push(ctx.before)
+  parts.push(`>>> ${msg.sender}: ${msg.content}`)
+  if (ctx.after) parts.push(ctx.after)
+  return parts.join('\n')
 }
 
 interface RegexMatch {
@@ -188,7 +239,8 @@ function findRegexMatches(
     if (!msg || !msg.content) continue
     if (shouldExclude(msg.content, options?.additionalExclusions)) continue
 
-    const context = getMessageContext(messages, i, 1000)
+    const ctx = getMessageContext(messages, i)
+    const context = buildContextString(msg, ctx)
 
     const builtInMatch = checkBuiltInPatterns(msg, context, minConfidence)
     if (builtInMatch) {
@@ -216,6 +268,45 @@ interface UrlMatch {
   context: string
 }
 
+interface BestUrl {
+  type: string
+  confidence: number
+}
+
+function findBestUrl(urls: readonly string[]): BestUrl {
+  let bestType = 'website'
+  let bestConfidence = 0
+
+  for (const url of urls) {
+    const urlType = classifyUrl(url)
+    const baseConfidence = URL_CONFIDENCE_MAP[urlType] ?? 0.3
+    if (baseConfidence > bestConfidence) {
+      bestConfidence = baseConfidence
+      bestType = urlType
+    }
+  }
+
+  return { type: bestType, confidence: bestConfidence }
+}
+
+function shouldIncludeUrl(firstUrl: string, content: string): boolean {
+  // Skip social media URLs - they could be anything (memes, random videos)
+  if (isSocialUrl(firstUrl)) return false
+  // Include activity URLs or messages with suggestion phrases
+  return isActivityUrl(firstUrl) || hasSuggestionPhrase(content)
+}
+
+function applyUrlBoosts(confidence: number, content: string): number {
+  let result = confidence
+  if (hasSuggestionPhrase(content)) {
+    result = Math.min(1.0, result + URL_SUGGESTION_BOOST)
+  }
+  if (hasActivityKeyword(content)) {
+    result = Math.min(1.0, result + 0.1)
+  }
+  return result
+}
+
 /**
  * Find suggestions based on activity-related URLs.
  */
@@ -228,53 +319,29 @@ function findUrlMatches(
   }
 
   const matches: UrlMatch[] = []
+  const minConfidence = options?.minConfidence ?? DEFAULT_MIN_CONFIDENCE
 
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i]
     if (!msg || !msg.urls || msg.urls.length === 0) continue
 
-    // Find the highest confidence URL in the message
-    let bestUrlType = 'website'
-    let bestConfidence = 0
+    const firstUrl = msg.urls[0] ?? ''
+    if (!shouldIncludeUrl(firstUrl, msg.content)) continue
 
-    for (const url of msg.urls) {
-      const urlType = classifyUrl(url)
-      const baseConfidence = URL_CONFIDENCE_MAP[urlType] ?? 0.3
+    const best = findBestUrl(msg.urls)
+    const confidence = applyUrlBoosts(best.confidence, msg.content)
 
-      if (baseConfidence > bestConfidence) {
-        bestConfidence = baseConfidence
-        bestUrlType = urlType
-      }
-    }
-
-    // Only include if it's an activity-related URL or has suggestion phrases
-    if (!isActivityUrl(msg.urls[0] ?? '')) {
-      // For non-activity URLs, require suggestion phrases
-      if (!hasSuggestionPhrase(msg.content)) {
-        continue
-      }
-    }
-
-    // Boost if message text indicates suggestion
-    if (hasSuggestionPhrase(msg.content)) {
-      bestConfidence = Math.min(1.0, bestConfidence + URL_SUGGESTION_BOOST)
-    }
-
-    // Boost for activity keywords
-    if (hasActivityKeyword(msg.content)) {
-      bestConfidence = Math.min(1.0, bestConfidence + 0.1)
-    }
-
-    if (bestConfidence >= (options?.minConfidence ?? DEFAULT_MIN_CONFIDENCE)) {
+    if (confidence >= minConfidence) {
+      const ctx = getMessageContext(messages, i)
       matches.push({
         messageId: msg.id,
         content: msg.content,
         sender: msg.sender,
         timestamp: msg.timestamp,
-        confidence: bestConfidence,
-        urlType: bestUrlType,
+        confidence,
+        urlType: best.type,
         urls: msg.urls,
-        context: getMessageContext(messages, i, 1000)
+        context: buildContextString(msg, ctx)
       })
     }
   }

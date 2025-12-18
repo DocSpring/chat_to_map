@@ -41,11 +41,13 @@ export interface QuickScanResult {
  */
 export interface QuickScanOptions {
   /** Parser options (format, timezone) */
-  readonly parser?: ParserOptions
+  readonly parser?: ParserOptions | undefined
   /** Extractor options (min confidence, patterns) */
-  readonly extractor?: ExtractorOptions
+  readonly extractor?: ExtractorOptions | undefined
   /** Maximum candidates to return (default: all) */
-  readonly maxCandidates?: number
+  readonly maxCandidates?: number | undefined
+  /** Maximum messages to process (for testing) */
+  readonly maxMessages?: number | undefined
 }
 
 /**
@@ -75,8 +77,14 @@ export function quickScan(content: string, options?: QuickScanOptions): QuickSca
   // Parse the chat
   const parseResult = parseChatWithStats(content, options?.parser)
 
+  // Limit messages if maxMessages is set
+  let messages = parseResult.messages
+  if (options?.maxMessages !== undefined && messages.length > options.maxMessages) {
+    messages = messages.slice(0, options.maxMessages)
+  }
+
   // Extract candidates using heuristics
-  const extractResult = extractCandidates(parseResult.messages, options?.extractor)
+  const extractResult = extractCandidates(messages, options?.extractor)
 
   // Limit candidates if requested
   let candidates = extractResult.candidates

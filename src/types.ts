@@ -37,6 +37,7 @@ export type UrlType =
   | 'instagram'
   | 'x'
   | 'facebook'
+  | 'facebook_group'
   | 'airbnb'
   | 'booking'
   | 'tripadvisor'
@@ -264,6 +265,14 @@ export interface ProviderConfig {
   readonly model?: string
 }
 
+export interface BatchInfo {
+  readonly batchIndex: number
+  readonly totalBatches: number
+  readonly candidateCount: number
+  readonly model: string
+  readonly provider: ClassifierProvider
+}
+
 export interface ClassifierConfig {
   readonly provider: ClassifierProvider
   readonly apiKey: string
@@ -281,6 +290,10 @@ export interface ClassifierConfig {
    * Providers are tried in order until one succeeds.
    */
   readonly fallbackProviders?: readonly ProviderConfig[]
+  /**
+   * Called before each batch API request. Use for logging/progress.
+   */
+  readonly onBatchStart?: (info: BatchInfo) => void
 }
 
 export interface ClassifierResponse {
@@ -391,7 +404,13 @@ export interface ExportMetadata {
 // Result Types
 // ============================================================================
 
-export type ApiErrorType = 'rate_limit' | 'auth' | 'quota' | 'network' | 'invalid_response'
+export type ApiErrorType =
+  | 'rate_limit'
+  | 'auth'
+  | 'quota'
+  | 'network'
+  | 'invalid_response'
+  | 'invalid_request'
 
 export interface ApiError {
   readonly type: ApiErrorType

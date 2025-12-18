@@ -20,7 +20,9 @@ export interface CLIArgs {
   quiet: boolean
   verbose: boolean
   dryRun: boolean
-  limit: number
+  debug: boolean
+  maxResults: number
+  maxMessages: number | undefined
 }
 
 /**
@@ -71,14 +73,16 @@ OPTIONS:
   -o, --output-dir <dir>      Output directory (default: ./chat-to-map/output)
   -f, --format <formats>      Output formats: csv,excel,json,map,pdf (default: all)
   -r, --region <code>         Region bias for geocoding (e.g., NZ, US)
-  -n, --limit <num>           Max results for preview/scan (default: 10)
+  -n, --max-results <num>     Max results to return (default: 10 for preview/scan)
+  -m, --max-messages <num>    Max messages to process (for testing)
   --min-confidence <0-1>      Minimum confidence threshold (default: 0.5)
   --activities-only           Exclude errands (activity_score > 0.5)
   --category <cat>            Filter by category
   --skip-geocoding            Skip geocoding step
   -q, --quiet                 Minimal output
   -v, --verbose               Verbose output
-  --dry-run                   Parse only, show stats
+  --dry-run                   Skip API calls
+  --debug                     Print debug info (e.g., classifier prompt)
   -h, --help                  Show this help
 
 API KEYS (via environment variables):
@@ -92,7 +96,8 @@ EXAMPLES:
 
   # AI preview - classify top candidates (requires API key, ~$0.01)
   chat-to-map preview "WhatsApp Chat.zip"
-  chat-to-map preview "WhatsApp Chat.zip" -n 5   # Limit to 5 results
+  chat-to-map preview "WhatsApp Chat.zip" -n 5   # Max 5 results
+  chat-to-map preview "WhatsApp Chat.zip" -m 100 # Process first 100 messages only
 
   # Full analysis (requires API key, ~$1-2)
   chat-to-map analyze "WhatsApp Chat.zip"
@@ -152,7 +157,8 @@ function mapShortFlags(flags: Record<string, string | boolean>): void {
     o: 'output-dir',
     f: 'format',
     r: 'region',
-    n: 'limit',
+    n: 'max-results',
+    m: 'max-messages',
     q: 'quiet',
     v: 'verbose',
     h: 'help'
@@ -183,7 +189,9 @@ function buildCliArgs(flags: Record<string, string | boolean>, positionals: stri
   const format = typeof flags.format === 'string' ? flags.format : 'csv,excel,json,map,pdf'
   const region = typeof flags.region === 'string' ? flags.region : undefined
   const minConfStr = typeof flags['min-confidence'] === 'string' ? flags['min-confidence'] : '0.5'
-  const limitStr = typeof flags.limit === 'string' ? flags.limit : '10'
+  const maxResultsStr = typeof flags['max-results'] === 'string' ? flags['max-results'] : '10'
+  const maxMessagesStr =
+    typeof flags['max-messages'] === 'string' ? flags['max-messages'] : undefined
   const category =
     typeof flags.category === 'string' ? (flags.category as ActivityCategory) : undefined
 
@@ -200,7 +208,9 @@ function buildCliArgs(flags: Record<string, string | boolean>, positionals: stri
     quiet: flags.quiet === true,
     verbose: flags.verbose === true,
     dryRun: flags['dry-run'] === true,
-    limit: Number.parseInt(limitStr, 10)
+    debug: flags.debug === true,
+    maxResults: Number.parseInt(maxResultsStr, 10),
+    maxMessages: maxMessagesStr ? Number.parseInt(maxMessagesStr, 10) : undefined
   }
 }
 

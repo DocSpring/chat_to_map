@@ -31,12 +31,20 @@ export {
 } from './classifier/index.js'
 // Embeddings module
 export {
+  ACTIVITY_TYPE_QUERIES,
   cosineSimilarity,
   DEFAULT_ACTIVITY_QUERIES,
+  DIRECT_SUGGESTION_QUERIES,
   embedMessages,
   embedQueries,
   findSemanticCandidates,
   findTopK,
+  getAllQueryEmbeddings,
+  getDefaultQueryEmbeddings,
+  getQueryEmbedding,
+  getQueryEmbeddingsDimensions,
+  getQueryEmbeddingsModel,
+  loadQueryEmbeddings,
   semanticSearch
 } from './embeddings/index.js'
 // Export module

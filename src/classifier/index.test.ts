@@ -310,22 +310,23 @@ describe('Classifier Module', () => {
     })
 
     it('processes candidates in batches', async () => {
+      // Mock returns responses for all 25 IDs - each batch finds its matching IDs
+      const allResponses = Array.from({ length: 25 }, (_, i) => ({
+        message_id: i + 1,
+        is_activity: true,
+        activity: 'Test',
+        activity_score: 0.8,
+        category: 'restaurant',
+        confidence: 0.9
+      }))
+
       mockFetch.mockResolvedValue({
         ok: true,
         json: async () => ({
           content: [
             {
               type: 'text',
-              text: createMockClassifierResponse([
-                {
-                  message_id: 1,
-                  is_activity: true,
-                  activity: 'Test',
-                  activity_score: 0.8,
-                  category: 'restaurant',
-                  confidence: 0.9
-                }
-              ])
+              text: createMockClassifierResponse(allResponses)
             }
           ]
         })

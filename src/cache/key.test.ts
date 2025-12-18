@@ -173,27 +173,27 @@ describe('generateClassifierCacheKey', () => {
       { messageId: 1, content: 'Hello' },
       { messageId: 2, content: 'World' }
     ]
-    const key1 = generateClassifierCacheKey('anthropic', 'claude-3-haiku', messages)
-    const key2 = generateClassifierCacheKey('anthropic', 'claude-3-haiku', messages)
+    const key1 = generateClassifierCacheKey('anthropic', 'claude-haiku-4-5', messages)
+    const key2 = generateClassifierCacheKey('anthropic', 'claude-haiku-4-5', messages)
     expect(key1).toBe(key2)
   })
 
   it('should differentiate by provider', () => {
     const messages = [{ messageId: 1, content: 'Hello' }]
-    const key1 = generateClassifierCacheKey('anthropic', 'claude-3-haiku', messages)
-    const key2 = generateClassifierCacheKey('openai', 'gpt-4o-mini', messages)
+    const key1 = generateClassifierCacheKey('anthropic', 'claude-haiku-4-5', messages)
+    const key2 = generateClassifierCacheKey('openai', 'gpt-5-mini', messages)
     expect(key1).not.toBe(key2)
   })
 
   it('should differentiate by model', () => {
     const messages = [{ messageId: 1, content: 'Hello' }]
-    const key1 = generateClassifierCacheKey('anthropic', 'claude-3-haiku', messages)
+    const key1 = generateClassifierCacheKey('anthropic', 'claude-haiku-4-5', messages)
     const key2 = generateClassifierCacheKey('anthropic', 'claude-3-sonnet', messages)
     expect(key1).not.toBe(key2)
   })
 
   it('should handle empty messages array', () => {
-    const key = generateClassifierCacheKey('anthropic', 'claude-3-haiku', [])
+    const key = generateClassifierCacheKey('anthropic', 'claude-haiku-4-5', [])
     expect(key).toMatch(/^[a-f0-9]{64}$/)
   })
 })

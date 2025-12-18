@@ -19,30 +19,41 @@ import type {
   SemanticSearchConfig
 } from '../types.js'
 import { findTopK } from './cosine-similarity.js'
+import activityTypes from './queries/activity-types.json' with { type: 'json' }
+import directSuggestions from './queries/direct-suggestions.json' with { type: 'json' }
 
 export { cosineSimilarity, findTopK } from './cosine-similarity.js'
+export {
+  getAllQueryEmbeddings,
+  getDefaultQueryEmbeddings,
+  getQueryEmbedding,
+  getQueryEmbeddingsDimensions,
+  getQueryEmbeddingsModel,
+  loadQueryEmbeddings
+} from './query-embeddings.js'
 
 const DEFAULT_MODEL = 'text-embedding-3-small'
 const DEFAULT_BATCH_SIZE = 100
 const MAX_OPENAI_BATCH_SIZE = 2048
 
 /**
- * Default activity queries for semantic search.
- * These are embedded and used to find similar messages.
+ * Direct suggestion queries - phrases indicating intent to do something.
+ */
+export const DIRECT_SUGGESTION_QUERIES: readonly string[] = directSuggestions
+
+/**
+ * Activity type queries - short keywords for different activity categories.
+ * Flattened from categorized JSON for embedding.
+ */
+export const ACTIVITY_TYPE_QUERIES: readonly string[] = Object.values(activityTypes).flat()
+
+/**
+ * All default activity queries for semantic search.
+ * Combined from direct suggestions and activity types.
  */
 export const DEFAULT_ACTIVITY_QUERIES: readonly string[] = [
-  // Direct suggestions
-  'we should go visit this place together',
-  "let's try this activity sometime",
-  'I want to go there with you',
-  'this looks like a fun thing to do',
-  'bucket list destination we should visit',
-  // Activity types
-  'hiking trail walk nature reserve',
-  'restaurant cafe bar food dining',
-  'beach swimming kayaking water activities',
-  'concert show festival event tickets',
-  'hotel airbnb accommodation travel trip'
+  ...DIRECT_SUGGESTION_QUERIES,
+  ...ACTIVITY_TYPE_QUERIES
 ]
 
 interface OpenAIEmbeddingResponse {

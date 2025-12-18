@@ -41,8 +41,9 @@ export function getCategoryEmoji(category: ActivityCategory): string {
 // Formatting
 // ============================================================================
 
-export function formatDate(date: Date): string {
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+export function formatDate(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 export function truncate(text: string, maxLength: number): string {
@@ -59,12 +60,17 @@ export interface QuickScanOutput {
   hasNoCandidates: boolean
 }
 
+export interface QuickScanWithLogsOptions {
+  maxMessages?: number | undefined
+}
+
 export async function runQuickScanWithLogs(
   input: string,
-  logger: Logger
+  logger: Logger,
+  options?: QuickScanWithLogsOptions
 ): Promise<QuickScanOutput> {
   const content = await readInputFile(input)
-  const scanResult = quickScan(content)
+  const scanResult = quickScan(content, { maxMessages: options?.maxMessages })
 
   const startDate = formatDate(scanResult.dateRange.start)
   const endDate = formatDate(scanResult.dateRange.end)
@@ -72,6 +78,10 @@ export async function runQuickScanWithLogs(
     `   ${scanResult.messageCount.toLocaleString()} messages from ${scanResult.senderCount} senders`
   )
   logger.log(`   Date range: ${startDate} to ${endDate}`)
+
+  if (options?.maxMessages !== undefined) {
+    logger.log(`   (limited to first ${options.maxMessages} messages for testing)`)
+  }
 
   if (scanResult.candidates.length === 0) {
     logger.log('\n⚠️  No activity suggestions found in this chat.')

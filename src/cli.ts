@@ -9,7 +9,10 @@
  */
 
 import { writeFile } from 'node:fs/promises'
+import { homedir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
+import { FilesystemCache } from './cache/filesystem.js'
+import { buildClassificationPrompt } from './classifier/prompt.js'
 import { type CLIArgs, HELP_TEXT, parseCliArgs } from './cli/args.js'
 import { ensureDir, readInputFile } from './cli/io.js'
 import { cmdList } from './cli/list.js'
@@ -41,7 +44,7 @@ import type {
 // Pipeline Steps
 // ============================================================================
 
-async function runParse(input: string, _args: CLIArgs, logger: Logger): Promise<ParsedMessage[]> {
+async function runParse(input: string, args: CLIArgs, logger: Logger): Promise<ParsedMessage[]> {
   logger.log('\n📝 Parsing messages...')
 
   const content = await readInputFile(input)
@@ -54,6 +57,13 @@ async function runParse(input: string, _args: CLIArgs, logger: Logger): Promise<
     `Date range: ${result.dateRange.start.toISOString().split('T')[0]} to ${result.dateRange.end.toISOString().split('T')[0]}`
   )
   logger.success(`${result.urlCount} messages contain URLs`)
+
+  // Limit messages if --max-messages is set
+  if (args.maxMessages !== undefined) {
+    const limited = result.messages.slice(0, args.maxMessages)
+    logger.log(`   (limited to first ${args.maxMessages} messages for testing)`)
+    return [...limited]
+  }
 
   return [...result.messages]
 }
@@ -242,11 +252,12 @@ async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
   logger.log(`\nChatToMap Preview v${VERSION}`)
   logger.log(`\n📁 ${basename(args.input)}`)
 
-  const { scanResult, hasNoCandidates } = await runQuickScanWithLogs(args.input, logger)
-
-  logger.log(`\n🔍 Quick scan found ${scanResult.stats.totalUnique} potential activities`)
+  const { scanResult, hasNoCandidates } = await runQuickScanWithLogs(args.input, logger, {
+    maxMessages: args.maxMessages
+  })
 
   if (hasNoCandidates) {
+    logger.log('\n🔍 Quick scan found 0 potential activities')
     return
   }
 
@@ -258,23 +269,56 @@ async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
     )
   }
 
-  // Step 3: Take top candidates and classify (single AI call)
-  // Classify 2x the limit to account for filtering out non-activities
-  const classifyCount = Math.min(args.limit * 2, scanResult.candidates.length)
-  const topCandidates = scanResult.candidates.slice(0, classifyCount)
-
-  logger.log(`\n✨ Top ${args.limit} suggestions (AI-classified):`)
-  logger.log('')
-
   const provider: ClassifierConfig['provider'] = process.env.ANTHROPIC_API_KEY
     ? 'anthropic'
     : 'openai'
 
-  const classifyResult = await classifyMessages(topCandidates, {
-    provider,
-    apiKey,
-    batchSize: classifyCount // Single batch for all candidates
-  })
+  // Step 3: Classify 3x more candidates than we'll show, then filter to best results
+  const PREVIEW_CLASSIFY_COUNT = args.maxResults * 3
+  const topCandidates = scanResult.candidates.slice(0, PREVIEW_CLASSIFY_COUNT)
+
+  logger.log(`\n🔍 Quick scan found ${scanResult.stats.totalUnique} potential activities`)
+
+  const model = provider === 'anthropic' ? 'claude-haiku-4-5' : 'gpt-5-mini'
+
+  // Debug: print the prompt
+  if (args.debug) {
+    const prompt = buildClassificationPrompt(topCandidates)
+    logger.log('\n--- DEBUG: Classifier Prompt ---')
+    logger.log(prompt)
+    logger.log('--- END DEBUG ---\n')
+    logger.log(`Prompt length: ${prompt.length} chars`)
+  }
+
+  // Dry run: skip API call
+  if (args.dryRun) {
+    logger.log(`\n📊 Dry run: would send ${topCandidates.length} messages to ${model}`)
+    return
+  }
+
+  // Use XDG-compliant cache location
+  const cacheDir = join(homedir(), '.cache', 'chat-to-map')
+  const cache = new FilesystemCache(cacheDir)
+
+  const classifyResult = await classifyMessages(
+    topCandidates,
+    {
+      provider,
+      apiKey,
+      batchSize: 30, // 30 candidates per API call
+      onBatchStart: (info) => {
+        if (info.totalBatches === 1) {
+          logger.log(`\n🤖 Sending ${info.candidateCount} candidates to ${info.model}...`)
+        } else {
+          logger.log(
+            `\n🤖 Batch ${info.batchIndex + 1}/${info.totalBatches}: ` +
+              `sending ${info.candidateCount} candidates to ${info.model}...`
+          )
+        }
+      }
+    },
+    cache
+  )
 
   if (!classifyResult.ok) {
     throw new Error(`Classification failed: ${classifyResult.error.message}`)
@@ -284,7 +328,7 @@ async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
   const activities = classifyResult.value
     .filter((s) => s.isActivity && s.activityScore >= 0.5)
     .sort((a, b) => b.activityScore - a.activityScore)
-    .slice(0, args.limit)
+    .slice(0, args.maxResults)
 
   if (activities.length === 0) {
     logger.log('   No activities found after AI classification.')
@@ -297,7 +341,7 @@ async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
     const s = activities[i]
     if (!s) continue
     const emoji = getCategoryEmoji(s.category)
-    const activity = truncate(s.activity, 55)
+    const activity = truncate(s.activity, 200)
     const category = s.category.charAt(0).toUpperCase() + s.category.slice(1)
 
     logger.log(`${i + 1}. ${emoji}  "${activity}"`)
@@ -322,7 +366,9 @@ async function cmdScan(args: CLIArgs, logger: Logger): Promise<void> {
   logger.log(`\nChatToMap Scan v${VERSION}`)
   logger.log(`\n📁 ${basename(args.input)}`)
 
-  const { scanResult, hasNoCandidates } = await runQuickScanWithLogs(args.input, logger)
+  const { scanResult, hasNoCandidates } = await runQuickScanWithLogs(args.input, logger, {
+    maxMessages: args.maxMessages
+  })
 
   logger.log(`\n🔍 Heuristic scan found ${scanResult.stats.totalUnique} potential activities`)
   logger.log(`   Regex patterns: ${scanResult.stats.regexMatches} matches`)
@@ -332,7 +378,7 @@ async function cmdScan(args: CLIArgs, logger: Logger): Promise<void> {
     return
   }
 
-  const candidates = scanResult.candidates.slice(0, args.limit)
+  const candidates = scanResult.candidates.slice(0, args.maxResults)
   logger.log(`\n📋 Top ${candidates.length} candidates (by confidence):`)
   logger.log('')
 

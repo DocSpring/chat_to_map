@@ -19,18 +19,22 @@ import type {
   ResponseCache,
   Result
 } from '../types.js'
-import { createSmartBatches } from './batching.js'
 import { buildClassificationPrompt, parseClassificationResponse } from './prompt.js'
+import { countTokens, MAX_BATCH_TOKENS } from './tokenizer.js'
 
-export { createSmartBatches, groupCandidatesByProximity } from './batching.js'
+export {
+  createSmartBatches,
+  createTokenAwareBatches,
+  groupCandidatesByProximity
+} from './batching.js'
 export { buildClassificationPrompt, parseClassificationResponse } from './prompt.js'
 
 const DEFAULT_BATCH_SIZE = 10
 
 const DEFAULT_MODELS: Record<ClassifierProvider, string> = {
-  anthropic: 'claude-3-haiku-20240307',
-  openai: 'gpt-4o-mini',
-  openrouter: 'anthropic/claude-3-haiku'
+  anthropic: 'claude-haiku-4-5',
+  openai: 'gpt-5-mini',
+  openrouter: 'anthropic/claude-haiku-4.5'
 }
 
 const VALID_CATEGORIES: readonly ActivityCategory[] = [
@@ -90,7 +94,7 @@ async function callAnthropic(prompt: string, config: ProviderConfig): Promise<Re
       },
       body: JSON.stringify({
         model,
-        max_tokens: 4096,
+        max_tokens: 16384,
         messages: [{ role: 'user', content: prompt }]
       })
     })
@@ -123,7 +127,7 @@ async function callOpenAICompatible(
       body: JSON.stringify({
         model,
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 4096
+        max_completion_tokens: 16384
       })
     })
 
@@ -262,13 +266,27 @@ async function classifyBatch(
   }
 
   const prompt = buildClassificationPrompt(candidates)
+
+  // Safety check: ensure prompt isn't too long
+  const tokenCount = countTokens(prompt)
+  if (tokenCount > MAX_BATCH_TOKENS) {
+    return {
+      ok: false,
+      error: {
+        type: 'invalid_request',
+        message: `Batch too large: ${tokenCount} tokens exceeds limit of ${MAX_BATCH_TOKENS}. Reduce batch size.`
+      }
+    }
+  }
+
   const responseResult = await callProviderWithFallbacks(prompt, config)
   if (!responseResult.ok) {
     return responseResult
   }
 
   try {
-    const parsed = parseClassificationResponse(responseResult.value)
+    const expectedIds = candidates.map((c) => c.messageId)
+    const parsed = parseClassificationResponse(responseResult.value, expectedIds)
 
     // Map responses to candidates
     const suggestions: ClassifiedSuggestion[] = []
@@ -316,13 +334,28 @@ export async function classifyMessages(
   cache?: ResponseCache
 ): Promise<Result<ClassifiedSuggestion[]>> {
   const batchSize = config.batchSize ?? DEFAULT_BATCH_SIZE
-  const proximityGap = config.proximityGap ?? 5
+  const model = config.model ?? DEFAULT_MODELS[config.provider]
   const results: ClassifiedSuggestion[] = []
 
-  // Use smart batching to keep nearby candidates together
-  const batches = createSmartBatches(candidates, batchSize, proximityGap)
+  // Simple batching - take candidates in order
+  const batches: CandidateMessage[][] = []
+  for (let i = 0; i < candidates.length; i += batchSize) {
+    batches.push([...candidates.slice(i, i + batchSize)])
+  }
 
-  for (const batch of batches) {
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i]
+    if (!batch) continue
+
+    // Call onBatchStart callback before each API request
+    config.onBatchStart?.({
+      batchIndex: i,
+      totalBatches: batches.length,
+      candidateCount: batch.length,
+      model,
+      provider: config.provider
+    })
+
     const batchResult = await classifyBatch(batch, config, cache)
     if (!batchResult.ok) {
       return batchResult

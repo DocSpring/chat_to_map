@@ -21,6 +21,11 @@ const URL_CLASSIFIER_RULES: readonly UrlClassifierRule[] = [
     patterns: ['eventfinda', 'ticketmaster', 'eventbrite', 'meetup.com', 'facebook.com/events'],
     type: 'event'
   },
+  // Facebook groups (e.g. hiking groups, activity groups) - high value
+  {
+    patterns: ['facebook.com/groups'],
+    type: 'facebook_group'
+  },
   {
     patterns: ['tiktok.com', 'vt.tiktok', 'vm.tiktok'],
     type: 'tiktok'
@@ -77,11 +82,24 @@ export function classifyUrl(url: string): UrlType {
 }
 
 /**
- * Check if a URL is activity-related (higher confidence).
+ * Check if a URL is activity-related (for heuristic matching).
+ * Only includes high-signal URLs where the URL itself indicates an activity.
+ * Social media URLs (TikTok, YouTube, Instagram, X, Facebook) are excluded -
+ * they could be anything and should be handled by AI classification.
  */
 export function isActivityUrl(url: string): boolean {
   const type = classifyUrl(url)
-  return ['google_maps', 'airbnb', 'booking', 'tripadvisor', 'event'].includes(type)
+  return ['google_maps', 'airbnb', 'booking', 'tripadvisor', 'event', 'facebook_group'].includes(
+    type
+  )
+}
+
+/**
+ * Check if a URL is social media (should be excluded from heuristic).
+ */
+export function isSocialUrl(url: string): boolean {
+  const type = classifyUrl(url)
+  return ['tiktok', 'youtube', 'instagram', 'x', 'facebook'].includes(type)
 }
 
 /**
