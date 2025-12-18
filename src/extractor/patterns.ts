@@ -180,7 +180,7 @@ export const EXCLUSION_PATTERNS: readonly RegExp[] = [
   // Medical & appointments
   /\b(?:doctor|dentist|hospital|appointment|vet|mechanic|optometrist|physio)\b/i,
   // Chores & errands
-  /\b(?:groceries|shopping|buy|sell|order|clean|laundry|dishes|vacuum|chores)\b/i,
+  /\b(?:groceries|shopping|buy|sell|order|clean|cleaning|laundry|dishes|vacuum|chores)\b/i,
   // Negative constructs
   /\b(?:should not|shouldn't|can't|cannot|won't|wouldn't|don't)\b/i,
   // Past tense indicators
