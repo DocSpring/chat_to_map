@@ -159,6 +159,17 @@ if (result.ok) {
 3. Choose "Without media"
 4. Save the .zip file
 
+## Privacy
+
+**This library and CLI have zero telemetry.** We do not collect any data about your usage.
+
+- No analytics or tracking
+- No phone-home behavior
+- No usage statistics
+- Your chat data stays on your machine
+
+The only network requests are to APIs you explicitly configure (Anthropic/OpenAI for classification, Google Maps for geocoding). These are direct calls to third-party services using your own API keys.
+
 ## License
 
 AGPL-3.0 - See [LICENSE](LICENSE)
