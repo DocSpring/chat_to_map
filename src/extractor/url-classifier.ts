@@ -16,6 +16,11 @@ const URL_CLASSIFIER_RULES: readonly UrlClassifierRule[] = [
     patterns: ['maps.google', 'goo.gl/maps', 'maps.app.goo.gl', 'google.com/maps'],
     type: 'google_maps'
   },
+  // Event URLs must come before Facebook to catch facebook.com/events specifically
+  {
+    patterns: ['eventfinda', 'ticketmaster', 'eventbrite', 'meetup.com', 'facebook.com/events'],
+    type: 'event'
+  },
   {
     patterns: ['tiktok.com', 'vt.tiktok', 'vm.tiktok'],
     type: 'tiktok'
@@ -29,6 +34,14 @@ const URL_CLASSIFIER_RULES: readonly UrlClassifierRule[] = [
     type: 'instagram'
   },
   {
+    patterns: ['twitter.com', 'x.com', 't.co'],
+    type: 'x'
+  },
+  {
+    patterns: ['facebook.com', 'fb.com', 'fb.watch', 'm.facebook.com'],
+    type: 'facebook'
+  },
+  {
     patterns: ['airbnb.com', 'airbnb.co'],
     type: 'airbnb'
   },
@@ -39,10 +52,6 @@ const URL_CLASSIFIER_RULES: readonly UrlClassifierRule[] = [
   {
     patterns: ['tripadvisor.com', 'tripadvisor.co'],
     type: 'tripadvisor'
-  },
-  {
-    patterns: ['eventfinda', 'ticketmaster', 'eventbrite', 'meetup.com', 'facebook.com/events'],
-    type: 'event'
   }
 ]
 

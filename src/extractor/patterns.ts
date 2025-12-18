@@ -199,5 +199,7 @@ export const URL_CONFIDENCE_MAP: Record<string, number> = {
   tiktok: 0.5,
   youtube: 0.4,
   instagram: 0.35,
+  x: 0.35,
+  facebook: 0.4,
   website: 0.3
 }

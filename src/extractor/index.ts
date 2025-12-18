@@ -20,6 +20,7 @@ import {
 } from './patterns.js'
 import { classifyUrl, isActivityUrl } from './url-classifier.js'
 
+export { type ActivityLinkOptions, extractActivityLinks } from './activity-links.js'
 export { ACTIVITY_KEYWORDS, EXCLUSION_PATTERNS, SUGGESTION_PATTERNS } from './patterns.js'
 export { classifyUrl, extractGoogleMapsCoords, isActivityUrl } from './url-classifier.js'
 

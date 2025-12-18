@@ -26,6 +26,19 @@ describe('URL Classifier', () => {
       expect(classifyUrl('https://instagr.am/p/abc')).toBe('instagram')
     })
 
+    it('classifies X (Twitter) URLs', () => {
+      expect(classifyUrl('https://twitter.com/user/status/123')).toBe('x')
+      expect(classifyUrl('https://x.com/user/status/456')).toBe('x')
+      expect(classifyUrl('https://t.co/abc123')).toBe('x')
+    })
+
+    it('classifies Facebook URLs', () => {
+      expect(classifyUrl('https://www.facebook.com/somepage')).toBe('facebook')
+      expect(classifyUrl('https://fb.com/page/123')).toBe('facebook')
+      expect(classifyUrl('https://fb.watch/abc123')).toBe('facebook')
+      expect(classifyUrl('https://m.facebook.com/page')).toBe('facebook')
+    })
+
     it('classifies TripAdvisor URLs', () => {
       expect(classifyUrl('https://www.tripadvisor.com/Restaurant_Review-g123-d456')).toBe(
         'tripadvisor'
@@ -85,6 +98,8 @@ describe('URL Classifier', () => {
       expect(isActivityUrl('https://youtube.com/watch')).toBe(false)
       expect(isActivityUrl('https://instagram.com/p/123')).toBe(false)
       expect(isActivityUrl('https://tiktok.com/@user')).toBe(false)
+      expect(isActivityUrl('https://x.com/user/status/123')).toBe(false)
+      expect(isActivityUrl('https://facebook.com/somepage')).toBe(false)
     })
   })
 

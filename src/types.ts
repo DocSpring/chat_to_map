@@ -35,6 +35,8 @@ export type UrlType =
   | 'tiktok'
   | 'youtube'
   | 'instagram'
+  | 'x'
+  | 'facebook'
   | 'airbnb'
   | 'booking'
   | 'tripadvisor'
@@ -89,6 +91,98 @@ export interface ExtractorResult {
   readonly regexMatches: number
   readonly urlMatches: number
   readonly totalUnique: number
+}
+
+// ============================================================================
+// Activity Link Types
+// ============================================================================
+
+/**
+ * Inferred type for an activity link based on context analysis.
+ */
+export type ActivityLinkType = 'place' | 'activity' | 'event' | 'idea' | 'unknown'
+
+/**
+ * Social platform type for activity links.
+ */
+export type SocialPlatform =
+  | 'instagram'
+  | 'tiktok'
+  | 'youtube'
+  | 'x'
+  | 'facebook'
+  | 'google_maps'
+  | 'other'
+
+/**
+ * Context surrounding an activity link in the chat.
+ */
+export interface ActivityLinkContext {
+  /** Messages before the link (±2 messages) */
+  readonly before: readonly string[]
+  /** Messages after the link (±2 messages) */
+  readonly after: readonly string[]
+  /** Sender who shared the link */
+  readonly sender: string
+  /** Timestamp when the link was shared */
+  readonly timestamp: Date
+  /** The full message content containing the link */
+  readonly messageContent: string
+}
+
+/**
+ * Intent signals detected from context around an activity link.
+ */
+export interface IntentSignals {
+  /** High-signal keywords found (e.g., "go", "try", "visit") */
+  readonly keywords: readonly string[]
+  /** High-signal emojis found (e.g., fire, heart eyes) */
+  readonly emojis: readonly string[]
+  /** Combined intent score from 0.0 to 1.0 */
+  readonly score: number
+}
+
+/**
+ * Optional metadata scraped from the linked content.
+ * This is best-effort - may not be available for all links.
+ */
+export interface ActivityLinkMetadata {
+  readonly title?: string | undefined
+  readonly description?: string | undefined
+  readonly thumbnail?: string | undefined
+  readonly creator?: string | undefined
+}
+
+/**
+ * An activity link extracted from chat - a social media or web link
+ * that likely represents a place, activity, or event.
+ */
+export interface ActivityLink {
+  /** The URL of the link */
+  readonly url: string
+  /** Detected platform (instagram, tiktok, youtube, etc.) */
+  readonly platform: SocialPlatform
+  /** Confidence that this is activity-related (0.0 to 1.0) */
+  readonly confidence: number
+  /** Inferred type based on context (place, activity, event, idea) */
+  readonly inferredType: ActivityLinkType
+  /** Context from surrounding messages */
+  readonly context: ActivityLinkContext
+  /** Intent signals detected from context */
+  readonly intent: IntentSignals
+  /** Optional metadata from scraping (best-effort) */
+  readonly metadata?: ActivityLinkMetadata | undefined
+  /** Original message ID */
+  readonly messageId: number
+}
+
+/**
+ * Result from extracting activity links from messages.
+ */
+export interface ActivityLinkResult {
+  readonly links: readonly ActivityLink[]
+  readonly totalUrls: number
+  readonly activityLinkCount: number
 }
 
 // ============================================================================

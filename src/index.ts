@@ -51,8 +51,10 @@ export {
 // Extractor module
 export {
   ACTIVITY_KEYWORDS,
+  type ActivityLinkOptions,
   classifyUrl,
   EXCLUSION_PATTERNS,
+  extractActivityLinks,
   extractCandidates,
   extractGoogleMapsCoords,
   isActivityUrl,
@@ -85,6 +87,12 @@ export { quickScan, quickScanMessages } from './scanner/index.js'
 export type {
   // Classifier types
   ActivityCategory,
+  // Activity Link types
+  ActivityLink,
+  ActivityLinkContext,
+  ActivityLinkMetadata,
+  ActivityLinkResult,
+  ActivityLinkType,
   // Aggregation types
   AggregatedSuggestion,
   ApiError,
@@ -112,6 +120,8 @@ export type {
   GeocoderConfig,
   // Geocoder types
   GeocodeSource,
+  // Intent signals
+  IntentSignals,
   // Export types
   MapConfig,
   // Parser types
@@ -124,6 +134,8 @@ export type {
   ProviderConfig,
   Result,
   SemanticSearchConfig,
+  // Social platform
+  SocialPlatform,
   SourceMessage,
   UrlType,
   WhatsAppFormat
