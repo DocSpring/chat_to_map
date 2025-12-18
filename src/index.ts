@@ -99,6 +99,7 @@ export type {
   CLIOptions,
   ClassifiedSuggestion,
   ClassifierConfig,
+  ClassifierProvider,
   ClassifierResponse,
   EmbeddedMessage,
   // Embeddings types
@@ -120,6 +121,7 @@ export type {
   ParserOptions,
   PDFConfig,
   ProcessingStats,
+  ProviderConfig,
   Result,
   SemanticSearchConfig,
   SourceMessage,

@@ -156,8 +156,22 @@ export interface ClassifiedSuggestion {
   readonly isMappable: boolean
 }
 
+/**
+ * Provider type for AI classification APIs.
+ */
+export type ClassifierProvider = 'anthropic' | 'openai' | 'openrouter'
+
+/**
+ * Configuration for a single provider (used for fallbacks).
+ */
+export interface ProviderConfig {
+  readonly provider: ClassifierProvider
+  readonly apiKey: string
+  readonly model?: string
+}
+
 export interface ClassifierConfig {
-  readonly provider: 'anthropic' | 'openai' | 'openrouter'
+  readonly provider: ClassifierProvider
   readonly apiKey: string
   readonly model?: string
   readonly batchSize?: number
@@ -168,6 +182,11 @@ export interface ClassifierConfig {
    * Default: 5
    */
   readonly proximityGap?: number
+  /**
+   * Fallback providers to try when the primary provider returns a rate limit error (429).
+   * Providers are tried in order until one succeeds.
+   */
+  readonly fallbackProviders?: readonly ProviderConfig[]
 }
 
 export interface ClassifierResponse {

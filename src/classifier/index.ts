@@ -13,7 +13,9 @@ import type {
   CandidateMessage,
   ClassifiedSuggestion,
   ClassifierConfig,
+  ClassifierProvider,
   ClassifierResponse,
+  ProviderConfig,
   ResponseCache,
   Result
 } from '../types.js'
@@ -25,7 +27,7 @@ export { buildClassificationPrompt, parseClassificationResponse } from './prompt
 
 const DEFAULT_BATCH_SIZE = 10
 
-const DEFAULT_MODELS: Record<ClassifierConfig['provider'], string> = {
+const DEFAULT_MODELS: Record<ClassifierProvider, string> = {
   anthropic: 'claude-3-haiku-20240307',
   openai: 'gpt-4o-mini',
   openrouter: 'anthropic/claude-3-haiku'
@@ -75,7 +77,7 @@ interface OpenAIResponse {
 /**
  * Call Anthropic Claude API for classification.
  */
-async function callAnthropic(prompt: string, config: ClassifierConfig): Promise<Result<string>> {
+async function callAnthropic(prompt: string, config: ProviderConfig): Promise<Result<string>> {
   const model = config.model ?? DEFAULT_MODELS.anthropic
 
   try {
@@ -109,7 +111,7 @@ async function callAnthropic(prompt: string, config: ClassifierConfig): Promise<
 async function callOpenAICompatible(
   url: string,
   prompt: string,
-  config: ClassifierConfig,
+  config: ProviderConfig,
   defaultModel: string
 ): Promise<Result<string>> {
   const model = config.model ?? defaultModel
@@ -136,31 +138,80 @@ async function callOpenAICompatible(
 }
 
 /**
- * Call the configured AI provider.
+ * Call a single AI provider.
  */
-async function callProvider(prompt: string, config: ClassifierConfig): Promise<Result<string>> {
-  switch (config.provider) {
+async function callProvider(
+  prompt: string,
+  providerConfig: ProviderConfig
+): Promise<Result<string>> {
+  switch (providerConfig.provider) {
     case 'anthropic':
-      return callAnthropic(prompt, config)
+      return callAnthropic(prompt, providerConfig)
     case 'openai':
       return callOpenAICompatible(
         'https://api.openai.com/v1/chat/completions',
         prompt,
-        config,
+        providerConfig,
         DEFAULT_MODELS.openai
       )
     case 'openrouter':
       return callOpenAICompatible(
         'https://openrouter.ai/api/v1/chat/completions',
         prompt,
-        config,
+        providerConfig,
         DEFAULT_MODELS.openrouter
       )
     default:
       return {
         ok: false,
-        error: { type: 'invalid_response', message: `Unknown provider: ${config.provider}` }
+        error: { type: 'invalid_response', message: `Unknown provider: ${providerConfig.provider}` }
       }
+  }
+}
+
+/**
+ * Call provider with automatic fallback on rate limit errors.
+ * Tries the primary provider first, then each fallback in order.
+ */
+async function callProviderWithFallbacks(
+  prompt: string,
+  config: ClassifierConfig
+): Promise<Result<string>> {
+  const primaryConfig: ProviderConfig = {
+    provider: config.provider,
+    apiKey: config.apiKey,
+    ...(config.model !== undefined && { model: config.model })
+  }
+
+  const result = await callProvider(prompt, primaryConfig)
+
+  // If successful or not a rate limit error, return immediately
+  if (result.ok || result.error.type !== 'rate_limit') {
+    return result
+  }
+
+  // No fallbacks configured
+  if (!config.fallbackProviders || config.fallbackProviders.length === 0) {
+    return result
+  }
+
+  // Try each fallback provider in order
+  for (const fallbackConfig of config.fallbackProviders) {
+    const fallbackResult = await callProvider(prompt, fallbackConfig)
+
+    // If successful or not a rate limit error, return
+    if (fallbackResult.ok || fallbackResult.error.type !== 'rate_limit') {
+      return fallbackResult
+    }
+  }
+
+  // All providers rate limited - return the original error
+  return {
+    ok: false,
+    error: {
+      type: 'rate_limit',
+      message: 'All providers rate limited (primary and fallbacks)'
+    }
   }
 }
 
@@ -211,7 +262,7 @@ async function classifyBatch(
   }
 
   const prompt = buildClassificationPrompt(candidates)
-  const responseResult = await callProvider(prompt, config)
+  const responseResult = await callProviderWithFallbacks(prompt, config)
   if (!responseResult.ok) {
     return responseResult
   }

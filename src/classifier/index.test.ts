@@ -428,6 +428,135 @@ describe('Classifier Module', () => {
         expect(result.error.message).toContain('Unknown provider')
       }
     })
+
+    it('falls back to secondary provider on rate limit', async () => {
+      // First call (Anthropic) - rate limited
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        text: async () => 'Rate limited',
+        headers: { get: () => null }
+      })
+
+      // Second call (OpenAI fallback) - success
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          choices: [
+            {
+              message: {
+                content: createMockClassifierResponse([
+                  {
+                    message_id: 1,
+                    is_activity: true,
+                    activity: 'Fallback Test',
+                    activity_score: 0.8,
+                    category: 'restaurant',
+                    confidence: 0.9
+                  }
+                ])
+              }
+            }
+          ]
+        })
+      })
+
+      const candidates = [createCandidate(1, 'Test')]
+
+      const result = await classifyMessages(candidates, {
+        provider: 'anthropic',
+        apiKey: 'primary-key',
+        fallbackProviders: [{ provider: 'openai', apiKey: 'fallback-key' }]
+      })
+
+      expect(result.ok).toBe(true)
+      if (result.ok) {
+        expect(result.value[0]?.activity).toBe('Fallback Test')
+      }
+      expect(mockFetch).toHaveBeenCalledTimes(2)
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        1,
+        'https://api.anthropic.com/v1/messages',
+        expect.anything()
+      )
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        'https://api.openai.com/v1/chat/completions',
+        expect.anything()
+      )
+    })
+
+    it('tries all fallback providers before failing', async () => {
+      // All providers rate limited
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 429,
+        text: async () => 'Rate limited',
+        headers: { get: () => null }
+      })
+
+      const candidates = [createCandidate(1, 'Test')]
+
+      const result = await classifyMessages(candidates, {
+        provider: 'anthropic',
+        apiKey: 'primary-key',
+        fallbackProviders: [
+          { provider: 'openai', apiKey: 'fallback-key-1' },
+          { provider: 'openrouter', apiKey: 'fallback-key-2' }
+        ]
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error.type).toBe('rate_limit')
+        expect(result.error.message).toContain('All providers rate limited')
+      }
+      // Should have tried all 3 providers
+      expect(mockFetch).toHaveBeenCalledTimes(3)
+    })
+
+    it('does not fall back on auth errors', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: async () => 'Invalid API key',
+        headers: { get: () => null }
+      })
+
+      const candidates = [createCandidate(1, 'Test')]
+
+      const result = await classifyMessages(candidates, {
+        provider: 'anthropic',
+        apiKey: 'invalid-key',
+        fallbackProviders: [{ provider: 'openai', apiKey: 'fallback-key' }]
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error.type).toBe('auth')
+      }
+      // Should only try primary, not fallback
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not fall back on network errors', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Network error'))
+
+      const candidates = [createCandidate(1, 'Test')]
+
+      const result = await classifyMessages(candidates, {
+        provider: 'anthropic',
+        apiKey: 'test-key',
+        fallbackProviders: [{ provider: 'openai', apiKey: 'fallback-key' }]
+      })
+
+      expect(result.ok).toBe(false)
+      if (!result.ok) {
+        expect(result.error.type).toBe('network')
+      }
+      // Should only try primary, not fallback
+      expect(mockFetch).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('filterActivities', async () => {
