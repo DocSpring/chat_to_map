@@ -1,0 +1,231 @@
+/**
+ * CLI Pipeline Steps
+ *
+ * Individual processing steps for the analyze command.
+ */
+
+import { writeFile } from 'node:fs/promises'
+import { basename, join } from 'node:path'
+import {
+  classifyMessages,
+  exportToCSV,
+  exportToExcel,
+  exportToJSON,
+  exportToMapHTML,
+  exportToPDF,
+  extractCandidates,
+  filterActivities,
+  geocodeSuggestions,
+  parseChatWithStats,
+  VERSION
+} from '../index.js'
+import type {
+  CandidateMessage,
+  ClassifiedSuggestion,
+  ClassifierConfig,
+  GeocodedSuggestion,
+  GeocoderConfig,
+  ParsedMessage
+} from '../types.js'
+import type { CLIArgs } from './args.js'
+import { ensureDir, readInputFile } from './io.js'
+import type { Logger } from './logger.js'
+
+export async function runParse(
+  input: string,
+  args: CLIArgs,
+  logger: Logger
+): Promise<ParsedMessage[]> {
+  logger.log('\n📝 Parsing messages...')
+
+  const content = await readInputFile(input)
+  const result = parseChatWithStats(content)
+
+  logger.success(
+    `${result.messageCount.toLocaleString()} messages from ${result.senders.length} senders`
+  )
+  logger.success(
+    `Date range: ${result.dateRange.start.toISOString().split('T')[0]} to ${result.dateRange.end.toISOString().split('T')[0]}`
+  )
+  logger.success(`${result.urlCount} messages contain URLs`)
+
+  if (args.maxMessages !== undefined) {
+    const limited = result.messages.slice(0, args.maxMessages)
+    logger.log(`   (limited to first ${args.maxMessages} messages for testing)`)
+    return [...limited]
+  }
+
+  return [...result.messages]
+}
+
+export function runExtract(
+  messages: readonly ParsedMessage[],
+  args: CLIArgs,
+  logger: Logger
+): CandidateMessage[] {
+  logger.log('\n🔍 Extracting candidates...')
+
+  const result = extractCandidates(messages, {
+    minConfidence: args.minConfidence
+  })
+
+  logger.success(`Regex patterns: ${result.regexMatches} matches`)
+  logger.success(`URL-based: ${result.urlMatches} matches`)
+  logger.success(`Total: ${result.totalUnique} unique candidates`)
+
+  return [...result.candidates]
+}
+
+export async function runClassify(
+  candidates: readonly CandidateMessage[],
+  args: CLIArgs,
+  logger: Logger
+): Promise<ClassifiedSuggestion[]> {
+  logger.log('\n🤖 Classifying with AI...')
+
+  const apiKey = process.env.ANTHROPIC_API_KEY ?? process.env.OPENAI_API_KEY
+
+  if (!apiKey) {
+    throw new Error('No AI API key found. Set ANTHROPIC_API_KEY or OPENAI_API_KEY')
+  }
+
+  const provider: ClassifierConfig['provider'] = process.env.ANTHROPIC_API_KEY
+    ? 'anthropic'
+    : 'openai'
+
+  const config: ClassifierConfig = {
+    provider,
+    apiKey,
+    batchSize: 10
+  }
+
+  logger.verbose(`Using ${provider} for classification`)
+
+  const result = await classifyMessages(candidates, config)
+
+  if (!result.ok) {
+    throw new Error(`Classification failed: ${result.error.message}`)
+  }
+
+  const activities = result.value.filter((s) => s.isActivity)
+  const errands = result.value.filter((s) => !s.isActivity || s.activityScore < 0.5)
+
+  logger.success(`Activities: ${activities.length}`)
+  logger.success(`Errands (filtered): ${errands.length}`)
+
+  if (args.activitiesOnly) {
+    return filterActivities(result.value)
+  }
+
+  return result.value.filter((s) => s.isActivity)
+}
+
+export async function runGeocode(
+  suggestions: readonly ClassifiedSuggestion[],
+  args: CLIArgs,
+  logger: Logger
+): Promise<GeocodedSuggestion[]> {
+  if (args.skipGeocoding) {
+    logger.log('\n📍 Skipping geocoding (--skip-geocoding)')
+    return suggestions.map((s) => ({ ...s }))
+  }
+
+  logger.log('\n📍 Geocoding locations...')
+
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY
+
+  if (!apiKey) {
+    logger.error('GOOGLE_MAPS_API_KEY not set, skipping geocoding')
+    return suggestions.map((s) => ({ ...s }))
+  }
+
+  const config: GeocoderConfig = {
+    apiKey,
+    regionBias: args.region,
+    defaultCountry: args.region === 'NZ' ? 'New Zealand' : undefined
+  }
+
+  const results = await geocodeSuggestions(suggestions, config)
+
+  const geocoded = results.filter((s) => s.latitude !== undefined)
+  logger.success(`Successfully geocoded: ${geocoded.length}/${suggestions.length}`)
+
+  return results
+}
+
+async function exportFormat(
+  format: string,
+  suggestions: readonly GeocodedSuggestion[],
+  args: CLIArgs,
+  logger: Logger,
+  inputFile: string
+): Promise<void> {
+  switch (format.toLowerCase()) {
+    case 'csv': {
+      const csv = exportToCSV(suggestions)
+      const csvPath = join(args.outputDir, 'suggestions.csv')
+      await writeFile(csvPath, csv)
+      logger.success(`${csvPath} (${suggestions.length} rows)`)
+      break
+    }
+
+    case 'json': {
+      const metadata = { inputFile: basename(inputFile), messageCount: 0, version: VERSION }
+      const json = exportToJSON(suggestions, metadata)
+      const jsonPath = join(args.outputDir, 'suggestions.json')
+      await writeFile(jsonPath, json)
+      logger.success(`${jsonPath}`)
+      break
+    }
+
+    case 'map': {
+      const html = exportToMapHTML(suggestions, { title: 'Things To Do' })
+      const mapPath = join(args.outputDir, 'map.html')
+      await writeFile(mapPath, html)
+      const geocoded = suggestions.filter((s) => s.latitude !== undefined).length
+      logger.success(`${mapPath} (${geocoded} mapped)`)
+      break
+    }
+
+    case 'excel': {
+      const excel = await exportToExcel(suggestions)
+      const excelPath = join(args.outputDir, 'suggestions.xlsx')
+      await writeFile(excelPath, excel)
+      logger.success(`${excelPath} (${suggestions.length} rows)`)
+      break
+    }
+
+    case 'pdf': {
+      const pdf = await exportToPDF(suggestions, {
+        title: 'Things To Do',
+        subtitle: `Generated from ${basename(inputFile)}`
+      })
+      const pdfPath = join(args.outputDir, 'suggestions.pdf')
+      await writeFile(pdfPath, pdf)
+      logger.success(`${pdfPath}`)
+      break
+    }
+
+    default:
+      logger.error(`Unknown format: ${format}`)
+  }
+}
+
+export async function runExport(
+  suggestions: readonly GeocodedSuggestion[],
+  args: CLIArgs,
+  logger: Logger,
+  inputFile: string
+): Promise<void> {
+  logger.log('\n📦 Exporting results...')
+  await ensureDir(args.outputDir)
+
+  for (const format of args.formats) {
+    try {
+      await exportFormat(format, suggestions, args, logger, inputFile)
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error)
+      logger.error(`Failed to export ${format}: ${msg}`)
+    }
+  }
+}

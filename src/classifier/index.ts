@@ -241,6 +241,12 @@ function toClassifiedSuggestion(
   }
 }
 
+interface ClassifyBatchResult {
+  result: Result<ClassifiedSuggestion[]>
+  cacheHit: boolean
+  cacheKey: string
+}
+
 /**
  * Classify a batch of candidates.
  */
@@ -248,20 +254,21 @@ async function classifyBatch(
   candidates: readonly CandidateMessage[],
   config: ClassifierConfig,
   cache?: ResponseCache
-): Promise<Result<ClassifiedSuggestion[]>> {
+): Promise<ClassifyBatchResult> {
   const model = config.model ?? DEFAULT_MODELS[config.provider]
 
-  // Check cache first
+  // Generate cache key
   const cacheKey = generateClassifierCacheKey(
     config.provider,
     model,
     candidates.map((c) => ({ messageId: c.messageId, content: c.content }))
   )
 
+  // Check cache first
   if (cache) {
     const cached = await cache.get<ClassifiedSuggestion[]>(cacheKey)
     if (cached) {
-      return { ok: true, value: cached.data }
+      return { result: { ok: true, value: cached.data }, cacheHit: true, cacheKey }
     }
   }
 
@@ -271,17 +278,21 @@ async function classifyBatch(
   const tokenCount = countTokens(prompt)
   if (tokenCount > MAX_BATCH_TOKENS) {
     return {
-      ok: false,
-      error: {
-        type: 'invalid_request',
-        message: `Batch too large: ${tokenCount} tokens exceeds limit of ${MAX_BATCH_TOKENS}. Reduce batch size.`
-      }
+      result: {
+        ok: false,
+        error: {
+          type: 'invalid_request',
+          message: `Batch too large: ${tokenCount} tokens exceeds limit of ${MAX_BATCH_TOKENS}. Reduce batch size.`
+        }
+      },
+      cacheHit: false,
+      cacheKey
     }
   }
 
   const responseResult = await callProviderWithFallbacks(prompt, config)
   if (!responseResult.ok) {
-    return responseResult
+    return { result: responseResult, cacheHit: false, cacheKey }
   }
 
   try {
@@ -307,12 +318,16 @@ async function classifyBatch(
       )
     }
 
-    return { ok: true, value: suggestions }
+    return { result: { ok: true, value: suggestions }, cacheHit: false, cacheKey }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return {
-      ok: false,
-      error: { type: 'invalid_response', message: `Failed to parse response: ${message}` }
+      result: {
+        ok: false,
+        error: { type: 'invalid_response', message: `Failed to parse response: ${message}` }
+      },
+      cacheHit: false,
+      cacheKey
     }
   }
 }
@@ -347,21 +362,27 @@ export async function classifyMessages(
     const batch = batches[i]
     if (!batch) continue
 
-    // Call onBatchStart callback before each API request
-    config.onBatchStart?.({
-      batchIndex: i,
-      totalBatches: batches.length,
-      candidateCount: batch.length,
-      model,
-      provider: config.provider
-    })
+    const { result, cacheHit, cacheKey } = await classifyBatch(batch, config, cache)
 
-    const batchResult = await classifyBatch(batch, config, cache)
-    if (!batchResult.ok) {
-      return batchResult
+    // Call onCacheCheck for debug logging
+    config.onCacheCheck?.({ batchIndex: i, cacheKey, hit: cacheHit })
+
+    // Only call onBatchStart on cache miss (actual API request)
+    if (!cacheHit) {
+      config.onBatchStart?.({
+        batchIndex: i,
+        totalBatches: batches.length,
+        candidateCount: batch.length,
+        model,
+        provider: config.provider
+      })
     }
 
-    results.push(...batchResult.value)
+    if (!result.ok) {
+      return result
+    }
+
+    results.push(...result.value)
   }
 
   return { ok: true, value: results }

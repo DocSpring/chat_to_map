@@ -273,6 +273,12 @@ export interface BatchInfo {
   readonly provider: ClassifierProvider
 }
 
+export interface CacheCheckInfo {
+  readonly batchIndex: number
+  readonly cacheKey: string
+  readonly hit: boolean
+}
+
 export interface ClassifierConfig {
   readonly provider: ClassifierProvider
   readonly apiKey: string
@@ -291,9 +297,13 @@ export interface ClassifierConfig {
    */
   readonly fallbackProviders?: readonly ProviderConfig[]
   /**
-   * Called before each batch API request. Use for logging/progress.
+   * Called before each batch API request (only on cache miss). Use for logging/progress.
    */
   readonly onBatchStart?: (info: BatchInfo) => void
+  /**
+   * Called after cache check. Use for debug logging.
+   */
+  readonly onCacheCheck?: (info: CacheCheckInfo) => void
 }
 
 export interface ClassifierResponse {
