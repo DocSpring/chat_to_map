@@ -298,6 +298,10 @@ function inferActivityType(
  */
 const PLATFORM_CONFIDENCE: Record<SocialPlatform, number> = {
   google_maps: 0.9,
+  airbnb: 0.9,
+  booking: 0.9,
+  tripadvisor: 0.85,
+  eventbrite: 0.85,
   instagram: 0.5,
   tiktok: 0.5,
   youtube: 0.4,

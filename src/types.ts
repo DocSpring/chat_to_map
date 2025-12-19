@@ -113,6 +113,10 @@ export type SocialPlatform =
   | 'x'
   | 'facebook'
   | 'google_maps'
+  | 'airbnb'
+  | 'booking'
+  | 'tripadvisor'
+  | 'eventbrite'
   | 'other'
 
 /**

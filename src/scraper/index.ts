@@ -1,18 +1,36 @@
 /**
- * Social Media Scraper
+ * URL Scraper
  *
- * Extract metadata from social media URLs.
- * Supports TikTok, Instagram, YouTube, and other platforms.
+ * Extract metadata from any URL using OG tags and JSON-LD.
+ *
+ * Architecture:
+ * - Blocklist: booking.com, tripadvisor (block automated requests)
+ * - Specific scrapers: YouTube, TikTok, Eventbrite, Airbnb
+ * - Generic scraper: Everything else (OG tags + JSON-LD)
  */
 
 import type { SocialPlatform } from '../types.js'
+import { scrapeAirbnb } from './airbnb.js'
+import { scrapeEventbrite } from './eventbrite.js'
+import { scrapeGeneric } from './generic.js'
 import { scrapeTikTok } from './tiktok.js'
 import type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types.js'
 import { scrapeYouTube } from './youtube.js'
 
+export { extractAirbnbListingId, scrapeAirbnb } from './airbnb.js'
+export { extractEventbriteId, scrapeEventbrite } from './eventbrite.js'
+export { scrapeGeneric } from './generic.js'
 export { extractTikTokVideoId, resolveTikTokUrl, scrapeTikTok } from './tiktok.js'
 export type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types.js'
 export { buildYouTubeUrl, extractYouTubeVideoId, scrapeYouTube } from './youtube.js'
+
+/** Domains that block automated requests - don't even try */
+const BLOCKLISTED_DOMAINS = [
+  'booking.com',
+  'tripadvisor.com',
+  'tripadvisor.co.nz',
+  'tripadvisor.co.uk'
+]
 
 /**
  * Check if URL matches a domain pattern.
@@ -63,77 +81,69 @@ export function detectPlatform(url: string): SocialPlatform {
   ) {
     return 'google_maps'
   }
+  if (matchesDomain(lower, 'airbnb.com', 'airbnb.co.nz', 'airbnb.co.uk')) {
+    return 'airbnb'
+  }
+  if (matchesDomain(lower, 'booking.com')) {
+    return 'booking'
+  }
+  if (matchesDomain(lower, 'tripadvisor.com', 'tripadvisor.co.nz', 'tripadvisor.co.uk')) {
+    return 'tripadvisor'
+  }
+  if (matchesDomain(lower, 'eventbrite.com', 'eventbrite.co.nz', 'eventbrite.co.uk')) {
+    return 'eventbrite'
+  }
 
   return 'other'
 }
 
 /**
- * Scrape metadata from a social media URL.
- * Automatically detects the platform and uses the appropriate scraper.
+ * Check if URL is on the blocklist.
+ */
+function isBlocklisted(url: string): boolean {
+  const lower = url.toLowerCase()
+  return BLOCKLISTED_DOMAINS.some((domain) => matchesDomain(lower, domain))
+}
+
+/**
+ * Scrape metadata from any URL.
+ * Uses platform-specific scrapers where available, falls back to generic.
+ * Returns { ok: false } for blocklisted domains.
  */
 export async function scrapeUrl(url: string, config: ScraperConfig = {}): Promise<ScrapeOutcome> {
+  // Check blocklist first
+  if (isBlocklisted(url)) {
+    return {
+      ok: false,
+      error: { type: 'blocked', message: 'Domain blocks automated requests', url }
+    }
+  }
+
   const platform = detectPlatform(url)
 
   switch (platform) {
     case 'tiktok':
       return scrapeTikTok(url, config)
 
-    case 'instagram':
-      // Instagram scraping is unreliable - return unsupported for now
-      return {
-        ok: false,
-        error: {
-          type: 'unsupported',
-          message: 'Instagram scraping not yet implemented',
-          url
-        }
-      }
-
     case 'youtube':
       return scrapeYouTube(url, config)
 
-    case 'x':
-      // X requires authentication for most content
-      return {
-        ok: false,
-        error: {
-          type: 'unsupported',
-          message: 'X/Twitter scraping not yet implemented',
-          url
-        }
-      }
+    case 'airbnb':
+      return scrapeAirbnb(url, config)
 
-    case 'facebook':
-      // Facebook is heavily gated
-      return {
-        ok: false,
-        error: {
-          type: 'unsupported',
-          message: 'Facebook scraping not yet implemented',
-          url
-        }
-      }
+    case 'eventbrite':
+      return scrapeEventbrite(url, config)
 
+    // Google Maps URLs are handled by geocoder, not scraper
     case 'google_maps':
-      // Google Maps URLs can be parsed directly for coordinates
       return {
         ok: false,
-        error: {
-          type: 'unsupported',
-          message: 'Google Maps URLs are handled by the geocoder, not scraper',
-          url
-        }
+        error: { type: 'unsupported', message: 'Google Maps handled by geocoder', url }
       }
 
+    // All other URLs: use generic scraper (OG tags + JSON-LD)
     default:
-      return {
-        ok: false,
-        error: {
-          type: 'unsupported',
-          message: `Unsupported platform: ${platform}`,
-          url
-        }
-      }
+      return scrapeGeneric(url, config)
   }
 }
 
