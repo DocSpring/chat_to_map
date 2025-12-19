@@ -49,6 +49,8 @@ ${context}
 
   return `You are analyzing chat messages between people. Your task is to identify messages that suggest "things to do" - activities, places to visit, events to attend, trips to take, etc.
 
+URLs in the chat may be followed by [URL_META: {...}] lines containing scraped metadata (title, description, platform). Use this metadata to better understand what the link is about - it tells you the actual content (e.g., a restaurant name, hotel listing, event details) rather than just seeing a raw URL.
+
 For each message marked with >>>, determine:
 1. Is this a suggestion for something to do together? (yes/no)
 2. If yes, what is the activity/thing to do?

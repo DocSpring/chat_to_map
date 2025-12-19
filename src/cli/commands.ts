@@ -10,6 +10,7 @@ import { basename, dirname, join } from 'node:path'
 import { FilesystemCache } from '../cache/filesystem.js'
 import { buildClassificationPrompt } from '../classifier/prompt.js'
 import { classifyMessages, VERSION } from '../index.js'
+import { scrapeAndEnrichCandidates } from '../scraper/enrich.js'
 import type { ClassifierConfig } from '../types.js'
 import type { CLIArgs } from './args.js'
 import { ensureDir } from './io.js'
@@ -52,8 +53,25 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
 
   const model = provider === 'anthropic' ? 'claude-haiku-4-5' : 'gpt-5-mini'
 
+  // Scrape URLs to enrich context with metadata
+  const enrichedCandidates = await scrapeAndEnrichCandidates(topCandidates, {
+    rateLimitMs: 200,
+    onScrapeStart: ({ urlCount }) => {
+      if (urlCount > 0) {
+        logger.log(`\n🔗 Scraping metadata for ${urlCount} URLs...`)
+      }
+    },
+    onUrlScraped: ({ url, success, current, total }) => {
+      if (args.debug) {
+        const status = success ? '✓' : '✗'
+        const domain = new URL(url).hostname.replace('www.', '')
+        logger.log(`   [${current}/${total}] ${status} ${domain}`)
+      }
+    }
+  })
+
   if (args.debug) {
-    const prompt = buildClassificationPrompt(topCandidates)
+    const prompt = buildClassificationPrompt(enrichedCandidates)
     logger.log('\n--- DEBUG: Classifier Prompt ---')
     logger.log(prompt)
     logger.log('--- END DEBUG ---\n')
@@ -61,7 +79,7 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
   }
 
   if (args.dryRun) {
-    logger.log(`\n📊 Dry run: would send ${topCandidates.length} messages to ${model}`)
+    logger.log(`\n📊 Dry run: would send ${enrichedCandidates.length} messages to ${model}`)
     return
   }
 
@@ -69,7 +87,7 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
   const cache = new FilesystemCache(cacheDir)
 
   const classifyResult = await classifyMessages(
-    topCandidates,
+    enrichedCandidates,
     {
       provider,
       apiKey,

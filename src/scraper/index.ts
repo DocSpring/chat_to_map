@@ -18,6 +18,14 @@ import type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types.js'
 import { scrapeYouTube } from './youtube.js'
 
 export { extractAirbnbListingId, scrapeAirbnb } from './airbnb.js'
+export {
+  type EnrichOptions,
+  enrichCandidatesWithMetadata,
+  extractUrlsFromCandidates,
+  extractUrlsFromText,
+  injectMetadataIntoText,
+  scrapeAndEnrichCandidates
+} from './enrich.js'
 export { extractEventbriteId, scrapeEventbrite } from './eventbrite.js'
 export { scrapeGeneric } from './generic.js'
 export { extractTikTokVideoId, resolveTikTokUrl, scrapeTikTok } from './tiktok.js'
