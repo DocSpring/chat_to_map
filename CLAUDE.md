@@ -125,6 +125,46 @@ src/parser/whatsapp.test.ts   // Tests
 import { describe, expect, it } from 'vitest'
 ```
 
+### Test Fixtures & Caching
+
+Three mechanisms for caching external API responses in tests:
+
+| Class | Purpose | Use For |
+|-------|---------|---------|
+| `FixtureCache` | AI API responses (classifier, embeddings, geocoder) | Single .json.gz file, pass to functions as `cache` param |
+| `HttpRecorder` | Raw HTTP responses (scrapers) | Auto-records to fixtures dir, provides `recorder.fetch` |
+| `FilesystemCache` | General response cache | Production-style caching in tests |
+
+**FixtureCache** - For AI API calls (classifier, embeddings, geocoder):
+```typescript
+import { FixtureCache } from '../test-support/fixture-cache.js'
+
+const cache = new FixtureCache('tests/fixtures/my-test.json.gz')
+await cache.load()
+
+// Pass to classifier/embeddings/geocoder - auto records on first run
+const result = await classifyMessages(candidates, config, cache)
+
+await cache.save() // Writes new entries to fixture
+```
+
+**HttpRecorder** - For HTTP scraper tests:
+```typescript
+import { HttpRecorder } from './test-support/http-recorder.js'
+
+const recorder = new HttpRecorder('tests/fixtures/scraper-name')
+
+// Pass recorder.fetch to scrapers - auto records/replays
+const result = await scrapeTikTok(url, { fetch: recorder.fetch })
+```
+
+**CI HTTP Guard** - Blocks uncached requests in CI:
+```typescript
+// In src/http.ts - throws UncachedHttpRequestError when:
+// - CI=true AND (NODE_ENV=test OR VITEST=true)
+// Run: CI=true bun run test  # Verifies all HTTP is cached
+```
+
 ## Documentation
 
 | Document | Location |

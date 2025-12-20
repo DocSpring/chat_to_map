@@ -74,22 +74,32 @@ function hasSuggestionPhrase(content: string): boolean {
   return phrases.some((phrase) => contentLower.includes(phrase))
 }
 
-const MAX_CONTEXT_MESSAGES = 3
-const MAX_CONTEXT_CHARS = 320
+const MIN_CONTEXT_CHARS = 280
+const MIN_CONTEXT_MESSAGES = 2
+const MAX_MESSAGE_CHARS = 280
+const TRUNCATION_MARKER = ' [truncated to 280 chars]'
 
 interface MessageContext {
   before: string
   after: string
 }
 
-function truncateLine(line: string, maxChars: number): string {
-  if (line.length <= maxChars) return line
-  return `${line.slice(0, maxChars - 3)}...`
+/**
+ * Truncate a message line to max chars with marker.
+ */
+function truncateMessage(line: string): string {
+  if (line.length <= MAX_MESSAGE_CHARS) return line
+  return line.slice(0, MAX_MESSAGE_CHARS) + TRUNCATION_MARKER
 }
 
 /**
- * Get context around a message (up to 3 messages / 320 chars on each side).
- * Always includes at least one message on each side (truncated if needed).
+ * Get context around a message.
+ *
+ * Rules:
+ * - Minimum 280 chars before and 280 chars after
+ * - Minimum 2 messages on each side
+ * - Each message truncated to max 280 chars with "[truncated to 280 chars]" suffix
+ * - For prior context: snap to message boundaries, then truncate
  */
 function getMessageContext(messages: readonly ParsedMessage[], index: number): MessageContext {
   const beforeMessages: string[] = []
@@ -97,40 +107,34 @@ function getMessageContext(messages: readonly ParsedMessage[], index: number): M
   let beforeChars = 0
   let afterChars = 0
 
-  // Get messages before (up to 3 messages or 320 chars)
-  for (let i = index - 1; i >= 0 && beforeMessages.length < MAX_CONTEXT_MESSAGES; i--) {
+  // Get messages before: minimum 2 messages OR 280 chars (whichever comes later)
+  for (let i = index - 1; i >= 0; i--) {
     const msg = messages[i]
     if (!msg) continue
-    const line = `${msg.sender}: ${msg.content}`
+    const rawLine = `${msg.sender}: ${msg.content}`
+    const line = truncateMessage(rawLine)
 
-    if (beforeMessages.length === 0) {
-      // Always include at least one message, truncated if needed
-      const truncated = truncateLine(line, MAX_CONTEXT_CHARS)
-      beforeMessages.unshift(truncated)
-      beforeChars += truncated.length
-    } else if (beforeChars + line.length <= MAX_CONTEXT_CHARS) {
-      beforeMessages.unshift(line)
-      beforeChars += line.length
-    } else {
+    beforeMessages.unshift(line)
+    beforeChars += line.length
+
+    // Stop when we have both minimums met
+    if (beforeMessages.length >= MIN_CONTEXT_MESSAGES && beforeChars >= MIN_CONTEXT_CHARS) {
       break
     }
   }
 
-  // Get messages after (up to 3 messages or 320 chars)
-  for (let i = index + 1; i < messages.length && afterMessages.length < MAX_CONTEXT_MESSAGES; i++) {
+  // Get messages after: minimum 2 messages OR 280 chars (whichever comes later)
+  for (let i = index + 1; i < messages.length; i++) {
     const msg = messages[i]
     if (!msg) continue
-    const line = `${msg.sender}: ${msg.content}`
+    const rawLine = `${msg.sender}: ${msg.content}`
+    const line = truncateMessage(rawLine)
 
-    if (afterMessages.length === 0) {
-      // Always include at least one message, truncated if needed
-      const truncated = truncateLine(line, MAX_CONTEXT_CHARS)
-      afterMessages.push(truncated)
-      afterChars += truncated.length
-    } else if (afterChars + line.length <= MAX_CONTEXT_CHARS) {
-      afterMessages.push(line)
-      afterChars += line.length
-    } else {
+    afterMessages.push(line)
+    afterChars += line.length
+
+    // Stop when we have both minimums met
+    if (afterMessages.length >= MIN_CONTEXT_MESSAGES && afterChars >= MIN_CONTEXT_CHARS) {
       break
     }
   }

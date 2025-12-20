@@ -2,11 +2,12 @@
  * Tests for semantic clustering
  */
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 import { describe, expect, it } from 'vitest'
 import type { ActivityCategory, ClassifiedSuggestion } from '../types/classifier.js'
+import type { ClusterResult } from './index.js'
 import { clusterSuggestions } from './index.js'
 
 /**
@@ -234,13 +235,45 @@ describe('clusterSuggestions', () => {
   })
 })
 
+/**
+ * Serialize clustering result for snapshot comparison.
+ * Converts Dates to ISO strings for JSON serialization.
+ */
+function serializeForSnapshot(result: ClusterResult): unknown {
+  return {
+    clusters: result.clusters.map((c) => ({
+      representative: {
+        activity: c.representative.activity,
+        category: c.representative.category,
+        location: c.representative.location
+      },
+      instanceCount: c.instanceCount,
+      instances: c.instances.map((i) => ({
+        activity: i.activity,
+        category: i.category,
+        location: i.location
+      })),
+      allSenders: [...c.allSenders].sort(),
+      firstMentioned: c.firstMentioned.toISOString(),
+      lastMentioned: c.lastMentioned.toISOString()
+    })),
+    filtered: result.filtered.map((f) => ({
+      activity: f.activity,
+      category: f.category,
+      location: f.location
+    }))
+  }
+}
+
 describe('clusterSuggestions with real fixture', () => {
-  it('should cluster real suggestions from fixture', async () => {
+  it('should match snapshot', async () => {
     // Load the fixture
     const fixturePath = join(
       __dirname,
       '../../tests/fixtures/clustering/classified-suggestions.json.gz'
     )
+    const snapshotPath = join(__dirname, '__snapshots__/clustered_suggestions.json')
+
     const compressed = readFileSync(fixturePath)
     const json = gunzipSync(new Uint8Array(compressed)).toString('utf-8')
     const data = JSON.parse(json) as { suggestions: ClassifiedSuggestion[] }
@@ -268,9 +301,20 @@ describe('clusterSuggestions with real fixture', () => {
       expect(cluster.allSenders.length).toBeGreaterThanOrEqual(1)
     }
 
-    // Multi-mention clusters should exist (proves clustering is working)
-    const multiMentionClusters = result.clusters.filter((c) => c.instanceCount > 1)
-    // We expect some clustering in real data
-    expect(multiMentionClusters.length).toBeGreaterThanOrEqual(0)
+    // Snapshot comparison
+    const serialized = serializeForSnapshot(result)
+
+    // If snapshot doesn't exist, create it
+    if (!existsSync(snapshotPath)) {
+      writeFileSync(snapshotPath, JSON.stringify(serialized, null, 2))
+      console.log(`Created snapshot: ${snapshotPath}`)
+      return
+    }
+
+    // Compare against existing snapshot
+    const snapshotJson = readFileSync(snapshotPath, 'utf-8')
+    const expected = JSON.parse(snapshotJson)
+
+    expect(serialized).toEqual(expected)
   })
 })

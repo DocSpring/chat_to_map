@@ -1,0 +1,96 @@
+/**
+ * Context Window Tests
+ *
+ * Rules:
+ * - Minimum 280 chars before and 280 chars after
+ * - Minimum 2 messages on each side
+ * - Each message truncated to max 280 chars with "[truncated to 280 chars]" suffix
+ * - For prior context: snap to message boundaries, then truncate
+ */
+
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+import { describe, expect, it } from 'vitest'
+import { parseWhatsAppChat } from '../parser/whatsapp.js'
+import { extractCandidates } from './index.js'
+
+const FIXTURES_DIR = join(__dirname, '../../tests/fixtures')
+
+/**
+ * Conversation where "her" should resolve to "Sarah".
+ * With 280 char minimum, we should get enough context.
+ */
+const PRONOUN_RESOLUTION_CHAT = `[4/29/24, 8:06:50 PM] Alice Smith: Oooh yum
+[4/29/24, 9:58:07 PM] Alice Smith: I should call Sarah and see if we can visit
+[4/29/24, 9:58:11 PM] Alice Smith: I forgot about that
+[4/29/24, 9:58:26 PM] Alice Smith: maybe tomorrow after lunch time?
+[4/30/24, 6:00:15 AM] Bob Jones: I'm busy all day today
+[4/30/24, 6:00:25 AM] Bob Jones: Can we visit her on Wednesday, please?
+[4/30/24, 9:03:07 AM] Alice Smith: Ok
+[4/30/24, 9:53:34 AM] Bob Jones: The package is her
+[4/30/24, 9:53:37 AM] Bob Jones: Here
+[4/30/24, 9:53:43 AM] Alice Smith: Yay`
+
+describe('Context Window', () => {
+  it('should include "Sarah" in context for "visit her" message', async () => {
+    const messages = parseWhatsAppChat(PRONOUN_RESOLUTION_CHAT)
+    const result = await extractCandidates(messages)
+
+    const visitCandidate = result.candidates.find((c) => c.content.includes('visit her'))
+    expect(visitCandidate).toBeDefined()
+
+    // With 280 char minimum, we should reach "Sarah" (4 messages back)
+    expect(visitCandidate?.context).toContain('Sarah')
+  })
+
+  it('should include at least 2 messages before and after', async () => {
+    const messages = parseWhatsAppChat(PRONOUN_RESOLUTION_CHAT)
+    const result = await extractCandidates(messages)
+
+    const visitCandidate = result.candidates.find((c) => c.content.includes('visit her'))
+    expect(visitCandidate).toBeDefined()
+
+    const context = visitCandidate?.context ?? ''
+    const [before, after] = context.split('>>>')
+
+    // Count messages (lines with "Sender: content" format)
+    const beforeMessages = before?.split('\n').filter((l) => l.includes(': ')).length ?? 0
+    const afterMessages = after?.split('\n').filter((l) => l.includes(': ')).length ?? 0
+
+    expect(beforeMessages).toBeGreaterThanOrEqual(2)
+    expect(afterMessages).toBeGreaterThanOrEqual(2)
+  })
+
+  it('should truncate long messages with marker', async () => {
+    const chat = readFileSync(join(FIXTURES_DIR, 'context-window.txt'), 'utf-8')
+    const messages = parseWhatsAppChat(chat)
+    const result = await extractCandidates(messages)
+
+    const candidate = result.candidates.find((c) => c.content.includes('try that place'))
+    expect(candidate).toBeDefined()
+
+    const context = candidate?.context ?? ''
+
+    // Long message about The Golden Fork should be truncated
+    expect(context).toContain('[truncated to 280 chars]')
+    expect(context).toContain('Golden Fork')
+    // Should not contain text beyond 280 chars (the end of the message)
+    expect(context).not.toContain('with friends and family')
+  })
+
+  it('should get at least 280 chars of context before', async () => {
+    const chat = readFileSync(join(FIXTURES_DIR, 'context-window.txt'), 'utf-8')
+    const messages = parseWhatsAppChat(chat)
+    const result = await extractCandidates(messages)
+
+    const candidate = result.candidates.find((c) => c.content.includes('try that place'))
+    expect(candidate).toBeDefined()
+
+    const context = candidate?.context ?? ''
+    const beforeContext = context.split('>>>')[0] ?? ''
+
+    // Should have at least 280 chars before (excluding newlines for calculation)
+    const beforeChars = beforeContext.replace(/\n/g, '').length
+    expect(beforeChars).toBeGreaterThanOrEqual(280)
+  })
+})
