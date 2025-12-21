@@ -13,6 +13,7 @@ import { classifyMessages, VERSION } from '../index.js'
 import { scrapeAndEnrichCandidates } from '../scraper/enrich.js'
 import { type ClassifierConfig, formatLocation } from '../types.js'
 import type { CLIArgs } from './args.js'
+import { getRequiredContext } from './env.js'
 import { ensureDir } from './io.js'
 import type { Logger } from './logger.js'
 import { runClassify, runExport, runExtract, runGeocode, runParse } from './pipeline.js'
@@ -41,6 +42,8 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
       'preview command requires ANTHROPIC_API_KEY or OPENAI_API_KEY environment variable'
     )
   }
+
+  const { homeCountry, timezone } = getRequiredContext()
 
   const provider: ClassifierConfig['provider'] = process.env.ANTHROPIC_API_KEY
     ? 'anthropic'
@@ -76,7 +79,7 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
   })
 
   if (args.debug) {
-    const prompt = buildClassificationPrompt(enrichedCandidates)
+    const prompt = buildClassificationPrompt(enrichedCandidates, { homeCountry, timezone })
     logger.log('\n--- DEBUG: Classifier Prompt ---')
     logger.log(prompt)
     logger.log('--- END DEBUG ---\n')
@@ -93,6 +96,8 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
     {
       provider,
       apiKey,
+      homeCountry,
+      timezone,
       batchSize: 30,
       onCacheCheck: (info) => {
         if (args.debug) {

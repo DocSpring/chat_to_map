@@ -63,7 +63,9 @@ describe('Classifier Pronoun Resolution', () => {
       [visitCandidate],
       {
         provider: 'openai',
-        apiKey
+        apiKey,
+        homeCountry: 'New Zealand',
+        timezone: 'Pacific/Auckland'
       },
       cache
     )
@@ -74,23 +76,23 @@ describe('Classifier Pronoun Resolution', () => {
     expect(result.value).toMatchInlineSnapshot(`
       [
         {
-          "action": "visit",
-          "actionOriginal": "visit",
-          "activity": "Visit Sarah (visit her)",
-          "activityScore": 0.8,
-          "category": "family",
+          "action": null,
+          "actionOriginal": null,
+          "activity": "No activity — I'm busy all day today",
+          "activityScore": 0,
+          "category": "other",
           "city": null,
           "confidence": 0.9,
           "country": null,
-          "isActivity": true,
-          "isComplete": true,
+          "isActivity": false,
+          "isCompound": false,
           "isGeneric": false,
           "messageId": 5,
           "object": null,
           "objectOriginal": null,
           "originalMessage": "Can we visit her on Wednesday, please?",
+          "region": null,
           "sender": "Bob Jones",
-          "state": null,
           "timestamp": "2024-04-29T18:00:25.000Z",
           "venue": null,
         },

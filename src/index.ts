@@ -22,6 +22,7 @@ export {
 // Classifier module
 export {
   buildClassificationPrompt,
+  type ClassificationContext,
   classifyMessages,
   createSmartBatches,
   filterActivities,

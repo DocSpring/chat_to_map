@@ -25,14 +25,14 @@ function createActivity(
     sender,
     timestamp: timestamp ?? new Date('2025-01-15T10:00:00Z'),
     isGeneric: true,
-    isComplete: true,
+    isCompound: false,
     action: null,
     actionOriginal: null,
     object: null,
     objectOriginal: null,
     venue: null,
     city: city ?? null,
-    state: null,
+    region: null,
     country: null
   }
 }

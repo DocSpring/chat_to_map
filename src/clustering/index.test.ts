@@ -6,7 +6,7 @@
  * structured fields (action, object, venue, city, country).
  *
  * Clustering is now simple exact-match on normalized fields.
- * Only complete entries (isComplete=true) are clustered; incomplete entries stay as singletons.
+ * Simple entries (isCompound=false) cluster by fields; compound entries (isCompound=true) cluster by title.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -32,14 +32,14 @@ function createActivity(
     sender: 'Test User',
     timestamp: new Date(),
     isGeneric: true,
-    isComplete: true,
+    isCompound: false,
     action: null,
     actionOriginal: null,
     object: null,
     objectOriginal: null,
     venue: null,
     city: null,
-    state: null,
+    region: null,
     country: null,
     ...overrides
   }
@@ -135,27 +135,27 @@ describe('clusterActivities', () => {
     })
   })
 
-  describe('complete vs complex handling', () => {
-    it('should cluster complete entries by normalized fields', () => {
+  describe('simple vs compound handling', () => {
+    it('should cluster simple entries by normalized fields', () => {
       const activities = [
-        createActivity('Go hiking', { action: 'hike', isComplete: true }),
-        createActivity('Go tramping', { action: 'hike', isComplete: true }),
-        createActivity('Go hiking and kayaking', { action: 'hike', isComplete: false })
+        createActivity('Go hiking', { action: 'hike', isCompound: false }),
+        createActivity('Go tramping', { action: 'hike', isCompound: false }),
+        createActivity('Go hiking and kayaking', { action: 'hike', isCompound: true })
       ]
 
       const result = clusterActivities(activities)
 
-      // 2 complete entries cluster by action, 1 complex is separate (different title)
+      // 2 simple entries cluster by action, 1 compound is separate (different title)
       expect(result.clusters.length).toBe(2)
       const clusterCounts = result.clusters.map((c) => c.instanceCount).sort((a, b) => b - a)
       expect(clusterCounts).toEqual([2, 1])
     })
 
-    it('should cluster complex entries by exact title', () => {
+    it('should cluster compound entries by exact title', () => {
       const activities = [
-        createActivity('Trip to Iceland and see aurora', { action: 'travel', isComplete: false }),
-        createActivity('Trip to Iceland and see aurora', { action: 'travel', isComplete: false }),
-        createActivity('Different Iceland trip', { action: 'travel', isComplete: false })
+        createActivity('Trip to Iceland and see aurora', { action: 'travel', isCompound: true }),
+        createActivity('Trip to Iceland and see aurora', { action: 'travel', isCompound: true }),
+        createActivity('Different Iceland trip', { action: 'travel', isCompound: true })
       ]
 
       const result = clusterActivities(activities)
@@ -166,15 +166,15 @@ describe('clusterActivities', () => {
       expect(clusterCounts).toEqual([2, 1])
     })
 
-    it('should not mix complete and complex entries even with same action', () => {
+    it('should not mix simple and compound entries even with same action', () => {
       const activities = [
-        createActivity('Go hiking', { action: 'hike', isComplete: true }),
-        createActivity('Go hiking', { action: 'hike', isComplete: false })
+        createActivity('Go hiking', { action: 'hike', isCompound: false }),
+        createActivity('Go hiking', { action: 'hike', isCompound: true })
       ]
 
       const result = clusterActivities(activities)
 
-      // Same title but different completeness = separate clusters
+      // Same title but different compound status = separate clusters
       expect(result.clusters.length).toBe(2)
     })
   })
@@ -383,14 +383,14 @@ describe('clusterActivities', () => {
         sender: 'Test User',
         timestamp: new Date('2025-01-15T10:00:00Z'),
         isGeneric: true,
-        isComplete: true,
+        isCompound: false,
         action: null,
         actionOriginal: null,
         object: null,
         objectOriginal: null,
         venue: null,
         city: null,
-        state: null,
+        region: null,
         country: null,
         ...overrides
       }
@@ -436,14 +436,14 @@ describe('clusterActivities', () => {
                   "confidence": 0.9,
                   "country": null,
                   "isActivity": true,
-                  "isComplete": true,
+                  "isCompound": false,
                   "isGeneric": true,
                   "messageId": 1,
                   "object": null,
                   "objectOriginal": null,
                   "originalMessage": "We should go hiking",
+                  "region": null,
                   "sender": "Alice",
-                  "state": null,
                   "timestamp": 2025-01-10T10:00:00.000Z,
                   "venue": null,
                 },
@@ -457,14 +457,14 @@ describe('clusterActivities', () => {
                   "confidence": 0.9,
                   "country": null,
                   "isActivity": true,
-                  "isComplete": true,
+                  "isCompound": false,
                   "isGeneric": true,
                   "messageId": 2,
                   "object": null,
                   "objectOriginal": null,
                   "originalMessage": "We should go tramping",
+                  "region": null,
                   "sender": "Bob",
-                  "state": null,
                   "timestamp": 2025-01-20T10:00:00.000Z,
                   "venue": null,
                 },
@@ -480,14 +480,14 @@ describe('clusterActivities', () => {
                 "confidence": 0.9,
                 "country": null,
                 "isActivity": true,
-                "isComplete": true,
+                "isCompound": false,
                 "isGeneric": true,
                 "messageId": 1,
                 "object": null,
                 "objectOriginal": null,
                 "originalMessage": "We should go hiking",
+                "region": null,
                 "sender": "Alice",
-                "state": null,
                 "timestamp": 2025-01-10T10:00:00.000Z,
                 "venue": null,
               },
@@ -568,14 +568,14 @@ describe('clusterActivities', () => {
                   "confidence": 0.95,
                   "country": "New Zealand",
                   "isActivity": true,
-                  "isComplete": true,
+                  "isCompound": false,
                   "isGeneric": true,
                   "messageId": 1,
                   "object": null,
                   "objectOriginal": null,
                   "originalMessage": "We should go hiking",
+                  "region": null,
                   "sender": "Alice",
-                  "state": null,
                   "timestamp": 2025-01-01T10:00:00.000Z,
                   "venue": null,
                 },
@@ -589,14 +589,14 @@ describe('clusterActivities', () => {
                   "confidence": 0.85,
                   "country": "New Zealand",
                   "isActivity": true,
-                  "isComplete": true,
+                  "isCompound": false,
                   "isGeneric": true,
                   "messageId": 2,
                   "object": null,
                   "objectOriginal": null,
                   "originalMessage": "We should tramping trip",
+                  "region": null,
                   "sender": "Bob",
-                  "state": null,
                   "timestamp": 2025-01-15T10:00:00.000Z,
                   "venue": null,
                 },
@@ -610,14 +610,14 @@ describe('clusterActivities', () => {
                   "confidence": 0.9,
                   "country": "New Zealand",
                   "isActivity": true,
-                  "isComplete": true,
+                  "isCompound": false,
                   "isGeneric": true,
                   "messageId": 3,
                   "object": null,
                   "objectOriginal": null,
                   "originalMessage": "We should hike the mountains",
+                  "region": null,
                   "sender": "Alice",
-                  "state": null,
                   "timestamp": 2025-01-20T10:00:00.000Z,
                   "venue": null,
                 },
@@ -633,14 +633,14 @@ describe('clusterActivities', () => {
                 "confidence": 0.95,
                 "country": "New Zealand",
                 "isActivity": true,
-                "isComplete": true,
+                "isCompound": false,
                 "isGeneric": true,
                 "messageId": 1,
                 "object": null,
                 "objectOriginal": null,
                 "originalMessage": "We should go hiking",
+                "region": null,
                 "sender": "Alice",
-                "state": null,
                 "timestamp": 2025-01-01T10:00:00.000Z,
                 "venue": null,
               },
@@ -663,14 +663,14 @@ describe('clusterActivities', () => {
                   "confidence": 0.9,
                   "country": null,
                   "isActivity": true,
-                  "isComplete": true,
+                  "isCompound": false,
                   "isGeneric": true,
                   "messageId": 4,
                   "object": null,
                   "objectOriginal": null,
                   "originalMessage": "We should try kazuya",
+                  "region": null,
                   "sender": "Charlie",
-                  "state": null,
                   "timestamp": 2025-02-01T10:00:00.000Z,
                   "venue": "Kazuya",
                 },
@@ -686,14 +686,14 @@ describe('clusterActivities', () => {
                 "confidence": 0.9,
                 "country": null,
                 "isActivity": true,
-                "isComplete": true,
+                "isCompound": false,
                 "isGeneric": true,
                 "messageId": 4,
                 "object": null,
                 "objectOriginal": null,
                 "originalMessage": "We should try kazuya",
+                "region": null,
                 "sender": "Charlie",
-                "state": null,
                 "timestamp": 2025-02-01T10:00:00.000Z,
                 "venue": "Kazuya",
               },
@@ -710,14 +710,14 @@ describe('clusterActivities', () => {
               "confidence": 0.9,
               "country": null,
               "isActivity": true,
-              "isComplete": true,
+              "isCompound": false,
               "isGeneric": true,
               "messageId": 5,
               "object": null,
               "objectOriginal": null,
               "originalMessage": "We should take out trash",
+              "region": null,
               "sender": "Alice",
-              "state": null,
               "timestamp": 2025-02-10T10:00:00.000Z,
               "venue": null,
             },
@@ -731,27 +731,27 @@ describe('clusterActivities', () => {
         // Complete entries - should cluster by normalized fields
         createDeterministicSuggestion(1, 'Go hiking', {
           action: 'hike',
-          isComplete: true,
+          isCompound: false,
           timestamp: new Date('2025-01-01T10:00:00Z'),
           sender: 'Alice'
         }),
         createDeterministicSuggestion(2, 'Tramping', {
           action: 'hike',
-          isComplete: true,
+          isCompound: false,
           timestamp: new Date('2025-01-02T10:00:00Z'),
           sender: 'Bob'
         }),
         // Complex entry - should cluster by exact title only
         createDeterministicSuggestion(3, 'Trip to Iceland and see aurora', {
           action: 'travel',
-          isComplete: false,
+          isCompound: true,
           timestamp: new Date('2025-01-03T10:00:00Z'),
           sender: 'Alice'
         }),
         // Another complex with same title - should cluster together
         createDeterministicSuggestion(4, 'Trip to Iceland and see aurora', {
           action: 'travel',
-          isComplete: false,
+          isCompound: true,
           timestamp: new Date('2025-01-04T10:00:00Z'),
           sender: 'Charlie'
         })
@@ -781,14 +781,14 @@ describe('clusterActivities', () => {
                   "confidence": 0.9,
                   "country": null,
                   "isActivity": true,
-                  "isComplete": true,
+                  "isCompound": false,
                   "isGeneric": true,
                   "messageId": 1,
                   "object": null,
                   "objectOriginal": null,
                   "originalMessage": "We should go hiking",
+                  "region": null,
                   "sender": "Alice",
-                  "state": null,
                   "timestamp": 2025-01-01T10:00:00.000Z,
                   "venue": null,
                 },
@@ -802,14 +802,14 @@ describe('clusterActivities', () => {
                   "confidence": 0.9,
                   "country": null,
                   "isActivity": true,
-                  "isComplete": true,
+                  "isCompound": false,
                   "isGeneric": true,
                   "messageId": 2,
                   "object": null,
                   "objectOriginal": null,
                   "originalMessage": "We should tramping",
+                  "region": null,
                   "sender": "Bob",
-                  "state": null,
                   "timestamp": 2025-01-02T10:00:00.000Z,
                   "venue": null,
                 },
@@ -825,14 +825,14 @@ describe('clusterActivities', () => {
                 "confidence": 0.9,
                 "country": null,
                 "isActivity": true,
-                "isComplete": true,
+                "isCompound": false,
                 "isGeneric": true,
                 "messageId": 1,
                 "object": null,
                 "objectOriginal": null,
                 "originalMessage": "We should go hiking",
+                "region": null,
                 "sender": "Alice",
-                "state": null,
                 "timestamp": 2025-01-01T10:00:00.000Z,
                 "venue": null,
               },
@@ -856,14 +856,14 @@ describe('clusterActivities', () => {
                   "confidence": 0.9,
                   "country": null,
                   "isActivity": true,
-                  "isComplete": false,
+                  "isCompound": true,
                   "isGeneric": true,
                   "messageId": 3,
                   "object": null,
                   "objectOriginal": null,
                   "originalMessage": "We should trip to iceland and see aurora",
+                  "region": null,
                   "sender": "Alice",
-                  "state": null,
                   "timestamp": 2025-01-03T10:00:00.000Z,
                   "venue": null,
                 },
@@ -877,14 +877,14 @@ describe('clusterActivities', () => {
                   "confidence": 0.9,
                   "country": null,
                   "isActivity": true,
-                  "isComplete": false,
+                  "isCompound": true,
                   "isGeneric": true,
                   "messageId": 4,
                   "object": null,
                   "objectOriginal": null,
                   "originalMessage": "We should trip to iceland and see aurora",
+                  "region": null,
                   "sender": "Charlie",
-                  "state": null,
                   "timestamp": 2025-01-04T10:00:00.000Z,
                   "venue": null,
                 },
@@ -900,14 +900,14 @@ describe('clusterActivities', () => {
                 "confidence": 0.9,
                 "country": null,
                 "isActivity": true,
-                "isComplete": false,
+                "isCompound": true,
                 "isGeneric": true,
                 "messageId": 3,
                 "object": null,
                 "objectOriginal": null,
                 "originalMessage": "We should trip to iceland and see aurora",
+                "region": null,
                 "sender": "Alice",
-                "state": null,
                 "timestamp": 2025-01-03T10:00:00.000Z,
                 "venue": null,
               },

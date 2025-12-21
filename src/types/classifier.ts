@@ -61,11 +61,10 @@ export interface ClassifiedActivity {
    */
   readonly isGeneric: boolean
   /**
-   * Whether the JSON data fully captures the activity info (not lossy).
-   * Only complete entries are clustered. Incomplete entries (compound activities,
-   * complex references) stay as singletons.
+   * Whether this is a compound/complex activity that JSON can't fully capture.
+   * Compound activities (e.g., "Go to Iceland and see the aurora") stay as singletons.
    */
-  readonly isComplete: boolean
+  readonly isCompound: boolean
   /** Normalized action verb/noun (e.g., "hike" not "tramping") */
   readonly action: string | null
   /** Original action word before normalization */
@@ -78,18 +77,18 @@ export interface ClassifiedActivity {
   readonly venue: string | null
   /** City name (e.g., "Queenstown", "Auckland") */
   readonly city: string | null
-  /** State/region name */
-  readonly state: string | null
+  /** Region name (state, province, prefecture) */
+  readonly region: string | null
   /** Country name */
   readonly country: string | null
 }
 
 /**
  * Check if an activity has a mappable location.
- * Derived from venue/city/state/country fields.
+ * Derived from venue/city/region/country fields.
  */
 export function isMappable(a: ClassifiedActivity): boolean {
-  return !!(a.venue || a.city || a.state || a.country)
+  return !!(a.venue || a.city || a.region || a.country)
 }
 
 /**
@@ -98,7 +97,7 @@ export function isMappable(a: ClassifiedActivity): boolean {
  * or null if no location fields are set.
  */
 export function formatLocation(a: ClassifiedActivity): string | null {
-  const parts = [a.venue, a.city, a.state, a.country].filter(Boolean)
+  const parts = [a.venue, a.city, a.region, a.country].filter(Boolean)
   return parts.length > 0 ? parts.join(', ') : null
 }
 
@@ -136,6 +135,10 @@ export interface BatchCompleteInfo {
 export interface ClassifierConfig {
   readonly provider: ClassifierProvider
   readonly apiKey: string
+  /** User's home country (e.g., "New Zealand") - REQUIRED for location disambiguation */
+  readonly homeCountry: string
+  /** User's timezone (e.g., "Pacific/Auckland") - REQUIRED */
+  readonly timezone: string
   readonly model?: string
   readonly batchSize?: number
   readonly contextChars?: number

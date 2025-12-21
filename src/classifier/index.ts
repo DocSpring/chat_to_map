@@ -30,7 +30,11 @@ export {
   createTokenAwareBatches,
   groupCandidatesByProximity
 } from './batching.js'
-export { buildClassificationPrompt, parseClassificationResponse } from './prompt.js'
+export {
+  buildClassificationPrompt,
+  type ClassificationContext,
+  parseClassificationResponse
+} from './prompt.js'
 
 const DEFAULT_BATCH_SIZE = 10
 
@@ -240,14 +244,14 @@ function toClassifiedActivity(
     sender: candidate.sender,
     timestamp: candidate.timestamp,
     isGeneric: response.gen,
-    isComplete: response.com,
+    isCompound: response.com,
     action: response.act,
     actionOriginal: response.act_orig,
     object: response.obj,
     objectOriginal: response.obj_orig,
     venue: response.venue,
     city: response.city,
-    state: response.state,
+    region: response.region,
     country: response.country
   }
 }
@@ -283,7 +287,10 @@ async function classifyBatch(
     }
   }
 
-  const prompt = buildClassificationPrompt(candidates)
+  const prompt = buildClassificationPrompt(candidates, {
+    homeCountry: config.homeCountry,
+    timezone: config.timezone
+  })
 
   // Safety check: ensure prompt isn't too long
   const tokenCount = countTokens(prompt)

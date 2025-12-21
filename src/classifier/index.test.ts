@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CandidateMessage, ClassifiedActivity } from '../types.js'
 
+// Base config with required fields for all tests
+const BASE_CONFIG = {
+  homeCountry: 'New Zealand',
+  timezone: 'Pacific/Auckland'
+} as const
+
 // Mock httpFetch before importing - explicitly re-export other functions
 const mockFetch = vi.fn()
 vi.mock('../http.js', () => ({
@@ -81,7 +87,7 @@ function createMockClassifierResponse(
       obj_orig: null,
       venue: null,
       city: item.city ?? null,
-      state: null,
+      region: null,
       country: item.country ?? null
     }))
   )
@@ -120,6 +126,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'We should try this restaurant')]
 
       await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'test-key'
       })
@@ -162,6 +169,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'We should try this restaurant')]
 
       await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'openai',
         apiKey: 'test-key'
       })
@@ -203,6 +211,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'We should try this restaurant')]
 
       await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'openrouter',
         apiKey: 'test-key'
       })
@@ -240,6 +249,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'We should try this Italian restaurant')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'test-key'
       })
@@ -263,6 +273,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'invalid-key'
       })
@@ -284,6 +295,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'test-key'
       })
@@ -301,6 +313,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'test-key'
       })
@@ -320,6 +333,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'test-key'
       })
@@ -358,6 +372,7 @@ describe('Classifier Module', () => {
       )
 
       await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'test-key',
         batchSize: 10
@@ -392,6 +407,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'test-key'
       })
@@ -427,6 +443,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'test-key',
         model: 'claude-3-opus-20240229'
@@ -441,6 +458,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'unknown' as 'anthropic',
         apiKey: 'test-key'
       })
@@ -486,6 +504,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'primary-key',
         fallbackProviders: [{ provider: 'openai', apiKey: 'fallback-key' }]
@@ -520,6 +539,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'primary-key',
         fallbackProviders: [
@@ -548,6 +568,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'invalid-key',
         fallbackProviders: [{ provider: 'openai', apiKey: 'fallback-key' }]
@@ -567,6 +588,7 @@ describe('Classifier Module', () => {
       const candidates = [createCandidate(1, 'Test')]
 
       const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
         provider: 'anthropic',
         apiKey: 'test-key',
         fallbackProviders: [{ provider: 'openai', apiKey: 'fallback-key' }]
@@ -596,14 +618,14 @@ describe('Classifier Module', () => {
         sender: 'User',
         timestamp: new Date(),
         isGeneric: true,
-        isComplete: true,
+        isCompound: false,
         action: null,
         actionOriginal: null,
         object: null,
         objectOriginal: null,
         venue: null,
         city: null,
-        state: null,
+        region: null,
         country: null
       }
     }
@@ -657,14 +679,14 @@ describe('Classifier Module', () => {
         sender: 'User',
         timestamp: new Date(),
         isGeneric: true,
-        isComplete: true,
+        isCompound: false,
         action: null,
         actionOriginal: null,
         object: null,
         objectOriginal: null,
         venue: null,
         city: null,
-        state: null,
+        region: null,
         country: null
       }
     }

@@ -12,6 +12,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CandidateMessage, ClassifiedActivity, GeocoderConfig } from '../types.js'
 import { FilesystemCache } from './filesystem'
 
+// Base config with required fields for all tests
+const BASE_CONFIG = {
+  homeCountry: 'New Zealand',
+  timezone: 'Pacific/Auckland'
+} as const
+
 // Mock the http module to track API calls
 const mockFetch = vi.fn()
 vi.mock('../http.js', () => ({
@@ -56,14 +62,14 @@ function createClassifiedActivity(id: number, activity: string, city: string): C
     sender: 'Test User',
     timestamp: new Date('2025-01-15T10:30:00Z'),
     isGeneric: true,
-    isComplete: true,
+    isCompound: false,
     action: null,
     actionOriginal: null,
     object: null,
     objectOriginal: null,
     venue: null,
     city,
-    state: null,
+    region: null,
     country: null
   }
 }
@@ -115,7 +121,7 @@ describe('Cache Integration', () => {
                   obj_orig: null,
                   venue: null,
                   city: 'downtown',
-                  state: null,
+                  region: null,
                   country: null
                 }
               ])
@@ -127,7 +133,7 @@ describe('Cache Integration', () => {
 
       const result = await classifyMessages(
         candidates,
-        { provider: 'anthropic', apiKey: 'test-key' },
+        { ...BASE_CONFIG, provider: 'anthropic', apiKey: 'test-key' },
         cache
       )
 
@@ -163,7 +169,7 @@ describe('Cache Integration', () => {
                   obj_orig: null,
                   venue: null,
                   city: 'downtown',
-                  state: null,
+                  region: null,
                   country: null
                 }
               ])
@@ -176,7 +182,7 @@ describe('Cache Integration', () => {
       // First call - should hit API
       const result1 = await classifyMessages(
         candidates,
-        { provider: 'anthropic', apiKey: 'test-key' },
+        { ...BASE_CONFIG, provider: 'anthropic', apiKey: 'test-key' },
         cache
       )
 
@@ -186,7 +192,7 @@ describe('Cache Integration', () => {
       // Second call with same candidates - should use cache
       const result2 = await classifyMessages(
         candidates,
-        { provider: 'anthropic', apiKey: 'test-key' },
+        { ...BASE_CONFIG, provider: 'anthropic', apiKey: 'test-key' },
         cache
       )
 
@@ -228,7 +234,7 @@ describe('Cache Integration', () => {
                   obj_orig: null,
                   venue: null,
                   city: 'somewhere',
-                  state: null,
+                  region: null,
                   country: null
                 }
               ])
@@ -244,14 +250,14 @@ describe('Cache Integration', () => {
       // First call with candidate 1
       await classifyMessages(
         [createCandidate(1, 'Lets try the Italian place')],
-        { provider: 'anthropic', apiKey: 'test-key' },
+        { ...BASE_CONFIG, provider: 'anthropic', apiKey: 'test-key' },
         cache
       )
 
       // Second call with different candidate
       await classifyMessages(
         [createCandidate(2, 'Lets go hiking this weekend!')],
-        { provider: 'anthropic', apiKey: 'test-key' },
+        { ...BASE_CONFIG, provider: 'anthropic', apiKey: 'test-key' },
         cache
       )
 

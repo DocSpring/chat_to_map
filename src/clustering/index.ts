@@ -4,11 +4,11 @@
  * Groups identical activities into single entries with multiple instances.
  *
  * Two clustering strategies:
- * 1. Complete entries (isComplete=true): Match on normalized fields (action, object, venue, city, country)
- * 2. Complex entries (isComplete=false): Match on exact activity title string
+ * 1. Simple entries (isCompound=false): Match on normalized fields (action, object, venue, city, country)
+ * 2. Compound entries (isCompound=true): Match on exact activity title string
  *
- * Complete = structured fields fully capture the activity (e.g., "hike in Queenstown")
- * Complex = compound/lossy, title is the full representation (e.g., "Go to Iceland and see the aurora")
+ * Simple = structured fields fully capture the activity (e.g., "hike in Queenstown")
+ * Compound = multi-part activity, title is the full representation (e.g., "Go to Iceland and see the aurora")
  *
  * @example
  * ```typescript
@@ -120,8 +120,8 @@ function buildCluster(
 /**
  * Cluster activities by matching fields.
  *
- * - Complete entries: cluster by normalized fields (action, object, venue, city, country)
- * - Complex entries: cluster by exact activity title
+ * - Simple entries (isCompound=false): cluster by normalized fields (action, object, venue, city, country)
+ * - Compound entries (isCompound=true): cluster by exact activity title
  *
  * @param activities - Classified activities from AI
  * @param config - Optional clustering configuration
@@ -159,36 +159,36 @@ export function clusterActivities(
     valid.push(activity)
   }
 
-  // Separate complete and complex entries
-  const complete = valid.filter((a) => a.isComplete)
-  const complex = valid.filter((a) => !a.isComplete)
+  // Separate simple and compound entries
+  const simple = valid.filter((a) => !a.isCompound)
+  const compound = valid.filter((a) => a.isCompound)
 
-  // Group complete entries by normalized fields (case-insensitive)
-  const completeGroups = new Map<string, ClassifiedActivity[]>()
-  for (const a of complete) {
+  // Group simple entries by normalized fields (case-insensitive)
+  const simpleGroups = new Map<string, ClassifiedActivity[]>()
+  for (const a of simple) {
     const key = getClusterKey(a)
-    const group = completeGroups.get(key) ?? []
+    const group = simpleGroups.get(key) ?? []
     group.push(a)
-    completeGroups.set(key, group)
+    simpleGroups.set(key, group)
   }
 
-  // Group complex entries by exact title (case-insensitive)
-  const complexGroups = new Map<string, ClassifiedActivity[]>()
-  for (const a of complex) {
+  // Group compound entries by exact title (case-insensitive)
+  const compoundGroups = new Map<string, ClassifiedActivity[]>()
+  for (const a of compound) {
     const key = a.activity.toLowerCase()
-    const group = complexGroups.get(key) ?? []
+    const group = compoundGroups.get(key) ?? []
     group.push(a)
-    complexGroups.set(key, group)
+    compoundGroups.set(key, group)
   }
 
   // Build clusters from both groups
   const clusters: ActivityCluster[] = []
 
-  for (const [key, group] of completeGroups) {
+  for (const [key, group] of simpleGroups) {
     clusters.push(buildCluster(group, key))
   }
 
-  for (const [key, group] of complexGroups) {
+  for (const [key, group] of compoundGroups) {
     clusters.push(buildCluster(group, key))
   }
 

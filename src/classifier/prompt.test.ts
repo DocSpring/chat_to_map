@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import type { CandidateMessage } from '../types.js'
-import { buildClassificationPrompt, parseClassificationResponse } from './prompt.js'
+import {
+  buildClassificationPrompt,
+  type ClassificationContext,
+  parseClassificationResponse
+} from './prompt.js'
+
+const TEST_CONTEXT: ClassificationContext = {
+  homeCountry: 'New Zealand',
+  timezone: 'Pacific/Auckland'
+}
 
 function createCandidate(id: number, content: string, context = ''): CandidateMessage {
   return {
@@ -19,7 +28,7 @@ describe('Classifier Prompt', () => {
     it('builds prompt for single candidate', () => {
       const candidates = [createCandidate(1, 'We should go to that restaurant')]
 
-      const prompt = buildClassificationPrompt(candidates)
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
 
       expect(prompt).toContain('We should go to that restaurant')
       expect(prompt).toContain('msg')
@@ -33,7 +42,7 @@ describe('Classifier Prompt', () => {
         createCandidate(3, 'Check out this concert')
       ]
 
-      const prompt = buildClassificationPrompt(candidates)
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
 
       expect(prompt).toContain('We should go hiking')
       expect(prompt).toContain("Let's try that cafe")
@@ -45,7 +54,7 @@ describe('Classifier Prompt', () => {
         createCandidate(1, 'We should go there', 'Previous: I found a great place')
       ]
 
-      const prompt = buildClassificationPrompt(candidates)
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
 
       expect(prompt).toContain('I found a great place')
     })
@@ -53,7 +62,7 @@ describe('Classifier Prompt', () => {
     it('includes message ID in prompt', () => {
       const candidates = [createCandidate(42, 'We should visit')]
 
-      const prompt = buildClassificationPrompt(candidates)
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
 
       expect(prompt).toContain('42')
     })
@@ -61,7 +70,7 @@ describe('Classifier Prompt', () => {
     it('requests structured JSON output with new fields', () => {
       const candidates = [createCandidate(1, 'Test message')]
 
-      const prompt = buildClassificationPrompt(candidates)
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
 
       // New short field names
       expect(prompt).toContain('is_act')
@@ -78,7 +87,7 @@ describe('Classifier Prompt', () => {
     it('lists valid categories', () => {
       const candidates = [createCandidate(1, 'Test message')]
 
-      const prompt = buildClassificationPrompt(candidates)
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
 
       expect(prompt).toContain('restaurant')
       expect(prompt).toContain('cafe')
@@ -90,7 +99,7 @@ describe('Classifier Prompt', () => {
     it('includes normalization rules', () => {
       const candidates = [createCandidate(1, 'Test message')]
 
-      const prompt = buildClassificationPrompt(candidates)
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
 
       expect(prompt).toContain('tramping→hike')
       expect(prompt).toContain('cycling→bike')
@@ -101,7 +110,7 @@ describe('Classifier Prompt', () => {
     it('includes adult content filter instructions', () => {
       const candidates = [createCandidate(1, 'Test message')]
 
-      const prompt = buildClassificationPrompt(candidates)
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
 
       // Must filter romantic/intimate content
       expect(prompt).toContain('Romantic/intimate')
@@ -127,7 +136,7 @@ describe('Classifier Prompt', () => {
           "obj_orig": "Italian place",
           "venue": "Italian place",
           "city": "Rome",
-          "state": null,
+          "region": null,
           "country": "Italy"
         }
       ]`
@@ -151,8 +160,8 @@ describe('Classifier Prompt', () => {
 
     it('parses multiple items', () => {
       const response = `[
-        {"msg": 1, "is_act": true, "title": "Hiking", "score": 0.8, "cat": "hike", "conf": 0.9, "gen": true, "com": true, "act": "hike", "act_orig": "hiking", "obj": null, "obj_orig": null, "venue": null, "city": "Mountains", "state": null, "country": null},
-        {"msg": 2, "is_act": false, "title": "Vet visit", "score": 0.1, "cat": "errand", "conf": 0.85, "gen": false, "com": true, "act": "visit", "act_orig": "visit", "obj": "vet", "obj_orig": "vet", "venue": null, "city": null, "state": null, "country": null}
+        {"msg": 1, "is_act": true, "title": "Hiking", "score": 0.8, "cat": "hike", "conf": 0.9, "gen": true, "com": true, "act": "hike", "act_orig": "hiking", "obj": null, "obj_orig": null, "venue": null, "city": "Mountains", "region": null, "country": null},
+        {"msg": 2, "is_act": false, "title": "Vet visit", "score": 0.1, "cat": "errand", "conf": 0.85, "gen": false, "com": true, "act": "visit", "act_orig": "visit", "obj": "vet", "obj_orig": "vet", "venue": null, "city": null, "region": null, "country": null}
       ]`
 
       const parsed = parseClassificationResponse(response)
@@ -164,7 +173,7 @@ describe('Classifier Prompt', () => {
 
     it('handles response with markdown code block', () => {
       const response = `\`\`\`json
-[{"msg": 1, "is_act": true, "title": "Beach day", "score": 0.9, "cat": "beach", "conf": 0.95, "gen": true, "com": true, "act": "beach", "act_orig": "beach", "obj": null, "obj_orig": null, "venue": null, "city": "Malibu", "state": "California", "country": "USA"}]
+[{"msg": 1, "is_act": true, "title": "Beach day", "score": 0.9, "cat": "beach", "conf": 0.95, "gen": true, "com": true, "act": "beach", "act_orig": "beach", "obj": null, "obj_orig": null, "venue": null, "city": "Malibu", "region": "California", "country": "USA"}]
 \`\`\``
 
       const parsed = parseClassificationResponse(response)
@@ -176,7 +185,7 @@ describe('Classifier Prompt', () => {
     it('handles response with extra text around JSON', () => {
       const response = `Here is the classification:
 
-[{"msg": 1, "is_act": true, "title": "Concert", "score": 0.85, "cat": "concert", "conf": 0.9, "gen": false, "com": true, "act": "attend", "act_orig": "concert", "obj": "concert", "obj_orig": "concert", "venue": "Madison Square Garden", "city": "New York", "state": "NY", "country": "USA"}]
+[{"msg": 1, "is_act": true, "title": "Concert", "score": 0.85, "cat": "concert", "conf": 0.9, "gen": false, "com": true, "act": "attend", "act_orig": "concert", "obj": "concert", "obj_orig": "concert", "venue": "Madison Square Garden", "city": "New York", "region": "NY", "country": "USA"}]
 
 Hope this helps!`
 
@@ -187,7 +196,7 @@ Hope this helps!`
     })
 
     it('handles null location fields', () => {
-      const response = `[{"msg": 1, "is_act": true, "title": "Something fun", "score": 0.7, "cat": "other", "conf": 0.8, "gen": true, "com": true, "act": "do", "act_orig": "do", "obj": null, "obj_orig": null, "venue": null, "city": null, "state": null, "country": null}]`
+      const response = `[{"msg": 1, "is_act": true, "title": "Something fun", "score": 0.7, "cat": "other", "conf": 0.8, "gen": true, "com": true, "act": "do", "act_orig": "do", "obj": null, "obj_orig": null, "venue": null, "city": null, "region": null, "country": null}]`
 
       const parsed = parseClassificationResponse(response)
 
@@ -203,6 +212,28 @@ Hope this helps!`
 
       // Defaults: gen=true, com=true
       expect(parsed[0]?.gen).toBe(true)
+      expect(parsed[0]?.com).toBe(true)
+    })
+
+    it('parses string-typed numbers (gpt-5-nano compatibility)', () => {
+      // Some models return numbers as strings
+      const response = `[{"msg": "168", "is_act": true, "title": "Test", "score": "0.85", "cat": "other", "conf": "0.9", "gen": true, "com": true}]`
+
+      const parsed = parseClassificationResponse(response)
+
+      expect(parsed[0]?.msg).toBe(168)
+      expect(parsed[0]?.score).toBe(0.85)
+      expect(parsed[0]?.conf).toBe(0.9)
+    })
+
+    it('parses string-typed booleans', () => {
+      // Some models return booleans as strings
+      const response = `[{"msg": 1, "is_act": "true", "title": "Test", "score": 0.5, "cat": "other", "conf": 0.5, "gen": "false", "com": "true"}]`
+
+      const parsed = parseClassificationResponse(response)
+
+      expect(parsed[0]?.is_act).toBe(true)
+      expect(parsed[0]?.gen).toBe(false)
       expect(parsed[0]?.com).toBe(true)
     })
 

@@ -30,6 +30,7 @@ import type {
   ParsedMessage
 } from '../types.js'
 import type { CLIArgs } from './args.js'
+import { getRequiredContext } from './env.js'
 import { ensureDir, readInputFile } from './io.js'
 import type { Logger } from './logger.js'
 
@@ -89,6 +90,8 @@ export async function runClassify(
     throw new Error('No AI API key found. Set ANTHROPIC_API_KEY or OPENAI_API_KEY')
   }
 
+  const { homeCountry, timezone } = getRequiredContext()
+
   const provider: ClassifierConfig['provider'] = process.env.ANTHROPIC_API_KEY
     ? 'anthropic'
     : 'openai'
@@ -107,6 +110,8 @@ export async function runClassify(
   const config: ClassifierConfig = {
     provider,
     apiKey,
+    homeCountry,
+    timezone,
     batchSize,
     onBatchStart: (info) => {
       logger.log(

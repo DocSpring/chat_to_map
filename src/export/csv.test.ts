@@ -22,14 +22,14 @@ function createActivity(
     latitude: lat,
     longitude: lng,
     isGeneric: true,
-    isComplete: true,
+    isCompound: false,
     action: null,
     actionOriginal: null,
     object: null,
     objectOriginal: null,
     venue: null,
     city: city ?? null,
-    state: null,
+    region: null,
     country: null
   }
 }

@@ -20,14 +20,14 @@ function createActivity(
     latitude: 41.9,
     longitude: 12.5,
     isGeneric: true,
-    isComplete: true,
+    isCompound: false,
     action: null,
     actionOriginal: null,
     object: null,
     objectOriginal: null,
     venue: null,
     city: 'Test Location',
-    state: null,
+    region: null,
     country: null
   }
 }
@@ -141,14 +141,14 @@ describe('JSON Export', () => {
         sender: 'User',
         timestamp: new Date(),
         isGeneric: true,
-        isComplete: true,
+        isCompound: false,
         action: null,
         actionOriginal: null,
         object: null,
         objectOriginal: null,
         venue: null,
         city: null,
-        state: null,
+        region: null,
         country: null
       }
 
@@ -172,14 +172,14 @@ describe('JSON Export', () => {
         sender: 'User',
         timestamp: new Date(),
         isGeneric: true,
-        isComplete: true,
+        isCompound: false,
         action: null,
         actionOriginal: null,
         object: null,
         objectOriginal: null,
         venue: null,
         city: null,
-        state: null,
+        region: null,
         country: null
       }
 

@@ -28,14 +28,14 @@ export function createActivity(
     sender: 'Test User',
     timestamp: new Date('2025-01-01'),
     isGeneric: true,
-    isComplete: true,
+    isCompound: false,
     action: null,
     actionOriginal: null,
     object: null,
     objectOriginal: null,
     venue: null,
     city: null,
-    state: null,
+    region: null,
     country: null,
     ...overrides
   }

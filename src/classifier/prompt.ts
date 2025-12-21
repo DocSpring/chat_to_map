@@ -32,26 +32,50 @@ function formatTimestamp(date: Date): string {
 }
 
 /**
+ * User context for classification - REQUIRED.
+ */
+export interface ClassificationContext {
+  /** User's home country (e.g., "New Zealand") - REQUIRED for location disambiguation */
+  readonly homeCountry: string
+  /** User's timezone (e.g., "Pacific/Auckland") - REQUIRED */
+  readonly timezone: string
+}
+
+/**
  * Build the classification prompt for a batch of candidates.
  */
-export function buildClassificationPrompt(candidates: readonly CandidateMessage[]): string {
+export function buildClassificationPrompt(
+  candidates: readonly CandidateMessage[],
+  context: ClassificationContext
+): string {
+  if (!context.homeCountry || !context.timezone) {
+    throw new Error('ClassificationContext.homeCountry and timezone are required')
+  }
+
   const messagesText = candidates
     .map((candidate) => {
-      const context = formatContext(candidate)
+      const ctx = formatContext(candidate)
       const timestamp = formatTimestamp(candidate.timestamp)
       return `
 ---
 ID: ${candidate.messageId} | ${timestamp}
-${context}
+${ctx}
 ---`
     })
     .join('\n')
 
-  return `You are analyzing chat messages to identify "things to do" - activities, places to visit, events, trips, etc.
+  const userContext = `
+USER CONTEXT:
+Home country: ${context.homeCountry}
+Timezone: ${context.timezone}
+`
+
+  return `PURPOSE: We are building a "things to do" map/list from a user's chat history. The goal is to surface specific activity suggestions and places they talked about wanting to visit - things they can actually act on later. We want to show pins on a map and a list of actionable ideas.
+${userContext}
+
+For each message marked with >>>, classify whether it's a mappable/actionable activity suggestion.
 
 URLs may have [URL_META: {...}] with scraped metadata. Use this to understand what the link is about.
-
-For each message marked with >>>, extract structured data for clustering and display.
 
 NORMALIZATION RULES:
 - Normalize action to common informal American English: tramping→hike, trekking→hike, cycling→bike, film→movie
@@ -59,24 +83,36 @@ NORMALIZATION RULES:
 - Do NOT over-normalize distinct concepts: cafe≠restaurant, diner≠restaurant, bar≠restaurant
 - Preserve original casing in all fields
 
-CATEGORIES: restaurant, cafe, bar, hike, nature, beach, trip, hotel, event, concert, museum, entertainment, adventure, family, errand, appointment, other
+CATEGORIES: restaurant, cafe, bar, hike, nature, beach, trip, hotel, event, concert, museum, entertainment, adventure, sports, gaming, art, skills, experiences, hobbies, family, social, shopping, fitness, health, food, home, pets, work, errand, appointment, other
 
-FOCUS ON:
-- Suggestions to visit places (restaurants, beaches, parks, cities)
-- Activities to try (hiking, kayaking, concerts, shows)
-- Travel plans (trips, hotels, Airbnb)
-- Events to attend (festivals, markets, movies)
-- Experiences to have ("we should try...", "let's go to...")
+CRITICAL: The "other" category is a last resort. If you can't fit something into a specific category, it's probably not a real activity suggestion. Set is_act=false unless there's a clear, specific, actionable activity or place to visit.
 
-IGNORE:
-- Mundane tasks (groceries, cleaning, work)
+is_act=true ONLY for specific, actionable suggestions:
+- Named places (restaurants, cafes, venues, parks, cities, countries)
+- Specific activities (hiking, kayaking, concerts, movies, shows)
+- Travel plans with destinations (trips, hotels, Airbnb)
+- Events to attend (festivals, markets, concerts)
+- Generic but specific activities: "Let's go to a cafe" (specific type of place)
+
+is_act=false for:
+- Vague suggestions: "wanna go out?", "do something fun", "go somewhere"
+- Logistics: "leave at 3:50pm", "skip the nachos"
+- Questions without suggestions: "where should we go?"
+- Just sharing links without clear suggestion to visit
+- Mundane errands (groceries, cleaning, vet, mechanic)
+- Work tasks, appointments, chores
 - Past events (things already done)
-- Vague statements without actionable suggestions
-- Just sharing links without suggesting to go/do something
-- Romantic/intimate invitations, adult content, private relationship moments
-- Generic routine activities without venue ("go to a coffee shop") - but DO include unique experiences ("go kayaking")
+- Romantic/intimate invitations, adult content
+- Pet care, household routines
+- Context-dependent references: "go there again" (where?), "check it out" (what?)
+- Bare Google Maps links without accompanying suggestion text
 
 ${messagesText}
+
+LOCATION FIELDS:
+- Only fill city/region/country if EXPLICITLY mentioned in the message
+- For ambiguous locations (e.g., "Omaha"), assume user's home country unless context suggests otherwise
+- region = state, province, prefecture, or region name
 
 Respond with JSON array (short keys to save tokens):
 \`\`\`json
@@ -88,26 +124,26 @@ Respond with JSON array (short keys to save tokens):
     "score": <0.0=errand to 1.0=fun>,
     "cat": "<category>",
     "conf": <0.0-1.0 confidence>,
-    "gen": <true if generic activity, no specific name/URL/compound>,
-    "com": <true if JSON fully captures info, false if lossy (compound activities, complex refs)>,
+    "gen": <true if generic activity, no specific name/URL>,
+    "com": <true if a compound/complex activity that JSON can't fully capture, false if the JSON is lossless>,
     "act": "<normalized action: hike, eat, watch, etc.>",
     "act_orig": "<original action word before normalization>",
     "obj": "<normalized object: movie, restaurant, etc.>",
     "obj_orig": "<original object word>",
     "venue": "<venue/place name: Coffee Lab, Kazuya, etc.>",
-    "city": "<city name (Queenstown, Auckland, etc.)>",
-    "state": "<state/region>",
+    "city": "<city name>",
+    "region": "<state/province/prefecture/region>",
     "country": "<country>"
   }
 ]
 \`\`\`
 
 EXAMPLES:
-- "Go tramping in Queenstown" → act:"hike", act_orig:"tramping", city:"Queenstown", country:"New Zealand", gen:false, com:true
-- "Watch a movie" → act:"watch", obj:"movie", gen:true, com:true
-- "Go to Coffee Lab" → act:"visit", loc:"Coffee Lab", gen:false, com:true
-- "Go to Iceland and see the aurora" → act:"travel", obj:"aurora", country:"Iceland", gen:false, com:false (compound, lossy)
-- "Buy a watch or scotch" → act:"buy", obj:"gift", gen:false, com:false (compound, lossy)
+- "Go tramping in Queenstown" → act:"hike", act_orig:"tramping", city:"Queenstown", gen:false, com:false
+- "Watch a movie" → act:"watch", obj:"movie", gen:true, com:false
+- "Go to Coffee Lab" → act:"visit", venue:"Coffee Lab", gen:false, com:false
+- "Let's visit Omaha" (user in NZ) → city:"Omaha", country:"New Zealand", gen:false, com:false
+- "Go to Iceland and see the aurora" → act:"travel", obj:"aurora", country:"Iceland", gen:false, com:true (compound)
 
 Include ALL messages in response.`
 }
@@ -127,7 +163,7 @@ export interface ParsedClassification {
   obj_orig: string | null
   venue: string | null
   city: string | null
-  state: string | null
+  region: string | null
   country: string | null
 }
 
@@ -149,17 +185,31 @@ function parseString(val: unknown): string | null {
   return typeof val === 'string' && val.trim() ? val : null
 }
 
-function parseNumber(val: unknown, fallback: number): number {
-  return typeof val === 'number' ? Math.max(0, Math.min(1, val)) : fallback
+function parseNumber(val: unknown, fallback: number, clamp = true): number {
+  if (typeof val === 'number') {
+    return clamp ? Math.max(0, Math.min(1, val)) : val
+  }
+  if (typeof val === 'string') {
+    const parsed = Number.parseFloat(val)
+    if (!Number.isNaN(parsed)) {
+      return clamp ? Math.max(0, Math.min(1, parsed)) : parsed
+    }
+  }
+  return fallback
 }
 
 function parseBoolean(val: unknown, fallback: boolean): boolean {
-  return typeof val === 'boolean' ? val : fallback
+  if (typeof val === 'boolean') return val
+  if (typeof val === 'string') {
+    if (val.toLowerCase() === 'true') return true
+    if (val.toLowerCase() === 'false') return false
+  }
+  return fallback
 }
 
 function parseItem(obj: Record<string, unknown>): ParsedClassification {
   return {
-    msg: typeof obj.msg === 'number' ? obj.msg : 0,
+    msg: parseNumber(obj.msg, 0, false), // msg is an ID, not clamped to 0-1
     is_act: parseBoolean(obj.is_act, false),
     title: parseString(obj.title),
     score: parseNumber(obj.score, 0.5),
@@ -173,7 +223,7 @@ function parseItem(obj: Record<string, unknown>): ParsedClassification {
     obj_orig: parseString(obj.obj_orig),
     venue: parseString(obj.venue),
     city: parseString(obj.city),
-    state: parseString(obj.state),
+    region: parseString(obj.region),
     country: parseString(obj.country)
   }
 }
