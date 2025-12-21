@@ -74,16 +74,25 @@ describe('Classifier Pronoun Resolution', () => {
     expect(result.value).toMatchInlineSnapshot(`
       [
         {
+          "action": "visit",
+          "actionOriginal": "visit",
           "activity": "Visit Sarah (visit her)",
           "activityScore": 0.8,
           "category": "family",
+          "city": null,
           "confidence": 0.9,
+          "country": null,
           "isActivity": true,
-          "isMappable": false,
+          "isComplete": true,
+          "isGeneric": false,
           "messageId": 5,
+          "object": null,
+          "objectOriginal": null,
           "originalMessage": "Can we visit her on Wednesday, please?",
           "sender": "Bob Jones",
+          "state": null,
           "timestamp": "2024-04-29T18:00:25.000Z",
+          "venue": null,
         },
       ]
     `)

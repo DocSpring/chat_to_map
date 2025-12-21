@@ -362,4 +362,560 @@ describe('clusterSuggestions', () => {
       expect(result.clusters.length).toBe(2)
     })
   })
+
+  describe('snapshots', () => {
+    /**
+     * Helper with deterministic IDs and timestamps for snapshot stability.
+     */
+    function createDeterministicSuggestion(
+      id: number,
+      activity: string,
+      overrides: Partial<ClassifiedSuggestion> = {}
+    ): ClassifiedSuggestion {
+      return {
+        messageId: id,
+        isActivity: true,
+        activity,
+        activityScore: 0.9,
+        category: 'other' as ActivityCategory,
+        confidence: 0.9,
+        originalMessage: `We should ${activity.toLowerCase()}`,
+        sender: 'Test User',
+        timestamp: new Date('2025-01-15T10:00:00Z'),
+        isGeneric: true,
+        isComplete: true,
+        action: null,
+        actionOriginal: null,
+        object: null,
+        objectOriginal: null,
+        venue: null,
+        city: null,
+        state: null,
+        country: null,
+        ...overrides
+      }
+    }
+
+    it('single cluster output structure', () => {
+      const suggestions = [
+        createDeterministicSuggestion(1, 'Go hiking', {
+          action: 'hike',
+          actionOriginal: 'hiking',
+          timestamp: new Date('2025-01-10T10:00:00Z'),
+          sender: 'Alice'
+        }),
+        createDeterministicSuggestion(2, 'Go tramping', {
+          action: 'hike',
+          actionOriginal: 'tramping',
+          timestamp: new Date('2025-01-20T10:00:00Z'),
+          sender: 'Bob'
+        })
+      ]
+
+      const result = clusterSuggestions(suggestions)
+
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "clusters": [
+            {
+              "allSenders": [
+                "Alice",
+                "Bob",
+              ],
+              "clusterKey": "hike||||",
+              "firstMentioned": 2025-01-10T10:00:00.000Z,
+              "instanceCount": 2,
+              "instances": [
+                {
+                  "action": "hike",
+                  "actionOriginal": "hiking",
+                  "activity": "Go hiking",
+                  "activityScore": 0.9,
+                  "category": "other",
+                  "city": null,
+                  "confidence": 0.9,
+                  "country": null,
+                  "isActivity": true,
+                  "isComplete": true,
+                  "isGeneric": true,
+                  "messageId": 1,
+                  "object": null,
+                  "objectOriginal": null,
+                  "originalMessage": "We should go hiking",
+                  "sender": "Alice",
+                  "state": null,
+                  "timestamp": 2025-01-10T10:00:00.000Z,
+                  "venue": null,
+                },
+                {
+                  "action": "hike",
+                  "actionOriginal": "tramping",
+                  "activity": "Go tramping",
+                  "activityScore": 0.9,
+                  "category": "other",
+                  "city": null,
+                  "confidence": 0.9,
+                  "country": null,
+                  "isActivity": true,
+                  "isComplete": true,
+                  "isGeneric": true,
+                  "messageId": 2,
+                  "object": null,
+                  "objectOriginal": null,
+                  "originalMessage": "We should go tramping",
+                  "sender": "Bob",
+                  "state": null,
+                  "timestamp": 2025-01-20T10:00:00.000Z,
+                  "venue": null,
+                },
+              ],
+              "lastMentioned": 2025-01-20T10:00:00.000Z,
+              "representative": {
+                "action": "hike",
+                "actionOriginal": "hiking",
+                "activity": "Go hiking",
+                "activityScore": 0.9,
+                "category": "other",
+                "city": null,
+                "confidence": 0.9,
+                "country": null,
+                "isActivity": true,
+                "isComplete": true,
+                "isGeneric": true,
+                "messageId": 1,
+                "object": null,
+                "objectOriginal": null,
+                "originalMessage": "We should go hiking",
+                "sender": "Alice",
+                "state": null,
+                "timestamp": 2025-01-10T10:00:00.000Z,
+                "venue": null,
+              },
+            },
+          ],
+          "filtered": [],
+        }
+      `)
+    })
+
+    it('multiple clusters with filtering', () => {
+      const suggestions = [
+        // Cluster 1: Hiking (3 mentions)
+        createDeterministicSuggestion(1, 'Go hiking', {
+          action: 'hike',
+          city: 'Queenstown',
+          country: 'New Zealand',
+          timestamp: new Date('2025-01-01T10:00:00Z'),
+          sender: 'Alice',
+          confidence: 0.95
+        }),
+        createDeterministicSuggestion(2, 'Tramping trip', {
+          action: 'hike',
+          city: 'Queenstown',
+          country: 'New Zealand',
+          timestamp: new Date('2025-01-15T10:00:00Z'),
+          sender: 'Bob',
+          confidence: 0.85
+        }),
+        createDeterministicSuggestion(3, 'Hike the mountains', {
+          action: 'hike',
+          city: 'Queenstown',
+          country: 'New Zealand',
+          timestamp: new Date('2025-01-20T10:00:00Z'),
+          sender: 'Alice',
+          confidence: 0.9
+        }),
+        // Cluster 2: Restaurant (1 mention)
+        createDeterministicSuggestion(4, 'Try Kazuya', {
+          action: 'eat',
+          venue: 'Kazuya',
+          city: 'Auckland',
+          timestamp: new Date('2025-02-01T10:00:00Z'),
+          sender: 'Charlie',
+          category: 'restaurant' as ActivityCategory
+        }),
+        // Filtered: Low activity score
+        createDeterministicSuggestion(5, 'Take out trash', {
+          action: 'dispose',
+          activityScore: 0.2,
+          category: 'errand' as ActivityCategory,
+          timestamp: new Date('2025-02-10T10:00:00Z'),
+          sender: 'Alice'
+        })
+      ]
+
+      const result = clusterSuggestions(suggestions, { minActivityScore: 0.5 })
+
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "clusters": [
+            {
+              "allSenders": [
+                "Alice",
+                "Bob",
+              ],
+              "clusterKey": "hike|||queenstown|new zealand",
+              "firstMentioned": 2025-01-01T10:00:00.000Z,
+              "instanceCount": 3,
+              "instances": [
+                {
+                  "action": "hike",
+                  "actionOriginal": null,
+                  "activity": "Go hiking",
+                  "activityScore": 0.9,
+                  "category": "other",
+                  "city": "Queenstown",
+                  "confidence": 0.95,
+                  "country": "New Zealand",
+                  "isActivity": true,
+                  "isComplete": true,
+                  "isGeneric": true,
+                  "messageId": 1,
+                  "object": null,
+                  "objectOriginal": null,
+                  "originalMessage": "We should go hiking",
+                  "sender": "Alice",
+                  "state": null,
+                  "timestamp": 2025-01-01T10:00:00.000Z,
+                  "venue": null,
+                },
+                {
+                  "action": "hike",
+                  "actionOriginal": null,
+                  "activity": "Tramping trip",
+                  "activityScore": 0.9,
+                  "category": "other",
+                  "city": "Queenstown",
+                  "confidence": 0.85,
+                  "country": "New Zealand",
+                  "isActivity": true,
+                  "isComplete": true,
+                  "isGeneric": true,
+                  "messageId": 2,
+                  "object": null,
+                  "objectOriginal": null,
+                  "originalMessage": "We should tramping trip",
+                  "sender": "Bob",
+                  "state": null,
+                  "timestamp": 2025-01-15T10:00:00.000Z,
+                  "venue": null,
+                },
+                {
+                  "action": "hike",
+                  "actionOriginal": null,
+                  "activity": "Hike the mountains",
+                  "activityScore": 0.9,
+                  "category": "other",
+                  "city": "Queenstown",
+                  "confidence": 0.9,
+                  "country": "New Zealand",
+                  "isActivity": true,
+                  "isComplete": true,
+                  "isGeneric": true,
+                  "messageId": 3,
+                  "object": null,
+                  "objectOriginal": null,
+                  "originalMessage": "We should hike the mountains",
+                  "sender": "Alice",
+                  "state": null,
+                  "timestamp": 2025-01-20T10:00:00.000Z,
+                  "venue": null,
+                },
+              ],
+              "lastMentioned": 2025-01-20T10:00:00.000Z,
+              "representative": {
+                "action": "hike",
+                "actionOriginal": null,
+                "activity": "Go hiking",
+                "activityScore": 0.9,
+                "category": "other",
+                "city": "Queenstown",
+                "confidence": 0.95,
+                "country": "New Zealand",
+                "isActivity": true,
+                "isComplete": true,
+                "isGeneric": true,
+                "messageId": 1,
+                "object": null,
+                "objectOriginal": null,
+                "originalMessage": "We should go hiking",
+                "sender": "Alice",
+                "state": null,
+                "timestamp": 2025-01-01T10:00:00.000Z,
+                "venue": null,
+              },
+            },
+            {
+              "allSenders": [
+                "Charlie",
+              ],
+              "clusterKey": "eat||kazuya|auckland|",
+              "firstMentioned": 2025-02-01T10:00:00.000Z,
+              "instanceCount": 1,
+              "instances": [
+                {
+                  "action": "eat",
+                  "actionOriginal": null,
+                  "activity": "Try Kazuya",
+                  "activityScore": 0.9,
+                  "category": "restaurant",
+                  "city": "Auckland",
+                  "confidence": 0.9,
+                  "country": null,
+                  "isActivity": true,
+                  "isComplete": true,
+                  "isGeneric": true,
+                  "messageId": 4,
+                  "object": null,
+                  "objectOriginal": null,
+                  "originalMessage": "We should try kazuya",
+                  "sender": "Charlie",
+                  "state": null,
+                  "timestamp": 2025-02-01T10:00:00.000Z,
+                  "venue": "Kazuya",
+                },
+              ],
+              "lastMentioned": 2025-02-01T10:00:00.000Z,
+              "representative": {
+                "action": "eat",
+                "actionOriginal": null,
+                "activity": "Try Kazuya",
+                "activityScore": 0.9,
+                "category": "restaurant",
+                "city": "Auckland",
+                "confidence": 0.9,
+                "country": null,
+                "isActivity": true,
+                "isComplete": true,
+                "isGeneric": true,
+                "messageId": 4,
+                "object": null,
+                "objectOriginal": null,
+                "originalMessage": "We should try kazuya",
+                "sender": "Charlie",
+                "state": null,
+                "timestamp": 2025-02-01T10:00:00.000Z,
+                "venue": "Kazuya",
+              },
+            },
+          ],
+          "filtered": [
+            {
+              "action": "dispose",
+              "actionOriginal": null,
+              "activity": "Take out trash",
+              "activityScore": 0.2,
+              "category": "errand",
+              "city": null,
+              "confidence": 0.9,
+              "country": null,
+              "isActivity": true,
+              "isComplete": true,
+              "isGeneric": true,
+              "messageId": 5,
+              "object": null,
+              "objectOriginal": null,
+              "originalMessage": "We should take out trash",
+              "sender": "Alice",
+              "state": null,
+              "timestamp": 2025-02-10T10:00:00.000Z,
+              "venue": null,
+            },
+          ],
+        }
+      `)
+    })
+
+    it('complete vs complex clustering', () => {
+      const suggestions = [
+        // Complete entries - should cluster by normalized fields
+        createDeterministicSuggestion(1, 'Go hiking', {
+          action: 'hike',
+          isComplete: true,
+          timestamp: new Date('2025-01-01T10:00:00Z'),
+          sender: 'Alice'
+        }),
+        createDeterministicSuggestion(2, 'Tramping', {
+          action: 'hike',
+          isComplete: true,
+          timestamp: new Date('2025-01-02T10:00:00Z'),
+          sender: 'Bob'
+        }),
+        // Complex entry - should cluster by exact title only
+        createDeterministicSuggestion(3, 'Trip to Iceland and see aurora', {
+          action: 'travel',
+          isComplete: false,
+          timestamp: new Date('2025-01-03T10:00:00Z'),
+          sender: 'Alice'
+        }),
+        // Another complex with same title - should cluster together
+        createDeterministicSuggestion(4, 'Trip to Iceland and see aurora', {
+          action: 'travel',
+          isComplete: false,
+          timestamp: new Date('2025-01-04T10:00:00Z'),
+          sender: 'Charlie'
+        })
+      ]
+
+      const result = clusterSuggestions(suggestions)
+
+      expect(result).toMatchInlineSnapshot(`
+        {
+          "clusters": [
+            {
+              "allSenders": [
+                "Alice",
+                "Bob",
+              ],
+              "clusterKey": "hike||||",
+              "firstMentioned": 2025-01-01T10:00:00.000Z,
+              "instanceCount": 2,
+              "instances": [
+                {
+                  "action": "hike",
+                  "actionOriginal": null,
+                  "activity": "Go hiking",
+                  "activityScore": 0.9,
+                  "category": "other",
+                  "city": null,
+                  "confidence": 0.9,
+                  "country": null,
+                  "isActivity": true,
+                  "isComplete": true,
+                  "isGeneric": true,
+                  "messageId": 1,
+                  "object": null,
+                  "objectOriginal": null,
+                  "originalMessage": "We should go hiking",
+                  "sender": "Alice",
+                  "state": null,
+                  "timestamp": 2025-01-01T10:00:00.000Z,
+                  "venue": null,
+                },
+                {
+                  "action": "hike",
+                  "actionOriginal": null,
+                  "activity": "Tramping",
+                  "activityScore": 0.9,
+                  "category": "other",
+                  "city": null,
+                  "confidence": 0.9,
+                  "country": null,
+                  "isActivity": true,
+                  "isComplete": true,
+                  "isGeneric": true,
+                  "messageId": 2,
+                  "object": null,
+                  "objectOriginal": null,
+                  "originalMessage": "We should tramping",
+                  "sender": "Bob",
+                  "state": null,
+                  "timestamp": 2025-01-02T10:00:00.000Z,
+                  "venue": null,
+                },
+              ],
+              "lastMentioned": 2025-01-02T10:00:00.000Z,
+              "representative": {
+                "action": "hike",
+                "actionOriginal": null,
+                "activity": "Go hiking",
+                "activityScore": 0.9,
+                "category": "other",
+                "city": null,
+                "confidence": 0.9,
+                "country": null,
+                "isActivity": true,
+                "isComplete": true,
+                "isGeneric": true,
+                "messageId": 1,
+                "object": null,
+                "objectOriginal": null,
+                "originalMessage": "We should go hiking",
+                "sender": "Alice",
+                "state": null,
+                "timestamp": 2025-01-01T10:00:00.000Z,
+                "venue": null,
+              },
+            },
+            {
+              "allSenders": [
+                "Alice",
+                "Charlie",
+              ],
+              "clusterKey": "trip to iceland and see aurora",
+              "firstMentioned": 2025-01-03T10:00:00.000Z,
+              "instanceCount": 2,
+              "instances": [
+                {
+                  "action": "travel",
+                  "actionOriginal": null,
+                  "activity": "Trip to Iceland and see aurora",
+                  "activityScore": 0.9,
+                  "category": "other",
+                  "city": null,
+                  "confidence": 0.9,
+                  "country": null,
+                  "isActivity": true,
+                  "isComplete": false,
+                  "isGeneric": true,
+                  "messageId": 3,
+                  "object": null,
+                  "objectOriginal": null,
+                  "originalMessage": "We should trip to iceland and see aurora",
+                  "sender": "Alice",
+                  "state": null,
+                  "timestamp": 2025-01-03T10:00:00.000Z,
+                  "venue": null,
+                },
+                {
+                  "action": "travel",
+                  "actionOriginal": null,
+                  "activity": "Trip to Iceland and see aurora",
+                  "activityScore": 0.9,
+                  "category": "other",
+                  "city": null,
+                  "confidence": 0.9,
+                  "country": null,
+                  "isActivity": true,
+                  "isComplete": false,
+                  "isGeneric": true,
+                  "messageId": 4,
+                  "object": null,
+                  "objectOriginal": null,
+                  "originalMessage": "We should trip to iceland and see aurora",
+                  "sender": "Charlie",
+                  "state": null,
+                  "timestamp": 2025-01-04T10:00:00.000Z,
+                  "venue": null,
+                },
+              ],
+              "lastMentioned": 2025-01-04T10:00:00.000Z,
+              "representative": {
+                "action": "travel",
+                "actionOriginal": null,
+                "activity": "Trip to Iceland and see aurora",
+                "activityScore": 0.9,
+                "category": "other",
+                "city": null,
+                "confidence": 0.9,
+                "country": null,
+                "isActivity": true,
+                "isComplete": false,
+                "isGeneric": true,
+                "messageId": 3,
+                "object": null,
+                "objectOriginal": null,
+                "originalMessage": "We should trip to iceland and see aurora",
+                "sender": "Alice",
+                "state": null,
+                "timestamp": 2025-01-03T10:00:00.000Z,
+                "venue": null,
+              },
+            },
+          ],
+          "filtered": [],
+        }
+      `)
+    })
+  })
 })
