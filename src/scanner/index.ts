@@ -5,7 +5,7 @@
  * Zero API cost - no AI calls, no API keys required.
  */
 
-import { extractCandidates } from '../extractor/index.js'
+import { extractCandidatesByHeuristics } from '../extraction/heuristics/index.js'
 import { parseChatWithStats } from '../parser/index.js'
 import type { CandidateMessage, ChatSource, ExtractorOptions, ParserOptions } from '../types.js'
 
@@ -84,7 +84,7 @@ export function quickScan(content: string, options?: QuickScanOptions): QuickSca
   }
 
   // Extract candidates using heuristics
-  const extractResult = extractCandidates(messages, options?.extractor)
+  const extractResult = extractCandidatesByHeuristics(messages, options?.extractor)
 
   // Limit candidates if requested
   let candidates = extractResult.candidates
@@ -120,13 +120,13 @@ export function quickScan(content: string, options?: QuickScanOptions): QuickSca
  * @returns Candidates and extraction stats
  */
 export function quickScanMessages(
-  messages: Parameters<typeof extractCandidates>[0],
+  messages: Parameters<typeof extractCandidatesByHeuristics>[0],
   options?: ExtractorOptions & { maxCandidates?: number }
 ): {
   candidates: readonly CandidateMessage[]
   stats: { regexMatches: number; urlMatches: number; totalUnique: number }
 } {
-  const extractResult = extractCandidates(messages, options)
+  const extractResult = extractCandidatesByHeuristics(messages, options)
 
   let candidates = extractResult.candidates
   if (options?.maxCandidates !== undefined && candidates.length > options.maxCandidates) {

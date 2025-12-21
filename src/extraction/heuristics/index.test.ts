@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { ParsedMessage } from '../types.js'
-import { extractCandidates } from './index.js'
+import type { ParsedMessage } from '../../types.js'
+import { extractCandidatesByHeuristics } from './index.js'
 
 function createMessage(
   id: number,
@@ -21,12 +21,12 @@ function createMessage(
 }
 
 describe('Candidate Extractor', () => {
-  describe('extractCandidates', () => {
+  describe('extractCandidatesByHeuristics', () => {
     describe('regex pattern matching', () => {
       it('matches "we should" pattern', () => {
         const messages = [createMessage(0, 'We should go to that restaurant')]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(1)
         expect(result.candidates[0]?.source.type).toBe('regex')
@@ -36,7 +36,7 @@ describe('Candidate Extractor', () => {
       it('matches "lets go" pattern', () => {
         const messages = [createMessage(0, "Let's go hiking this weekend")]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(1)
       })
@@ -44,7 +44,7 @@ describe('Candidate Extractor', () => {
       it('matches "want to go" pattern', () => {
         const messages = [createMessage(0, 'I want to go to that beach')]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(1)
       })
@@ -52,7 +52,7 @@ describe('Candidate Extractor', () => {
       it('matches "bucket list" pattern', () => {
         const messages = [createMessage(0, 'This is on my bucket list!')]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(1)
       })
@@ -66,7 +66,7 @@ describe('Candidate Extractor', () => {
           ])
         ]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates.length).toBeGreaterThanOrEqual(1)
         expect(result.urlMatches).toBeGreaterThanOrEqual(1)
@@ -77,7 +77,7 @@ describe('Candidate Extractor', () => {
           createMessage(0, 'We should go here', 'User', ['https://yelp.com/biz/some-restaurant'])
         ]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(1)
       })
@@ -89,7 +89,7 @@ describe('Candidate Extractor', () => {
           ])
         ]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(1)
       })
@@ -99,7 +99,7 @@ describe('Candidate Extractor', () => {
           createMessage(0, "Let's stay here", 'User', ['https://airbnb.com/rooms/12345'])
         ]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(1)
       })
@@ -109,7 +109,7 @@ describe('Candidate Extractor', () => {
           createMessage(0, 'Should book this', 'User', ['https://booking.com/hotel/us/hotel-name'])
         ]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(1)
       })
@@ -121,7 +121,7 @@ describe('Candidate Extractor', () => {
           ])
         ]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(1)
       })
@@ -131,7 +131,7 @@ describe('Candidate Extractor', () => {
       it('excludes messages with "vet" mentions', () => {
         const messages = [createMessage(0, 'We should take the dog to the vet')]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(0)
       })
@@ -139,7 +139,7 @@ describe('Candidate Extractor', () => {
       it('excludes messages with "dentist" mentions', () => {
         const messages = [createMessage(0, 'Need to go to the dentist')]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(0)
       })
@@ -147,7 +147,7 @@ describe('Candidate Extractor', () => {
       it('excludes messages with "doctor" mentions', () => {
         const messages = [createMessage(0, 'I have a doctor appointment')]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(0)
       })
@@ -155,7 +155,7 @@ describe('Candidate Extractor', () => {
       it('excludes messages with "mechanic" mentions', () => {
         const messages = [createMessage(0, 'Car needs to go to the mechanic')]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(0)
       })
@@ -165,7 +165,7 @@ describe('Candidate Extractor', () => {
       it('boosts confidence for activity keywords', () => {
         const messages = [createMessage(0, 'We should go to that restaurant for dinner')]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates[0]?.confidence).toBeGreaterThan(0.6)
       })
@@ -176,7 +176,7 @@ describe('Candidate Extractor', () => {
           createMessage(1, 'This restaurant looks amazing!')
         ]
 
-        const result = extractCandidates(messages, { minConfidence: 0.8 })
+        const result = extractCandidatesByHeuristics(messages, { minConfidence: 0.8 })
 
         // Only high-confidence matches should remain
         for (const candidate of result.candidates) {
@@ -191,7 +191,7 @@ describe('Candidate Extractor', () => {
           createMessage(0, "Let's go to this restaurant", 'User', ['https://yelp.com/biz/place'])
         ]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.totalUnique).toBe(1)
       })
@@ -205,7 +205,7 @@ describe('Candidate Extractor', () => {
           createMessage(2, 'Next message')
         ]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates[0]?.context).toContain('Previous message')
         expect(result.candidates[0]?.context).toContain('Next message')
@@ -214,7 +214,7 @@ describe('Candidate Extractor', () => {
 
     describe('edge cases', () => {
       it('handles empty messages array', () => {
-        const result = extractCandidates([])
+        const result = extractCandidatesByHeuristics([])
 
         expect(result.candidates).toHaveLength(0)
         expect(result.regexMatches).toBe(0)
@@ -229,7 +229,7 @@ describe('Candidate Extractor', () => {
           createMessage(2, 'Good thanks')
         ]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(0)
       })
@@ -247,7 +247,7 @@ describe('Candidate Extractor', () => {
           }
         ]
 
-        const result = extractCandidates(messages)
+        const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates[0]?.sender).toBe('John Doe')
         expect(result.candidates[0]?.timestamp).toEqual(new Date('2025-01-15T10:30:00'))
@@ -260,7 +260,7 @@ describe('Candidate Extractor', () => {
           createMessage(0, 'Check this', 'User', ['https://yelp.com/biz/restaurant'])
         ]
 
-        const result = extractCandidates(messages, { includeUrlBased: false })
+        const result = extractCandidatesByHeuristics(messages, { includeUrlBased: false })
 
         expect(result.urlMatches).toBe(0)
       })
@@ -268,7 +268,7 @@ describe('Candidate Extractor', () => {
       it('accepts additional patterns', () => {
         const messages = [createMessage(0, 'Custom pattern here')]
 
-        const result = extractCandidates(messages, {
+        const result = extractCandidatesByHeuristics(messages, {
           additionalPatterns: [/custom pattern/i]
         })
 
@@ -278,7 +278,7 @@ describe('Candidate Extractor', () => {
       it('accepts additional exclusions', () => {
         const messages = [createMessage(0, 'We should go to the custom exclusion')]
 
-        const result = extractCandidates(messages, {
+        const result = extractCandidatesByHeuristics(messages, {
           additionalExclusions: [/custom exclusion/i]
         })
 

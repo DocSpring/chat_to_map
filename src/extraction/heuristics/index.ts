@@ -11,7 +11,7 @@ import type {
   ExtractorOptions,
   ExtractorResult,
   ParsedMessage
-} from '../types.js'
+} from '../../types.js'
 import {
   ACTIVITY_KEYWORDS,
   ACTIVITY_PATTERNS,
@@ -389,13 +389,13 @@ function upsertCandidate(
 }
 
 /**
- * Extract candidate messages from parsed messages.
+ * Extract candidate messages using cheap heuristics (regex + URL patterns).
  *
- * Uses regex patterns and URL detection to find messages likely to contain
- * "things to do" activities. This is a cheap heuristic pass before expensive
- * AI classification.
+ * This is a fast, zero-cost pass before expensive AI classification.
+ * For semantic search, use extractCandidatesByEmbeddings().
+ * For both combined, use extractCandidates().
  */
-export function extractCandidates(
+export function extractCandidatesByHeuristics(
   messages: readonly ParsedMessage[],
   options?: ExtractorOptions
 ): ExtractorResult {

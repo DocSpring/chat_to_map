@@ -15,7 +15,7 @@ import type {
   ParsedMessage,
   SocialPlatform,
   UrlType
-} from '../types.js'
+} from '../../types.js'
 import { classifyUrl } from './url-classifier.js'
 
 // ============================================================================

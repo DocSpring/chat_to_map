@@ -8,7 +8,7 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { extractCandidates } from '../extractor/index.js'
+import { extractCandidatesByHeuristics } from '../extraction/heuristics/index.js'
 import { parseWhatsAppChat } from '../parser/whatsapp.js'
 import { FixtureCache } from '../test-support/fixture-cache.js'
 import { classifyMessages } from './index.js'
@@ -45,7 +45,7 @@ describe('Classifier Pronoun Resolution', () => {
 
   it('should resolve "her" to "Sarah" in visit suggestion', { timeout: 120000 }, async () => {
     const messages = parseWhatsAppChat(PRONOUN_RESOLUTION_CHAT)
-    const extracted = await extractCandidates(messages)
+    const extracted = await extractCandidatesByHeuristics(messages)
 
     // Find the "visit her" candidate
     const visitCandidate = extracted.candidates.find((c) => c.content.includes('visit her'))

@@ -6,7 +6,7 @@
 
 import { generateGeocodeCacheKey } from '../cache/key.js'
 import { DEFAULT_CACHE_TTL_SECONDS } from '../cache/types.js'
-import { extractGoogleMapsCoords } from '../extractor/url-classifier.js'
+import { extractGoogleMapsCoords } from '../extraction/heuristics/url-classifier.js'
 import { httpFetch } from '../http.js'
 import {
   type ClassifiedActivity,

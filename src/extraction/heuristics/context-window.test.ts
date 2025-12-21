@@ -11,10 +11,10 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { parseWhatsAppChat } from '../parser/whatsapp.js'
-import { extractCandidates } from './index.js'
+import { parseWhatsAppChat } from '../../parser/whatsapp.js'
+import { extractCandidatesByHeuristics } from './index.js'
 
-const FIXTURES_DIR = join(__dirname, '../../tests/fixtures')
+const FIXTURES_DIR = join(__dirname, '../../../tests/fixtures')
 
 /**
  * Conversation where "her" should resolve to "Sarah".
@@ -34,7 +34,7 @@ const PRONOUN_RESOLUTION_CHAT = `[4/29/24, 8:06:50 PM] Alice Smith: Oooh yum
 describe('Context Window', () => {
   it('should include "Sarah" in context for "visit her" message', async () => {
     const messages = parseWhatsAppChat(PRONOUN_RESOLUTION_CHAT)
-    const result = await extractCandidates(messages)
+    const result = await extractCandidatesByHeuristics(messages)
 
     const visitCandidate = result.candidates.find((c) => c.content.includes('visit her'))
     expect(visitCandidate).toBeDefined()
@@ -45,7 +45,7 @@ describe('Context Window', () => {
 
   it('should include at least 2 messages before and after', async () => {
     const messages = parseWhatsAppChat(PRONOUN_RESOLUTION_CHAT)
-    const result = await extractCandidates(messages)
+    const result = await extractCandidatesByHeuristics(messages)
 
     const visitCandidate = result.candidates.find((c) => c.content.includes('visit her'))
     expect(visitCandidate).toBeDefined()
@@ -64,7 +64,7 @@ describe('Context Window', () => {
   it('should truncate long messages with marker', async () => {
     const chat = readFileSync(join(FIXTURES_DIR, 'context-window.txt'), 'utf-8')
     const messages = parseWhatsAppChat(chat)
-    const result = await extractCandidates(messages)
+    const result = await extractCandidatesByHeuristics(messages)
 
     const candidate = result.candidates.find((c) => c.content.includes('try that place'))
     expect(candidate).toBeDefined()
@@ -81,7 +81,7 @@ describe('Context Window', () => {
   it('should get at least 280 chars of context before', async () => {
     const chat = readFileSync(join(FIXTURES_DIR, 'context-window.txt'), 'utf-8')
     const messages = parseWhatsAppChat(chat)
-    const result = await extractCandidates(messages)
+    const result = await extractCandidatesByHeuristics(messages)
 
     const candidate = result.candidates.find((c) => c.content.includes('try that place'))
     expect(candidate).toBeDefined()

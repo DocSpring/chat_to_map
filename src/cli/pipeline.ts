@@ -15,7 +15,7 @@ import {
   exportToJSON,
   exportToMapHTML,
   exportToPDF,
-  extractCandidates,
+  extractCandidatesByHeuristics,
   filterActivities,
   geocodeActivities,
   parseChatWithStats,
@@ -68,7 +68,7 @@ export function runExtract(
 ): CandidateMessage[] {
   logger.log('\n🔍 Extracting candidates...')
 
-  const result = extractCandidates(messages, {
+  const result = extractCandidatesByHeuristics(messages, {
     minConfidence: args.minConfidence
   })
 

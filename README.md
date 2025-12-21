@@ -74,9 +74,10 @@ export OPENAI_API_KEY=sk-...          # Optional for embeddings
 ```typescript
 import {
   parseWhatsAppChat,
-  extractCandidates,
+  extractCandidatesByHeuristics,
+  extractCandidates,  // combined: heuristics + embeddings
   classifyMessages,
-  geocodeSuggestions,
+  geocodeActivities,
   exportToMapHTML,
   quickScan
 } from 'chat-to-map'
@@ -88,8 +89,14 @@ console.log(`Found ${scan.candidates.length} candidates`)
 // Parse messages
 const messages = parseWhatsAppChat(chatText)
 
-// Extract candidates
-const { candidates } = extractCandidates(messages)
+// Extract candidates (heuristics only - sync, free)
+const { candidates } = extractCandidatesByHeuristics(messages)
+
+// Or with embeddings (async, requires OpenAI key)
+// const result = await extractCandidates(messages, {
+//   embeddings: { config: { apiKey: process.env.OPENAI_API_KEY } }
+// })
+// if (result.ok) candidates = result.value.candidates
 
 // Classify with AI
 const result = await classifyMessages(candidates, {

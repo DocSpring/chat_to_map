@@ -4,7 +4,7 @@
  * Classifies URLs by type for confidence boosting.
  */
 
-import type { UrlType } from '../types.js'
+import type { UrlType } from '../../types.js'
 
 interface UrlClassifierRule {
   readonly patterns: readonly (string | RegExp)[]

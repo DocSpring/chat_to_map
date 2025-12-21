@@ -5,9 +5,9 @@
  * activity suggestions that don't match explicit patterns.
  */
 
-import { generateEmbeddingCacheKey } from '../cache/key.js'
-import { DEFAULT_CACHE_TTL_SECONDS } from '../cache/types.js'
-import { handleHttpError, handleNetworkError, httpFetch } from '../http.js'
+import { generateEmbeddingCacheKey } from '../../cache/key.js'
+import { DEFAULT_CACHE_TTL_SECONDS } from '../../cache/types.js'
+import { handleHttpError, handleNetworkError, httpFetch } from '../../http.js'
 import type {
   CandidateMessage,
   CandidateSource,
@@ -17,7 +17,7 @@ import type {
   ResponseCache,
   Result,
   SemanticSearchConfig
-} from '../types.js'
+} from '../../types.js'
 import { findTopK } from './cosine-similarity.js'
 import activityTypes from './queries/activity-types.json' with { type: 'json' }
 import directSuggestions from './queries/direct-suggestions.json' with { type: 'json' }
@@ -260,7 +260,10 @@ export function findSemanticCandidates(
 }
 
 /**
- * Full semantic search pipeline: embed messages, embed queries, find candidates.
+ * Extract candidates using semantic search (embeddings).
+ *
+ * Embeds all messages and queries, then finds semantically similar messages.
+ * Requires OpenAI API key for embeddings.
  *
  * @param messages Parsed messages to search
  * @param embeddingConfig Embedding configuration
@@ -268,7 +271,7 @@ export function findSemanticCandidates(
  * @param cache Optional response cache to prevent duplicate API calls
  * @returns Semantic candidates or error
  */
-export async function semanticSearch(
+export async function extractCandidatesByEmbeddings(
   messages: readonly ParsedMessage[],
   embeddingConfig: EmbeddingConfig,
   searchConfig?: SemanticSearchConfig,

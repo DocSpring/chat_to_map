@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { extractCandidates } from './extractor/index.js'
+import { extractCandidatesByHeuristics } from './extraction/heuristics/index.js'
 import { parseWhatsAppChat } from './parser/whatsapp.js'
 
 const FIXTURES_DIR = join(__dirname, '..', 'tests', 'fixtures')
@@ -39,7 +39,7 @@ describe('iOS Format Fixtures', () => {
   })
 
   it('extracts activity candidates', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
     expect(result.candidates.length).toBeGreaterThan(0)
 
     // Should find "we should try" pattern
@@ -49,7 +49,7 @@ describe('iOS Format Fixtures', () => {
   })
 
   it('finds high-confidence patterns', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
 
     // "bucket list" is high confidence (0.95)
     const bucketList = result.candidates.find((c) =>
@@ -60,7 +60,7 @@ describe('iOS Format Fixtures', () => {
   })
 
   it('finds medium-confidence patterns', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
 
     // "we could go" is medium confidence
     const weCould = result.candidates.find((c) => c.content.toLowerCase().includes('we could'))
@@ -92,7 +92,7 @@ describe('Android Format Fixtures', () => {
   })
 
   it('extracts activity candidates', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
     expect(result.candidates.length).toBeGreaterThan(0)
 
     // Should find "must visit" pattern
@@ -101,7 +101,7 @@ describe('Android Format Fixtures', () => {
   })
 
   it('finds multiple activity keywords', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
 
     // Activities mentioned: bungy, jet boat, hiking, wine bar, cruise, caves, skiing
     const activities = result.candidates.filter(
@@ -152,7 +152,7 @@ describe('URL Fixtures', () => {
   })
 
   it('extracts URL-based candidates', () => {
-    const result = extractCandidates(messages, { includeUrlBased: true })
+    const result = extractCandidatesByHeuristics(messages, { includeUrlBased: true })
 
     // Should have URL-type candidates
     const urlCandidates = result.candidates.filter((c) => c.source.type === 'url')
@@ -225,7 +225,7 @@ describe('Exclusion Fixtures', () => {
   })
 
   it('filters out work-related suggestions', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
 
     // Work-related messages should not appear as candidates
     const workMessages = result.candidates.filter(
@@ -239,7 +239,7 @@ describe('Exclusion Fixtures', () => {
   })
 
   it('filters out medical appointments', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
 
     // Medical terms should be excluded
     const medicalMessages = result.candidates.filter(
@@ -254,7 +254,7 @@ describe('Exclusion Fixtures', () => {
   })
 
   it('filters out errands', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
 
     // Errands should be excluded
     const errandMessages = result.candidates.filter(
@@ -269,7 +269,7 @@ describe('Exclusion Fixtures', () => {
   })
 
   it('filters out negative constructs', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
 
     // Negative patterns should be excluded
     const negativeMessages = result.candidates.filter(
@@ -283,7 +283,7 @@ describe('Exclusion Fixtures', () => {
   })
 
   it('filters out past tense mentions', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
 
     // Past tense should be excluded
     const pastMessages = result.candidates.filter(
@@ -298,7 +298,7 @@ describe('Exclusion Fixtures', () => {
   })
 
   it('returns very few or no candidates from exclusion patterns', () => {
-    const result = extractCandidates(messages)
+    const result = extractCandidatesByHeuristics(messages)
 
     // Most messages in this fixture should be excluded
     // Some might slip through, but should be very few

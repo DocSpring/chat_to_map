@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { ParsedMessage } from '../types.js'
+import type { ParsedMessage } from '../../types.js'
 import { extractActivityLinks } from './activity-links.js'
 
 /**

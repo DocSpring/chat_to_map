@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { EmbeddedMessage, ParsedMessage } from '../types.js'
+import type { EmbeddedMessage, ParsedMessage } from '../../types.js'
 
 // Mock httpFetch before importing - explicitly re-export other functions
 const mockFetch = vi.fn()
-vi.mock('../http.js', () => ({
+vi.mock('../../http.js', () => ({
   httpFetch: mockFetch,
   // Re-implement the helper functions to avoid vi.importActual
   handleHttpError: async (response: {
@@ -358,8 +358,8 @@ describe('Embeddings Module', () => {
     })
   })
 
-  describe('semanticSearch', async () => {
-    const { semanticSearch } = await import('./index.js')
+  describe('extractCandidatesByEmbeddings', async () => {
+    const { extractCandidatesByEmbeddings } = await import('./index.js')
 
     it('performs full semantic search pipeline', async () => {
       // Mock embedding responses for both messages and queries
@@ -377,7 +377,7 @@ describe('Embeddings Module', () => {
         createParsedMessage(2, 'Random message')
       ]
 
-      const result = await semanticSearch(messages, { apiKey: 'test-key' })
+      const result = await extractCandidatesByEmbeddings(messages, { apiKey: 'test-key' })
 
       expect(result.ok).toBe(true)
       // Should have called API at least twice (messages + queries)
@@ -395,7 +395,7 @@ describe('Embeddings Module', () => {
         createParsedMessage(2, 'This is a longer message with more content')
       ]
 
-      await semanticSearch(messages, { apiKey: 'test-key' })
+      await extractCandidatesByEmbeddings(messages, { apiKey: 'test-key' })
 
       const call = mockFetch.mock.calls[0] as [string, { body: string }]
       const body = JSON.parse(call[1].body) as { input: string[] }
@@ -413,7 +413,7 @@ describe('Embeddings Module', () => {
 
       const messages = [createParsedMessage(1, 'Test message content')]
 
-      const result = await semanticSearch(messages, { apiKey: 'test-key' })
+      const result = await extractCandidatesByEmbeddings(messages, { apiKey: 'test-key' })
 
       expect(result.ok).toBe(false)
     })

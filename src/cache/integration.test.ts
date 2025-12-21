@@ -270,7 +270,7 @@ describe('Cache Integration', () => {
     const messages = [{ id: 1, content: 'Test message for embedding that is long enough' }]
 
     it('calls API on cache miss', async () => {
-      const { embedMessages } = await import('../embeddings/index.js')
+      const { embedMessages } = await import('../extraction/embeddings/index.js')
 
       // Mock successful API response
       mockFetch.mockResolvedValueOnce({
@@ -288,7 +288,7 @@ describe('Cache Integration', () => {
     })
 
     it('skips API call on cache hit', async () => {
-      const { embedMessages } = await import('../embeddings/index.js')
+      const { embedMessages } = await import('../extraction/embeddings/index.js')
 
       // Mock successful API response
       mockFetch.mockResolvedValueOnce({

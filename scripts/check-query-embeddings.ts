@@ -10,11 +10,11 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { gunzipSync } from 'node:zlib'
 
-import activityTypes from '../src/embeddings/queries/activity-types.json'
-import directSuggestions from '../src/embeddings/queries/direct-suggestions.json'
+import activityTypes from '../src/extraction/embeddings/queries/activity-types.json'
+import directSuggestions from '../src/extraction/embeddings/queries/direct-suggestions.json'
 
 // Load compressed embeddings
-const embeddingsPath = join(import.meta.dir, '../src/embeddings/queries/query-embeddings.json.gz')
+const embeddingsPath = join(import.meta.dir, '../src/extraction/embeddings/queries/query-embeddings.json.gz')
 const compressed = readFileSync(embeddingsPath)
 const jsonData = gunzipSync(compressed).toString()
 const queryEmbeddings = JSON.parse(jsonData) as { queries: Array<{ text: string }> }
