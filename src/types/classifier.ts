@@ -137,8 +137,8 @@ export interface ClassifierConfig {
   readonly apiKey: string
   /** User's home country (e.g., "New Zealand") - REQUIRED for location disambiguation */
   readonly homeCountry: string
-  /** User's timezone (e.g., "Pacific/Auckland") - REQUIRED */
-  readonly timezone: string
+  /** User's timezone (e.g., "Pacific/Auckland") - optional, helps with temporal context */
+  readonly timezone?: string | undefined
   readonly model?: string
   readonly batchSize?: number
   readonly contextChars?: number

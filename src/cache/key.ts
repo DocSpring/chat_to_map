@@ -36,7 +36,7 @@ function sortKeys(obj: unknown): unknown {
  * ```ts
  * const key = generateCacheKey({
  *   service: 'openai',
- *   model: 'text-embedding-3-small',
+ *   model: 'text-embedding-3-large',
  *   payload: { input: ['hello', 'world'] }
  * })
  * // Returns: '3a7bd3e2...' (64 char hex string)

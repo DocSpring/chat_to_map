@@ -198,14 +198,21 @@ AI SDKs are peer dependencies (optional):
 
 **You MUST use current model IDs.** Outdated models will fail or produce poor results.
 
-| Provider | Model ID | Purpose |
-|----------|----------|---------|
-| Anthropic | `claude-haiku-4-5` | Classification (fast, cheap) |
-| OpenAI | `gpt-5-mini` | Classification fallback |
-| OpenRouter | `anthropic/claude-haiku-4.5` | Classification via OpenRouter |
+### CLI Model Selection
+
+Model ID determines provider. Set via `CLASSIFIER_MODEL` env var.
+
+| Model ID | Provider | API Model ID | Required Env Var |
+|----------|----------|--------------|------------------|
+| `gemini-2.5-flash` | openrouter | `google/gemini-2.5-flash` | `OPENROUTER_API_KEY` |
+| `haiku-4.5` | anthropic | `claude-haiku-4-5` | `ANTHROPIC_API_KEY` |
+| `haiku-4.5-or` | openrouter | `anthropic/claude-3-5-haiku-latest` | `OPENROUTER_API_KEY` |
+| `gpt-5-mini` | openai | `gpt-5-mini` | `OPENAI_API_KEY` |
+
+**Default:** `gemini-2.5-flash` (falls back to `haiku-4.5` if no OpenRouter key)
 
 **Keep these updated!** Check provider docs when models feel outdated.
 
 ---
 
-*Last updated: 2025-12-19*
+*Last updated: 2025-12-22*

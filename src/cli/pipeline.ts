@@ -30,9 +30,9 @@ import type {
   ParsedMessage
 } from '../types.js'
 import type { CLIArgs } from './args.js'
-import { getRequiredContext } from './env.js'
 import { ensureDir, readInputFile } from './io.js'
 import type { Logger } from './logger.js'
+import { resolveContext, resolveModelConfig } from './model.js'
 
 export async function runParse(
   input: string,
@@ -84,19 +84,9 @@ export async function runClassify(
   args: CLIArgs,
   logger: Logger
 ): Promise<ClassifiedActivity[]> {
-  const apiKey = process.env.ANTHROPIC_API_KEY ?? process.env.OPENAI_API_KEY
-
-  if (!apiKey) {
-    throw new Error('No AI API key found. Set ANTHROPIC_API_KEY or OPENAI_API_KEY')
-  }
-
-  const { homeCountry, timezone } = getRequiredContext()
-
-  const provider: ClassifierConfig['provider'] = process.env.ANTHROPIC_API_KEY
-    ? 'anthropic'
-    : 'openai'
-
-  const model = provider === 'anthropic' ? 'claude-haiku-4-5' : 'gpt-5-mini'
+  // Resolve model and context
+  const { provider, apiModel: model, apiKey } = resolveModelConfig()
+  const { homeCountry, timezone } = resolveContext(args.homeCountry, args.timezone)
   const batchSize = 10
   const totalBatches = Math.ceil(candidates.length / batchSize)
 
@@ -110,6 +100,7 @@ export async function runClassify(
   const config: ClassifierConfig = {
     provider,
     apiKey,
+    model,
     homeCountry,
     timezone,
     batchSize,

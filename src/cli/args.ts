@@ -1,11 +1,11 @@
 /**
  * CLI Argument Parsing
  *
- * Parse command line arguments for the CLI.
+ * Uses commander for subcommand-based CLI with per-command options.
  */
 
+import { Command } from 'commander'
 import { VERSION } from '../index.js'
-import type { ActivityCategory } from '../types.js'
 
 export type ExtractionMethod = 'heuristics' | 'embeddings' | 'both'
 
@@ -16,8 +16,6 @@ export interface CLIArgs {
   formats: string[]
   region: string | undefined
   minConfidence: number
-  activitiesOnly: boolean
-  category: ActivityCategory | undefined
   skipGeocoding: boolean
   quiet: boolean
   verbose: boolean
@@ -25,173 +23,136 @@ export interface CLIArgs {
   debug: boolean
   maxResults: number
   maxMessages: number | undefined
-  /** For candidates command: extraction method */
   method: ExtractionMethod
-  /** For candidates command: JSON output path */
   jsonOutput: string | undefined
+  homeCountry: string | undefined
+  timezone: string | undefined
 }
 
-/**
- * Default base directory for chat-to-map data.
- */
 export const DEFAULT_BASE_DIR = './chat-to-map'
-
-/**
- * Default output directory under the base directory.
- */
 export const DEFAULT_OUTPUT_DIR = `${DEFAULT_BASE_DIR}/output`
-
-/**
- * Default cache directory under the base directory.
- */
 export const DEFAULT_CACHE_DIR = `${DEFAULT_BASE_DIR}/cache`
 
-export const HELP_TEXT = `
-ChatToMap CLI v${VERSION}
+function createProgram(): Command {
+  const program = new Command()
+    .name('chat-to-map')
+    .description('Transform chat exports into interactive maps of activities and places.')
+    .version(VERSION, '-V, --version', 'Show version number')
 
-Transform chat exports into interactive maps of activities and places.
+  // ============ ANALYZE ============
+  program
+    .command('analyze')
+    .description('Run the complete pipeline (parse → classify → geocode → export)')
+    .argument('<input>', 'Chat export file (.txt or .zip)')
+    .requiredOption('-c, --home-country <name>', 'Your home country for location disambiguation')
+    .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
+    .option('-o, --output-dir <dir>', 'Output directory', DEFAULT_OUTPUT_DIR)
+    .option(
+      '-f, --format <formats>',
+      'Output formats: csv,excel,json,map,pdf',
+      'csv,excel,json,map,pdf'
+    )
+    .option('-r, --region <code>', 'Region bias for geocoding (e.g., NZ, US)')
+    .option('--min-confidence <num>', 'Minimum confidence threshold', '0.5')
+    .option('--skip-geocoding', 'Skip geocoding step')
+    .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
+    .option('--dry-run', 'Show stats without API calls')
+    .option('--debug', 'Print debug info')
 
-USAGE:
-  chat-to-map analyze <input> [options]
-  chat-to-map preview <input> [options]
-  chat-to-map scan <input> [options]
-  chat-to-map candidates <input> [options]
-  chat-to-map list [options]
-  chat-to-map parse <input> [options]
-  chat-to-map classify <candidates.json> [options]
-  chat-to-map geocode <suggestions.json> [options]
-  chat-to-map export <geocoded.json> [options]
-  chat-to-map version
-  chat-to-map help
+  // ============ PREVIEW ============
+  program
+    .command('preview')
+    .description('AI-powered preview: classify top candidates (~$0.01)')
+    .argument('<input>', 'Chat export file (.txt or .zip)')
+    .requiredOption('-c, --home-country <name>', 'Your home country for location disambiguation')
+    .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
+    .option('-n, --max-results <num>', 'Max results to return', '10')
+    .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
+    .option('--dry-run', 'Show stats without API calls')
+    .option('--debug', 'Print debug info')
 
-COMMANDS:
-  analyze    Run the complete pipeline (parse -> extract -> classify -> geocode -> export)
-  preview    AI-powered preview: classify top candidates (requires API key, ~$0.01)
-  scan       Heuristic scan: show pattern matches (no API key needed, free)
-  candidates Debug candidate extraction (heuristics, embeddings, or both)
-  list       Show previously processed chats
-  parse      Parse a chat export file
-  classify   Classify candidates using AI
-  geocode    Geocode classified suggestions
-  export     Generate output files
+  // ============ SCAN ============
+  program
+    .command('scan')
+    .description('Heuristic scan: show pattern matches (free, no API key)')
+    .argument('<input>', 'Chat export file (.txt or .zip)')
+    .option('-n, --max-results <num>', 'Max results to return', '10')
+    .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
 
-OPTIONS:
-  -o, --output-dir <dir>      Output directory (default: ./chat-to-map/output)
-  -f, --format <formats>      Output formats: csv,excel,json,map,pdf (default: all)
-  -r, --region <code>         Region bias for geocoding (e.g., NZ, US)
-  -n, --max-results <num>     Max results to return (default: 10 for preview/scan)
-  -m, --max-messages <num>    Max messages to process (for testing)
-  --min-confidence <0-1>      Minimum confidence threshold (default: 0.5)
-  --activities-only           Exclude errands (activity_score > 0.5)
-  --category <cat>            Filter by category
-  --skip-geocoding            Skip geocoding step
-  --method <method>           Extraction method: heuristics, embeddings, both (default: both)
-  --json <file>               Output candidates to JSON file instead of stdout
-  -q, --quiet                 Minimal output
-  -v, --verbose               Verbose output
-  --dry-run                   Skip API calls
-  --debug                     Print debug info (e.g., classifier prompt)
-  -h, --help                  Show this help
+  // ============ CANDIDATES ============
+  program
+    .command('candidates')
+    .description('Debug candidate extraction (heuristics, embeddings, or both)')
+    .argument('<input>', 'Chat export file (.txt or .zip)')
+    .option('--method <method>', 'Extraction method: heuristics, embeddings, both', 'both')
+    .option('--json [file]', 'Output as JSON (to file if specified, otherwise stdout)')
+    .option('--min-confidence <num>', 'Minimum confidence threshold', '0.5')
+    .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
+    .option('--dry-run', 'Show cost estimate without API calls')
+    .option('--debug', 'Print debug info')
 
-API KEYS (via environment variables):
-  OPENAI_API_KEY              Required for embeddings (optional)
-  ANTHROPIC_API_KEY           Required for classification
-  GOOGLE_MAPS_API_KEY         Required for geocoding
+  // ============ PARSE ============
+  program
+    .command('parse')
+    .description('Parse a chat export file and show stats')
+    .argument('<input>', 'Chat export file (.txt or .zip)')
+    .option('-o, --output <file>', 'Save parsed messages to JSON file')
+    .option('-m, --max-messages <num>', 'Max messages to process')
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
 
-EXAMPLES:
-  # Heuristic scan - see what patterns match (free, no API key)
-  chat-to-map scan "WhatsApp Chat.zip"
+  // ============ CLASSIFY ============
+  program
+    .command('classify')
+    .description('Classify candidates using AI')
+    .argument('<input>', 'Candidates JSON file from candidates command')
+    .requiredOption('-c, --home-country <name>', 'Your home country for location disambiguation')
+    .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
+    .option('-o, --output <file>', 'Save classified activities to JSON file')
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
+    .option('--debug', 'Print classifier prompt')
 
-  # AI preview - classify top candidates (requires API key, ~$0.01)
-  chat-to-map preview "WhatsApp Chat.zip"
-  chat-to-map preview "WhatsApp Chat.zip" -n 5   # Max 5 results
-  chat-to-map preview "WhatsApp Chat.zip" -m 100 # Process first 100 messages only
+  // ============ GEOCODE ============
+  program
+    .command('geocode')
+    .description('Geocode classified activities')
+    .argument('<input>', 'Classified activities JSON file')
+    .option('-r, --region <code>', 'Region bias for geocoding (e.g., NZ, US)')
+    .option('-o, --output <file>', 'Save geocoded activities to JSON file')
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
 
-  # Full analysis (requires API key, ~$1-2)
-  chat-to-map analyze "WhatsApp Chat.zip"
+  // ============ EXPORT ============
+  program
+    .command('export')
+    .description('Generate output files from geocoded activities')
+    .argument('<input>', 'Geocoded activities JSON file')
+    .option('-o, --output-dir <dir>', 'Output directory', DEFAULT_OUTPUT_DIR)
+    .option(
+      '-f, --format <formats>',
+      'Output formats: csv,excel,json,map,pdf',
+      'csv,excel,json,map,pdf'
+    )
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
 
-  # Debug candidate extraction
-  chat-to-map candidates "WhatsApp Chat.zip"                    # Both methods
-  chat-to-map candidates "WhatsApp Chat.zip" --method heuristics # Heuristics only
-  chat-to-map candidates "WhatsApp Chat.zip" --json output.json  # Save to file
+  // ============ LIST ============
+  program
+    .command('list')
+    .description('Show previously processed chats')
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
 
-  # List previously processed chats
-  chat-to-map list
-
-  # Parse and show stats only (no API calls)
-  chat-to-map analyze chat.txt --dry-run
-
-  # Custom output directory and formats
-  chat-to-map analyze chat.txt -o ./results -f csv,map
-
-  # Filter to activities in NZ
-  chat-to-map analyze chat.txt -r NZ --activities-only
-`
-
-interface ParsedFlags {
-  flags: Record<string, string | boolean>
-  positionals: string[]
-}
-
-function parseFlag(
-  arg: string,
-  nextArg: string | undefined,
-  flags: Record<string, string | boolean>
-): boolean {
-  const isLongFlag = arg.startsWith('--')
-  const key = isLongFlag ? arg.slice(2) : arg.slice(1)
-  const hasValue = nextArg !== undefined && !nextArg.startsWith('-')
-
-  flags[key] = hasValue ? nextArg : true
-  return hasValue
-}
-
-function extractFlagsAndPositionals(args: string[]): ParsedFlags {
-  const flags: Record<string, string | boolean> = {}
-  const positionals: string[] = []
-
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i]
-    if (!arg) continue
-
-    if (arg.startsWith('-')) {
-      const skippedNext = parseFlag(arg, args[i + 1], flags)
-      if (skippedNext) i++
-    } else {
-      positionals.push(arg)
-    }
-  }
-
-  return { flags, positionals }
-}
-
-function mapShortFlags(flags: Record<string, string | boolean>): void {
-  const shortToLong: Record<string, string> = {
-    o: 'output-dir',
-    f: 'format',
-    r: 'region',
-    n: 'max-results',
-    m: 'max-messages',
-    q: 'quiet',
-    v: 'verbose',
-    h: 'help'
-  }
-
-  for (const [short, long] of Object.entries(shortToLong)) {
-    if (flags[short]) flags[long] = flags[short]
-  }
-}
-
-function handleSpecialCommands(command: string, flags: Record<string, string | boolean>): void {
-  if (flags.help || command === 'help' || !command) {
-    console.log(HELP_TEXT)
-    process.exit(0)
-  }
-
-  if (command === 'version') {
-    console.log(`ChatToMap CLI v${VERSION}`)
-    process.exit(0)
-  }
+  return program
 }
 
 function parseMethod(value: unknown): ExtractionMethod {
@@ -201,64 +162,98 @@ function parseMethod(value: unknown): ExtractionMethod {
   return 'both'
 }
 
-function buildCliArgs(flags: Record<string, string | boolean>, positionals: string[]): CLIArgs {
-  const command = positionals[0] ?? 'help'
-  const input = positionals[1] ?? ''
-  const outputDir =
-    typeof flags['output-dir'] === 'string' ? flags['output-dir'] : DEFAULT_OUTPUT_DIR
-  const format = typeof flags.format === 'string' ? flags.format : 'csv,excel,json,map,pdf'
-  const region = typeof flags.region === 'string' ? flags.region : undefined
-  const minConfStr = typeof flags['min-confidence'] === 'string' ? flags['min-confidence'] : '0.5'
-  const maxResultsStr = typeof flags['max-results'] === 'string' ? flags['max-results'] : '10'
-  const maxMessagesStr =
-    typeof flags['max-messages'] === 'string' ? flags['max-messages'] : undefined
-  const category =
-    typeof flags.category === 'string' ? (flags.category as ActivityCategory) : undefined
+function buildCLIArgs(commandName: string, input: string, opts: Record<string, unknown>): CLIArgs {
+  const format = typeof opts.format === 'string' ? opts.format : 'csv,excel,json,map,pdf'
 
   return {
-    command,
+    command: commandName,
     input,
-    outputDir,
+    outputDir: typeof opts.outputDir === 'string' ? opts.outputDir : DEFAULT_OUTPUT_DIR,
     formats: format.split(',').map((f) => f.trim()),
-    region,
-    minConfidence: Number.parseFloat(minConfStr),
-    activitiesOnly: flags['activities-only'] === true,
-    category,
-    skipGeocoding: flags['skip-geocoding'] === true,
-    quiet: flags.quiet === true,
-    verbose: flags.verbose === true,
-    dryRun: flags['dry-run'] === true,
-    debug: flags.debug === true,
-    maxResults: Number.parseInt(maxResultsStr, 10),
-    maxMessages: maxMessagesStr ? Number.parseInt(maxMessagesStr, 10) : undefined,
-    method: parseMethod(flags.method),
-    jsonOutput: typeof flags.json === 'string' ? flags.json : undefined
+    region: typeof opts.region === 'string' ? opts.region : undefined,
+    minConfidence: Number.parseFloat(String(opts.minConfidence ?? '0.5')),
+    skipGeocoding: opts.skipGeocoding === true,
+    quiet: opts.quiet === true,
+    verbose: opts.verbose === true,
+    dryRun: opts.dryRun === true,
+    debug: opts.debug === true,
+    maxResults: Number.parseInt(String(opts.maxResults ?? '10'), 10),
+    maxMessages: opts.maxMessages ? Number.parseInt(String(opts.maxMessages), 10) : undefined,
+    method: parseMethod(opts.method),
+    jsonOutput:
+      opts.json === true ? 'stdout' : typeof opts.json === 'string' ? opts.json : undefined,
+    homeCountry: typeof opts.homeCountry === 'string' ? opts.homeCountry : undefined,
+    timezone: typeof opts.timezone === 'string' ? opts.timezone : undefined
   }
 }
 
 /**
- * Parse CLI arguments from an argv array.
- * This function is testable since it takes argv as a parameter.
- *
- * @param argv - Command line arguments (without node/script path)
- * @param exitOnHelp - If true, print help and exit. If false, return help command args.
- */
-export function parseArgs(argv: string[], exitOnHelp = true): CLIArgs {
-  const { flags, positionals } = extractFlagsAndPositionals(argv)
-
-  mapShortFlags(flags)
-
-  if (exitOnHelp) {
-    handleSpecialCommands(positionals[0] ?? '', flags)
-  }
-
-  return buildCliArgs(flags, positionals)
-}
-
-/**
- * Parse CLI arguments from process.argv.
- * Convenience wrapper for parseArgs that reads from process.argv.
+ * Parse CLI arguments and return structured args.
+ * Exits on --help or --version.
  */
 export function parseCliArgs(): CLIArgs {
-  return parseArgs(process.argv.slice(2))
+  const program = createProgram()
+
+  let result: CLIArgs | null = null
+
+  // Attach action handlers to capture parsed args
+  for (const cmd of program.commands) {
+    cmd.action((input: string, opts: Record<string, unknown>) => {
+      result = buildCLIArgs(cmd.name(), input ?? '', opts)
+    })
+  }
+
+  // Handle no-argument list command
+  const listCmd = program.commands.find((c) => c.name() === 'list')
+  if (listCmd) {
+    listCmd.action((opts: Record<string, unknown>) => {
+      result = buildCLIArgs('list', '', opts)
+    })
+  }
+
+  program.parse()
+
+  if (!result) {
+    program.help()
+    process.exit(0)
+  }
+
+  return result
+}
+
+/**
+ * Parse CLI arguments from an argv array (for testing).
+ */
+export function parseArgs(argv: string[], exitOnHelp = true): CLIArgs {
+  const program = createProgram()
+
+  if (!exitOnHelp) {
+    program.exitOverride()
+  }
+
+  let result: CLIArgs | null = null
+
+  for (const cmd of program.commands) {
+    cmd.action((input: string, opts: Record<string, unknown>) => {
+      result = buildCLIArgs(cmd.name(), input ?? '', opts)
+    })
+  }
+
+  const listCmd = program.commands.find((c) => c.name() === 'list')
+  if (listCmd) {
+    listCmd.action((opts: Record<string, unknown>) => {
+      result = buildCLIArgs('list', '', opts)
+    })
+  }
+
+  try {
+    program.parse(argv, { from: 'user' })
+  } catch {
+    // exitOverride throws on help/version
+    if (!result) {
+      return buildCLIArgs('help', '', {})
+    }
+  }
+
+  return result ?? buildCLIArgs('help', '', {})
 }

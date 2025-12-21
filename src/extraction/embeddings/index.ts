@@ -21,6 +21,7 @@ import type {
 import { findTopK } from './cosine-similarity.js'
 import activityTypes from './queries/activity-types.json' with { type: 'json' }
 import directSuggestions from './queries/direct-suggestions.json' with { type: 'json' }
+import { getDefaultQueryEmbeddings } from './query-embeddings.js'
 
 export { cosineSimilarity, findTopK } from './cosine-similarity.js'
 export {
@@ -32,9 +33,11 @@ export {
   loadQueryEmbeddings
 } from './query-embeddings.js'
 
-const DEFAULT_MODEL = 'text-embedding-3-small'
+const DEFAULT_MODEL = 'text-embedding-3-large'
 const DEFAULT_BATCH_SIZE = 100
+const DEFAULT_CONCURRENCY = 10
 const MAX_OPENAI_BATCH_SIZE = 2048
+const DEFAULT_MIN_SIMILARITY = 0.4
 
 /**
  * Direct suggestion queries - phrases indicating intent to do something.
@@ -139,6 +142,12 @@ async function embedBatch(
   }
 }
 
+interface BatchTask {
+  batchIndex: number
+  batch: readonly { id: number; content: string }[]
+  texts: readonly string[]
+}
+
 /**
  * Embed messages for semantic search.
  *
@@ -153,21 +162,34 @@ export async function embedMessages(
   cache?: ResponseCache
 ): Promise<Result<EmbeddedMessage[]>> {
   const batchSize = Math.min(config.batchSize ?? DEFAULT_BATCH_SIZE, MAX_OPENAI_BATCH_SIZE)
+  const concurrency = config.concurrency ?? DEFAULT_CONCURRENCY
   const totalBatches = Math.ceil(messages.length / batchSize)
 
-  const results: EmbeddedMessage[] = []
-
-  // Process in batches
+  // Build all batch tasks
+  const tasks: BatchTask[] = []
   for (let i = 0; i < messages.length; i += batchSize) {
     const batchIndex = Math.floor(i / batchSize)
     const batch = messages.slice(i, i + batchSize)
-    const texts = batch.map((m) => m.content)
+    tasks.push({
+      batchIndex,
+      batch,
+      texts: batch.map((m) => m.content)
+    })
+  }
+
+  // Results array indexed by batchIndex
+  const batchResults: (EmbeddedMessage[] | null)[] = new Array(tasks.length).fill(null)
+  let firstError: Result<never> | null = null
+
+  // Process batches with concurrency limit
+  const processBatch = async (task: BatchTask): Promise<void> => {
+    if (firstError) return // Stop if we already hit an error
 
     const progressInfo = {
       phase: 'messages' as const,
-      batchIndex,
+      batchIndex: task.batchIndex,
       totalBatches,
-      itemsInBatch: batch.length,
+      itemsInBatch: task.batch.length,
       totalItems: messages.length,
       cacheHit: false
     }
@@ -175,10 +197,11 @@ export async function embedMessages(
     config.onBatchStart?.(progressInfo)
 
     const startTime = Date.now()
-    const embedResult = await embedBatch(texts, config, cache)
+    const embedResult = await embedBatch(task.texts, config, cache)
 
     if (!embedResult.ok) {
-      return embedResult
+      firstError = embedResult
+      return
     }
 
     config.onBatchComplete?.({
@@ -187,17 +210,32 @@ export async function embedMessages(
       durationMs: Date.now() - startTime
     })
 
-    for (let j = 0; j < batch.length; j++) {
-      const msg = batch[j]
+    const batchEmbeddings: EmbeddedMessage[] = []
+    for (let j = 0; j < task.batch.length; j++) {
+      const msg = task.batch[j]
       const embedding = embedResult.value.embeddings[j]
       if (msg && embedding) {
-        results.push({
+        batchEmbeddings.push({
           messageId: msg.id,
           content: msg.content,
           embedding
         })
       }
     }
+    batchResults[task.batchIndex] = batchEmbeddings
+  }
+
+  // Process in chunks of `concurrency` size
+  for (let i = 0; i < tasks.length; i += concurrency) {
+    const chunk = tasks.slice(i, i + concurrency)
+    await Promise.all(chunk.map(processBatch))
+    if (firstError) return firstError
+  }
+
+  // Flatten results in order
+  const results: EmbeddedMessage[] = []
+  for (const batch of batchResults) {
+    if (batch) results.push(...batch)
   }
 
   return { ok: true, value: results }
@@ -231,7 +269,7 @@ export function findSemanticCandidates(
   config?: SemanticSearchConfig
 ): CandidateMessage[] {
   const topK = config?.topK ?? 500
-  const minSimilarity = config?.minSimilarity ?? 0.25
+  const minSimilarity = config?.minSimilarity ?? DEFAULT_MIN_SIMILARITY
   const queries = config?.queries ?? DEFAULT_ACTIVITY_QUERIES
 
   // Build a map from messageId to message for quick lookup
@@ -298,6 +336,10 @@ export function findSemanticCandidates(
  * Embeds all messages and queries, then finds semantically similar messages.
  * Requires OpenAI API key for embeddings.
  *
+ * IMPORTANT: Query embeddings are PRE-COMPUTED and loaded from query-embeddings.json.gz.
+ * Do NOT call embedQueries() for the default queries - use getDefaultQueryEmbeddings().
+ * To update query embeddings, run: bun scripts/generate-query-embeddings.ts
+ *
  * @param messages Parsed messages to search
  * @param embeddingConfig Embedding configuration
  * @param searchConfig Search configuration
@@ -321,17 +363,13 @@ export async function extractCandidatesByEmbeddings(
     return messageEmbeddingsResult
   }
 
-  // Embed query strings
-  const queries = searchConfig?.queries ?? DEFAULT_ACTIVITY_QUERIES
-  const queryEmbeddingsResult = await embedQueries(queries, embeddingConfig, cache)
-  if (!queryEmbeddingsResult.ok) {
-    return queryEmbeddingsResult
-  }
+  // Use pre-computed query embeddings (generated by scripts/generate-query-embeddings.ts)
+  const queryEmbeddings = getDefaultQueryEmbeddings()
 
   // Find semantic candidates
   const candidates = findSemanticCandidates(
     messageEmbeddingsResult.value,
-    queryEmbeddingsResult.value,
+    queryEmbeddings,
     messages,
     searchConfig
   )

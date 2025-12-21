@@ -4,28 +4,14 @@
  * Tests for extractCandidates() which merges heuristics and embeddings results.
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CandidateMessage, ParsedMessage } from '../types.js'
+import * as embeddingsModule from './embeddings/index.js'
+import * as heuristicsModule from './heuristics/index.js'
 
-// Mock the embeddings module
-const mockExtractByEmbeddings = vi.fn()
-vi.mock('./embeddings/index.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./embeddings/index.js')>()
-  return {
-    ...actual,
-    extractCandidatesByEmbeddings: mockExtractByEmbeddings
-  }
-})
-
-// Mock the heuristics module
-const mockExtractByHeuristics = vi.fn()
-vi.mock('./heuristics/index.js', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('./heuristics/index.js')>()
-  return {
-    ...actual,
-    extractCandidatesByHeuristics: mockExtractByHeuristics
-  }
-})
+// Create spies after importing
+const mockExtractByEmbeddings = vi.spyOn(embeddingsModule, 'extractCandidatesByEmbeddings')
+const mockExtractByHeuristics = vi.spyOn(heuristicsModule, 'extractCandidatesByHeuristics')
 
 function createMessage(id: number, content: string): ParsedMessage {
   return {
@@ -65,6 +51,10 @@ function createCandidate(
 describe('extractCandidates (combined)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  afterAll(() => {
+    vi.restoreAllMocks()
   })
 
   describe('heuristics only (no embeddings config)', () => {

@@ -21,15 +21,19 @@ export {
 } from './cache/index.js'
 
 // Classifier module
+export type { ResolvedModel } from './classifier/index.js'
 export {
   buildClassificationPrompt,
   type ClassificationContext,
   classifyMessages,
   createSmartBatches,
   filterActivities,
+  getRequiredApiKeyEnvVar,
+  getValidModelIds,
   groupByCategory,
   groupCandidatesByProximity,
-  parseClassificationResponse
+  parseClassificationResponse,
+  resolveModel
 } from './classifier/index.js'
 // Export module
 export {

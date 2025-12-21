@@ -11,8 +11,8 @@ import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 
 // Load queries
-import activityTypes from '../src/embeddings/queries/activity-types.json'
-import directSuggestions from '../src/embeddings/queries/direct-suggestions.json'
+import activityTypes from '../src/extraction/embeddings/queries/activity-types.json'
+import directSuggestions from '../src/extraction/embeddings/queries/direct-suggestions.json'
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 if (!OPENAI_API_KEY) {
@@ -21,7 +21,7 @@ if (!OPENAI_API_KEY) {
   process.exit(1)
 }
 
-const MODEL = 'text-embedding-3-small'
+const MODEL = 'text-embedding-3-large'
 
 interface OpenAIEmbeddingResponse {
   data: Array<{ embedding: number[]; index: number }>
@@ -91,7 +91,7 @@ async function main() {
   }
 
   // Write compressed file
-  const outputPath = join(import.meta.dir, '../src/embeddings/queries/query-embeddings.json.gz')
+  const outputPath = join(import.meta.dir, '../src/extraction/embeddings/queries/query-embeddings.json.gz')
   const jsonData = JSON.stringify(output)
   const compressed = gzipSync(jsonData)
   writeFileSync(outputPath, compressed)

@@ -43,7 +43,7 @@ export interface ResponseCache {
 export interface CacheKeyComponents {
   /** Service name: 'openai', 'anthropic', 'google' */
   readonly service: string
-  /** Model or endpoint: 'text-embedding-3-small', 'claude-3-haiku', 'geocoding' */
+  /** Model or endpoint: 'text-embedding-3-large', 'claude-3-haiku', 'geocoding' */
   readonly model: string
   /** Request payload (will be JSON stringified and sorted) */
   readonly payload: unknown

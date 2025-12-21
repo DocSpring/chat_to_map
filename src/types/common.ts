@@ -4,8 +4,6 @@
  * Shared types used across multiple modules: Result, Cache, Embeddings, CLI.
  */
 
-import type { ActivityCategory } from './classifier.js'
-
 // Result Types
 export type ApiErrorType =
   | 'rate_limit'
@@ -52,6 +50,7 @@ export interface EmbeddingConfig {
   readonly apiKey: string
   readonly model?: string
   readonly batchSize?: number
+  readonly concurrency?: number
   readonly onBatchStart?: (info: EmbeddingProgressInfo) => void
   readonly onBatchComplete?: (info: EmbeddingProgressInfo & { durationMs: number }) => void
 }
@@ -75,8 +74,6 @@ export interface CLIOptions {
   readonly region?: string | undefined
   readonly parallel?: number | undefined
   readonly minConfidence?: number | undefined
-  readonly activitiesOnly?: boolean | undefined
-  readonly category?: ActivityCategory | undefined
   readonly skipEmbeddings?: boolean | undefined
   readonly skipGeocoding?: boolean | undefined
   readonly quiet?: boolean | undefined

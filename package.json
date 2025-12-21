@@ -66,6 +66,7 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
+    "commander": "^14.0.2",
     "compromise": "^14.14.5",
     "exceljs": "^4.4.0",
     "js-tiktoken": "^1.0.21",

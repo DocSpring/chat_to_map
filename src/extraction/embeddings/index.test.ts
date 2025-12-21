@@ -41,14 +41,25 @@ vi.mock('../../http.js', () => ({
   })
 }))
 
-function createEmbeddingResponse(embeddings: number[][]): {
+// text-embedding-3-large produces 3072-dimension embeddings
+const EMBEDDING_DIMENSIONS = 3072
+
+function createMockEmbedding(seed = 0): number[] {
+  // Create a 3072-dimension embedding with deterministic values based on seed
+  return Array.from({ length: EMBEDDING_DIMENSIONS }, (_, i) => Math.sin(seed + i) * 0.1)
+}
+
+function createEmbeddingResponse(count: number): {
   data: Array<{ embedding: number[]; index: number }>
   model: string
   usage: { prompt_tokens: number; total_tokens: number }
 } {
   return {
-    data: embeddings.map((embedding, index) => ({ embedding, index })),
-    model: 'text-embedding-3-small',
+    data: Array.from({ length: count }, (_, index) => ({
+      embedding: createMockEmbedding(index),
+      index
+    })),
+    model: 'text-embedding-3-large',
     usage: { prompt_tokens: 100, total_tokens: 100 }
   }
 }
@@ -76,7 +87,7 @@ describe('Embeddings Module', () => {
     it('calls OpenAI API with correct parameters', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => createEmbeddingResponse([[0.1, 0.2, 0.3]])
+        json: async () => createEmbeddingResponse(1)
       })
 
       const messages = [{ id: 1, content: 'Test message' }]
@@ -97,7 +108,7 @@ describe('Embeddings Module', () => {
     it('uses default model when not specified', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => createEmbeddingResponse([[0.1, 0.2, 0.3]])
+        json: async () => createEmbeddingResponse(1)
       })
 
       const messages = [{ id: 1, content: 'Test message' }]
@@ -106,13 +117,13 @@ describe('Embeddings Module', () => {
 
       const call = mockFetch.mock.calls[0] as [string, { body: string }]
       const body = JSON.parse(call[1].body) as { model: string }
-      expect(body.model).toBe('text-embedding-3-small')
+      expect(body.model).toBe('text-embedding-3-large')
     })
 
     it('uses custom model when specified', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => createEmbeddingResponse([[0.1, 0.2, 0.3]])
+        json: async () => createEmbeddingResponse(1)
       })
 
       const messages = [{ id: 1, content: 'Test message' }]
@@ -127,11 +138,7 @@ describe('Embeddings Module', () => {
     it('returns embedded messages on success', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () =>
-          createEmbeddingResponse([
-            [0.1, 0.2, 0.3],
-            [0.4, 0.5, 0.6]
-          ])
+        json: async () => createEmbeddingResponse(2)
       })
 
       const messages = [
@@ -183,7 +190,7 @@ describe('Embeddings Module', () => {
     it('processes messages in batches', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => createEmbeddingResponse([[0.1, 0.2]])
+        json: async () => createEmbeddingResponse(1)
       })
 
       const messages = Array.from({ length: 250 }, (_, i) => ({
@@ -200,7 +207,7 @@ describe('Embeddings Module', () => {
     it('respects max batch size of 2048', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => createEmbeddingResponse([[0.1, 0.2]])
+        json: async () => createEmbeddingResponse(1)
       })
 
       const messages = Array.from({ length: 100 }, (_, i) => ({
@@ -223,11 +230,7 @@ describe('Embeddings Module', () => {
     it('embeds query strings', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () =>
-          createEmbeddingResponse([
-            [0.1, 0.2],
-            [0.3, 0.4]
-          ])
+        json: async () => createEmbeddingResponse(2)
       })
 
       const queries = ['hiking trail', 'restaurant recommendation']
@@ -362,32 +365,28 @@ describe('Embeddings Module', () => {
     const { extractCandidatesByEmbeddings } = await import('./index.js')
 
     it('performs full semantic search pipeline', async () => {
-      // Mock embedding responses for both messages and queries
+      // Mock embedding responses for messages (queries use pre-computed embeddings)
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () =>
-          createEmbeddingResponse([
-            [1.0, 0.0],
-            [0.9, 0.1]
-          ])
+        json: async () => createEmbeddingResponse(2)
       })
 
       const messages = [
         createParsedMessage(1, 'We should try this restaurant sometime'),
-        createParsedMessage(2, 'Random message')
+        createParsedMessage(2, 'Random message that is long enough')
       ]
 
       const result = await extractCandidatesByEmbeddings(messages, { apiKey: 'test-key' })
 
       expect(result.ok).toBe(true)
-      // Should have called API at least twice (messages + queries)
-      expect(mockFetch.mock.calls.length).toBeGreaterThanOrEqual(2)
+      // Should have called API once for messages (queries use pre-computed embeddings)
+      expect(mockFetch.mock.calls.length).toBeGreaterThanOrEqual(1)
     })
 
     it('filters short messages', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
-        json: async () => createEmbeddingResponse([[1.0, 0.0]])
+        json: async () => createEmbeddingResponse(1)
       })
 
       const messages = [

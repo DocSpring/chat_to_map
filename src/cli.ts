@@ -8,7 +8,7 @@
  * @license AGPL-3.0
  */
 
-import { HELP_TEXT, parseCliArgs } from './cli/args.js'
+import { parseCliArgs } from './cli/args.js'
 import { cmdAnalyze, cmdCandidates, cmdParse, cmdPreview, cmdScan } from './cli/commands.js'
 import { cmdList } from './cli/list.js'
 import { createLogger } from './cli/logger.js'
@@ -44,7 +44,7 @@ async function main(): Promise<void> {
         break
 
       default:
-        console.log(HELP_TEXT)
+        logger.error(`Unknown command: ${args.command}. Run 'chat-to-map --help' for usage.`)
         process.exit(1)
     }
   } catch (error) {

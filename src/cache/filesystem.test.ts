@@ -99,7 +99,7 @@ describe('FilesystemCache', () => {
       const complexData = {
         embeddings: [0.1, 0.2, 0.3],
         metadata: {
-          model: 'text-embedding-3-small',
+          model: 'text-embedding-3-large',
           tokens: 10
         }
       }

@@ -32,13 +32,13 @@ function formatTimestamp(date: Date): string {
 }
 
 /**
- * User context for classification - REQUIRED.
+ * User context for classification.
  */
 export interface ClassificationContext {
   /** User's home country (e.g., "New Zealand") - REQUIRED for location disambiguation */
   readonly homeCountry: string
-  /** User's timezone (e.g., "Pacific/Auckland") - REQUIRED */
-  readonly timezone: string
+  /** User's timezone (e.g., "Pacific/Auckland") - optional, helps with temporal context */
+  readonly timezone?: string | undefined
 }
 
 /**
@@ -48,8 +48,8 @@ export function buildClassificationPrompt(
   candidates: readonly CandidateMessage[],
   context: ClassificationContext
 ): string {
-  if (!context.homeCountry || !context.timezone) {
-    throw new Error('ClassificationContext.homeCountry and timezone are required')
+  if (!context.homeCountry) {
+    throw new Error('ClassificationContext.homeCountry is required')
   }
 
   const messagesText = candidates
@@ -64,10 +64,10 @@ ${ctx}
     })
     .join('\n')
 
+  const timezoneInfo = context.timezone ? `\nTimezone: ${context.timezone}` : ''
   const userContext = `
 USER CONTEXT:
-Home country: ${context.homeCountry}
-Timezone: ${context.timezone}
+Home country: ${context.homeCountry}${timezoneInfo}
 `
 
   return `PURPOSE: We are building a "things to do" map/list from a user's chat history. The goal is to surface specific activity suggestions and places they talked about wanting to visit - things they can actually act on later. We want to show pins on a map and a list of actionable ideas.

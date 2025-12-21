@@ -79,7 +79,7 @@ Extract "things to do" suggestions from a WhatsApp chat history between Nathan a
    └── TikTok/YouTube with suggestion context
 
    Pass 3: Semantic search (broad recall)
-   └── Embed ALL messages with OpenAI text-embedding-3-small
+   └── Embed ALL messages with OpenAI text-embedding-3-large
    └── Search for messages similar to activity phrases
    └── Filter to top N candidates
 

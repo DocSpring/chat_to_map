@@ -9,6 +9,7 @@ import { homedir } from 'node:os'
 import { basename, dirname, join } from 'node:path'
 import { FilesystemCache } from '../cache/filesystem.js'
 import { buildClassificationPrompt } from '../classifier/prompt.js'
+import { countTokens } from '../classifier/tokenizer.js'
 import {
   classifyMessages,
   extractCandidates,
@@ -17,12 +18,12 @@ import {
   VERSION
 } from '../index.js'
 import { scrapeAndEnrichCandidates } from '../scraper/enrich.js'
-import type { CandidateMessage } from '../types.js'
-import { type ClassifierConfig, formatLocation } from '../types.js'
+import type { CandidateMessage, ParsedMessage } from '../types.js'
+import { formatLocation } from '../types.js'
 import type { CLIArgs, ExtractionMethod } from './args.js'
-import { getRequiredContext } from './env.js'
 import { ensureDir } from './io.js'
 import type { Logger } from './logger.js'
+import { resolveContext, resolveModelConfig } from './model.js'
 import { runClassify, runExport, runExtract, runGeocode, runParse } from './pipeline.js'
 import { formatDate, getCategoryEmoji, runQuickScanWithLogs, truncate } from './preview.js'
 
@@ -43,25 +44,14 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
     return
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY ?? process.env.OPENAI_API_KEY
-  if (!apiKey) {
-    throw new Error(
-      'preview command requires ANTHROPIC_API_KEY or OPENAI_API_KEY environment variable'
-    )
-  }
-
-  const { homeCountry, timezone } = getRequiredContext()
-
-  const provider: ClassifierConfig['provider'] = process.env.ANTHROPIC_API_KEY
-    ? 'anthropic'
-    : 'openai'
+  // Resolve model and context
+  const { provider, apiModel: model, apiKey } = resolveModelConfig()
+  const { homeCountry, timezone } = resolveContext(args.homeCountry, args.timezone)
 
   const PREVIEW_CLASSIFY_COUNT = args.maxResults * 3
   const topCandidates = scanResult.candidates.slice(0, PREVIEW_CLASSIFY_COUNT)
 
   logger.log(`\n🔍 Quick scan found ${scanResult.stats.totalUnique} potential activities`)
-
-  const model = provider === 'anthropic' ? 'claude-haiku-4-5' : 'gpt-5-mini'
 
   const cacheDir = join(homedir(), '.cache', 'chat-to-map')
   const cache = new FilesystemCache(cacheDir)
@@ -103,6 +93,7 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
     {
       provider,
       apiKey,
+      model,
       homeCountry,
       timezone,
       batchSize: 30,
@@ -304,6 +295,27 @@ function createEmbeddingCallbacks(logger: Logger) {
   }
 }
 
+// text-embedding-3-large: $0.13 per 1M tokens
+const EMBEDDING_COST_PER_MILLION_TOKENS = 0.13
+
+function estimateEmbeddingCost(messages: readonly ParsedMessage[], logger: Logger): void {
+  const messagesToEmbed = messages.filter((m) => m.content.length > 10)
+  let totalTokens = 0
+
+  for (const msg of messagesToEmbed) {
+    totalTokens += countTokens(msg.content)
+  }
+
+  const costDollars = (totalTokens / 1_000_000) * EMBEDDING_COST_PER_MILLION_TOKENS
+  const batchCount = Math.ceil(messagesToEmbed.length / 100)
+
+  logger.log(`\n📊 Embedding Cost Estimate (text-embedding-3-large)`)
+  logger.log(`   Messages to embed: ${messagesToEmbed.length.toLocaleString()}`)
+  logger.log(`   Total tokens: ${totalTokens.toLocaleString()}`)
+  logger.log(`   API batches: ${batchCount}`)
+  logger.log(`   Estimated cost: $${costDollars.toFixed(4)}`)
+}
+
 function formatCandidatesText(output: CandidatesOutput, logger: Logger): void {
   const { method, stats, candidates } = output
 
@@ -333,14 +345,14 @@ function formatCandidatesText(output: CandidatesOutput, logger: Logger): void {
     const msg = truncate(c.content, 70)
     const sourceLabel =
       c.source.type === 'semantic'
-        ? `semantic (${c.source.similarity.toFixed(2)})`
+        ? `matched: "${c.source.query}" (${c.source.similarity.toFixed(2)})`
         : c.source.type === 'url'
           ? `url (${c.source.urlType})`
           : `regex (${c.source.pattern})`
 
     logger.log(`${i + 1}. "${msg}"`)
-    logger.log(`   ${c.sender} • ${formatDate(c.timestamp)} • ${sourceLabel}`)
-    logger.log(`   confidence: ${c.confidence.toFixed(3)}`)
+    logger.log(`   ${c.sender} • ${formatDate(c.timestamp)}`)
+    logger.log(`   ${sourceLabel}`)
     logger.log('')
   }
 }
@@ -354,6 +366,12 @@ export async function cmdCandidates(args: CLIArgs, logger: Logger): Promise<void
   logger.log(`\n📁 ${basename(args.input)}`)
 
   const messages = await runParse(args.input, args, logger)
+
+  // Dry run: show cost estimate and exit
+  if (args.dryRun && (args.method === 'embeddings' || args.method === 'both')) {
+    estimateEmbeddingCost(messages, logger)
+    return
+  }
 
   const cacheDir = join(homedir(), '.cache', 'chat-to-map')
   const cache = new FilesystemCache(cacheDir)
@@ -443,8 +461,12 @@ export async function cmdCandidates(args: CLIArgs, logger: Logger): Promise<void
 
   if (args.jsonOutput) {
     const json = JSON.stringify(output, null, 2)
-    await writeFile(args.jsonOutput, json)
-    logger.success(`\n✓ Saved ${output.stats.totalCandidates} candidates to ${args.jsonOutput}`)
+    if (args.jsonOutput === 'stdout') {
+      console.log(json)
+    } else {
+      await writeFile(args.jsonOutput, json)
+      logger.success(`\n✓ Saved ${output.stats.totalCandidates} candidates to ${args.jsonOutput}`)
+    }
   } else {
     formatCandidatesText(output, logger)
   }

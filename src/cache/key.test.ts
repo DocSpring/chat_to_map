@@ -10,12 +10,12 @@ describe('generateCacheKey', () => {
   it('should generate consistent hash for same inputs', () => {
     const key1 = generateCacheKey({
       service: 'openai',
-      model: 'text-embedding-3-small',
+      model: 'text-embedding-3-large',
       payload: { input: 'hello' }
     })
     const key2 = generateCacheKey({
       service: 'openai',
-      model: 'text-embedding-3-small',
+      model: 'text-embedding-3-large',
       payload: { input: 'hello' }
     })
     expect(key1).toBe(key2)
@@ -24,12 +24,12 @@ describe('generateCacheKey', () => {
   it('should generate different hash for different inputs', () => {
     const key1 = generateCacheKey({
       service: 'openai',
-      model: 'text-embedding-3-small',
+      model: 'text-embedding-3-large',
       payload: { input: 'hello' }
     })
     const key2 = generateCacheKey({
       service: 'openai',
-      model: 'text-embedding-3-small',
+      model: 'text-embedding-3-large',
       payload: { input: 'world' }
     })
     expect(key1).not.toBe(key2)
@@ -75,12 +75,12 @@ describe('generateCacheKey', () => {
   it('should handle arrays in payload', () => {
     const key1 = generateCacheKey({
       service: 'openai',
-      model: 'text-embedding-3-small',
+      model: 'text-embedding-3-large',
       payload: { inputs: ['a', 'b', 'c'] }
     })
     const key2 = generateCacheKey({
       service: 'openai',
-      model: 'text-embedding-3-small',
+      model: 'text-embedding-3-large',
       payload: { inputs: ['a', 'b', 'c'] }
     })
     expect(key1).toBe(key2)
@@ -149,20 +149,20 @@ describe('generateCacheKey', () => {
 
 describe('generateEmbeddingCacheKey', () => {
   it('should generate consistent key for same inputs', () => {
-    const key1 = generateEmbeddingCacheKey('text-embedding-3-small', ['hello', 'world'])
-    const key2 = generateEmbeddingCacheKey('text-embedding-3-small', ['hello', 'world'])
+    const key1 = generateEmbeddingCacheKey('text-embedding-3-large', ['hello', 'world'])
+    const key2 = generateEmbeddingCacheKey('text-embedding-3-large', ['hello', 'world'])
     expect(key1).toBe(key2)
   })
 
   it('should sort inputs for consistent hashing', () => {
-    const key1 = generateEmbeddingCacheKey('text-embedding-3-small', ['world', 'hello'])
-    const key2 = generateEmbeddingCacheKey('text-embedding-3-small', ['hello', 'world'])
+    const key1 = generateEmbeddingCacheKey('text-embedding-3-large', ['world', 'hello'])
+    const key2 = generateEmbeddingCacheKey('text-embedding-3-large', ['hello', 'world'])
     expect(key1).toBe(key2)
   })
 
   it('should differentiate by model', () => {
-    const key1 = generateEmbeddingCacheKey('text-embedding-3-small', ['hello'])
-    const key2 = generateEmbeddingCacheKey('text-embedding-3-large', ['hello'])
+    const key1 = generateEmbeddingCacheKey('text-embedding-3-large', ['hello'])
+    const key2 = generateEmbeddingCacheKey('text-embedding-3-small', ['hello'])
     expect(key1).not.toBe(key2)
   })
 })

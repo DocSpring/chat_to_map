@@ -24,7 +24,7 @@ export const SYSTEM_PROMPT_TOKENS = 350
 
 /**
  * Maximum tokens per batch. Leave room for response.
- * Modern models have huge context windows (128k+), but smaller batches
- * are more reliable and easier to validate.
+ * Claude Haiku has 200k context, GPT-4o-mini has 128k.
+ * 50k is safe and allows large batches while leaving room for response.
  */
-export const MAX_BATCH_TOKENS = 8000
+export const MAX_BATCH_TOKENS = 50000
