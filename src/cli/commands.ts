@@ -275,6 +275,35 @@ interface CandidatesOutput {
   candidates: readonly CandidateMessage[]
 }
 
+function createEmbeddingCallbacks(logger: Logger) {
+  return {
+    onBatchStart: (info: {
+      phase: string
+      batchIndex: number
+      totalBatches: number
+      itemsInBatch: number
+    }) => {
+      if (info.phase === 'messages') {
+        logger.log(
+          `   [${info.batchIndex + 1}/${info.totalBatches}] Embedding ${info.itemsInBatch} messages...`
+        )
+      }
+    },
+    onBatchComplete: (info: {
+      phase: string
+      batchIndex: number
+      totalBatches: number
+      cacheHit: boolean
+      durationMs: number
+    }) => {
+      if (info.phase === 'messages') {
+        const status = info.cacheHit ? '📦 cached' : `✓ ${info.durationMs}ms`
+        logger.log(`   [${info.batchIndex + 1}/${info.totalBatches}] ${status}`)
+      }
+    }
+  }
+}
+
 function formatCandidatesText(output: CandidatesOutput, logger: Logger): void {
   const { method, stats, candidates } = output
 
@@ -353,7 +382,12 @@ export async function cmdCandidates(args: CLIArgs, logger: Logger): Promise<void
     }
 
     logger.log('\n🔍 Extracting candidates (embeddings only)...')
-    const result = await extractCandidatesByEmbeddings(messages, { apiKey }, undefined, cache)
+    const result = await extractCandidatesByEmbeddings(
+      messages,
+      { apiKey, ...createEmbeddingCallbacks(logger) },
+      undefined,
+      cache
+    )
 
     if (!result.ok) {
       throw new Error(`Embeddings extraction failed: ${result.error.message}`)
@@ -377,7 +411,7 @@ export async function cmdCandidates(args: CLIArgs, logger: Logger): Promise<void
       apiKey
         ? {
             heuristics: { minConfidence: args.minConfidence },
-            embeddings: { config: { apiKey } },
+            embeddings: { config: { apiKey, ...createEmbeddingCallbacks(logger) } },
             cache
           }
         : {

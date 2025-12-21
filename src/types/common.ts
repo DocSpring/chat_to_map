@@ -39,10 +39,21 @@ export interface ResponseCache {
 }
 
 // Embeddings Types
+export interface EmbeddingProgressInfo {
+  readonly phase: 'messages' | 'queries'
+  readonly batchIndex: number
+  readonly totalBatches: number
+  readonly itemsInBatch: number
+  readonly totalItems: number
+  readonly cacheHit: boolean
+}
+
 export interface EmbeddingConfig {
   readonly apiKey: string
   readonly model?: string
   readonly batchSize?: number
+  readonly onBatchStart?: (info: EmbeddingProgressInfo) => void
+  readonly onBatchComplete?: (info: EmbeddingProgressInfo & { durationMs: number }) => void
 }
 
 export interface EmbeddedMessage {

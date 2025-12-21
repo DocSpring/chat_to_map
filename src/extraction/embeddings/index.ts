@@ -68,6 +68,11 @@ interface OpenAIEmbeddingResponse {
   }
 }
 
+interface BatchResult {
+  embeddings: Float32Array[]
+  cacheHit: boolean
+}
+
 /**
  * Embed a batch of texts using OpenAI API.
  */
@@ -75,7 +80,7 @@ async function embedBatch(
   texts: readonly string[],
   config: EmbeddingConfig,
   cache?: ResponseCache
-): Promise<Result<Float32Array[]>> {
+): Promise<Result<BatchResult>> {
   const model = config.model ?? DEFAULT_MODEL
 
   // Check cache first (store as number[][] since Float32Array doesn't serialize well)
@@ -83,7 +88,13 @@ async function embedBatch(
   if (cache) {
     const cached = await cache.get<number[][]>(cacheKey)
     if (cached) {
-      return { ok: true, value: cached.data.map((arr) => new Float32Array(arr)) }
+      return {
+        ok: true,
+        value: {
+          embeddings: cached.data.map((arr) => new Float32Array(arr)),
+          cacheHit: true
+        }
+      }
     }
   }
 
@@ -122,7 +133,7 @@ async function embedBatch(
       )
     }
 
-    return { ok: true, value: embeddings }
+    return { ok: true, value: { embeddings, cacheHit: false } }
   } catch (error) {
     return handleNetworkError(error)
   }
@@ -142,23 +153,43 @@ export async function embedMessages(
   cache?: ResponseCache
 ): Promise<Result<EmbeddedMessage[]>> {
   const batchSize = Math.min(config.batchSize ?? DEFAULT_BATCH_SIZE, MAX_OPENAI_BATCH_SIZE)
+  const totalBatches = Math.ceil(messages.length / batchSize)
 
   const results: EmbeddedMessage[] = []
 
   // Process in batches
   for (let i = 0; i < messages.length; i += batchSize) {
+    const batchIndex = Math.floor(i / batchSize)
     const batch = messages.slice(i, i + batchSize)
     const texts = batch.map((m) => m.content)
 
+    const progressInfo = {
+      phase: 'messages' as const,
+      batchIndex,
+      totalBatches,
+      itemsInBatch: batch.length,
+      totalItems: messages.length,
+      cacheHit: false
+    }
+
+    config.onBatchStart?.(progressInfo)
+
+    const startTime = Date.now()
     const embedResult = await embedBatch(texts, config, cache)
 
     if (!embedResult.ok) {
       return embedResult
     }
 
+    config.onBatchComplete?.({
+      ...progressInfo,
+      cacheHit: embedResult.value.cacheHit,
+      durationMs: Date.now() - startTime
+    })
+
     for (let j = 0; j < batch.length; j++) {
       const msg = batch[j]
-      const embedding = embedResult.value[j]
+      const embedding = embedResult.value.embeddings[j]
       if (msg && embedding) {
         results.push({
           messageId: msg.id,
@@ -180,7 +211,9 @@ export async function embedQueries(
   config: EmbeddingConfig,
   cache?: ResponseCache
 ): Promise<Result<Float32Array[]>> {
-  return embedBatch(queries, config, cache)
+  const result = await embedBatch(queries, config, cache)
+  if (!result.ok) return result
+  return { ok: true, value: result.value.embeddings }
 }
 
 /**
