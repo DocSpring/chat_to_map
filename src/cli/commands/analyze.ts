@@ -6,8 +6,8 @@
 
 import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
-import { FilesystemCache } from '../../cache/filesystem.js'
-import { PipelineCache } from '../../cache/pipeline.js'
+import { FilesystemCache } from '../../cache/filesystem'
+import { PipelineCache } from '../../cache/pipeline'
 import {
   classifyMessages,
   extractCandidatesByHeuristics,
@@ -15,8 +15,8 @@ import {
   geocodeActivities,
   parseChatWithStats,
   VERSION
-} from '../../index.js'
-import { scrapeAndEnrichCandidates } from '../../scraper/enrich.js'
+} from '../../index'
+import { scrapeAndEnrichCandidates } from '../../scraper/enrich'
 import type {
   CandidateMessage,
   ClassifiedActivity,
@@ -24,12 +24,12 @@ import type {
   GeocodedActivity,
   GeocoderConfig,
   ParsedMessage
-} from '../../types.js'
-import type { CLIArgs } from '../args.js'
-import { readInputFile } from '../io.js'
-import type { Logger } from '../logger.js'
-import { resolveContext, resolveModelConfig } from '../model.js'
-import { runExport } from '../pipeline.js'
+} from '../../types'
+import type { CLIArgs } from '../args'
+import { readInputFile } from '../io'
+import type { Logger } from '../logger'
+import { resolveContext, resolveModelConfig } from '../model'
+import { runExport } from '../pipeline'
 
 export async function cmdAnalyze(args: CLIArgs, logger: Logger): Promise<void> {
   if (!args.input) {

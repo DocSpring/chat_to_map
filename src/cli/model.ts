@@ -10,8 +10,8 @@ import {
   getValidModelIds,
   type ResolvedModel,
   resolveModel
-} from '../index.js'
-import type { ClassifierProvider } from '../types.js'
+} from '../index'
+import type { ClassifierProvider } from '../types'
 
 export interface ResolvedModelConfig {
   provider: ClassifierProvider

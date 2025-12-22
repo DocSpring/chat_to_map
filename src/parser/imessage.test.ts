@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseIMessageChat } from './imessage.js'
+import { parseIMessageChat } from './imessage'
 
 describe('iMessage Parser', () => {
   describe('parseIMessageChat', () => {

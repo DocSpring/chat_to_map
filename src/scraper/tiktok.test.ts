@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { extractTikTokVideoId, scrapeTikTok } from './tiktok.js'
+import { extractTikTokVideoId, scrapeTikTok } from './tiktok'
 
 // Sample TikTok JSON data (simplified from real response)
 const SAMPLE_TIKTOK_DATA = {
@@ -64,10 +64,11 @@ function mockResponse(options: {
     blob: () => Promise.resolve(new Blob()),
     formData: () => Promise.resolve(new FormData()),
     clone: () => mockResponse(options),
+    bytes: () => Promise.resolve(new Uint8Array()),
     redirected: false,
     type: 'basic',
     url: ''
-  } as Response
+  } as unknown as Response
 }
 
 describe('extractTikTokVideoId', () => {

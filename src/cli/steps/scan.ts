@@ -4,10 +4,10 @@
  * Heuristic scan for candidate messages.
  */
 
-import { extractCandidatesByHeuristics } from '../../extraction/heuristics/index.js'
-import type { CandidateMessage, ParsedMessage } from '../../types.js'
-import type { PipelineContext } from './context.js'
-import { stepParse } from './parse.js'
+import { extractCandidatesByHeuristics } from '../../extraction/heuristics/index'
+import type { CandidateMessage, ParsedMessage } from '../../types'
+import type { PipelineContext } from './context'
+import { stepParse } from './parse'
 
 /**
  * Stats saved to scan_stats.json

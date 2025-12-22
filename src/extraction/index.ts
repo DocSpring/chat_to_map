@@ -18,13 +18,13 @@ import type {
   ResponseCache,
   Result,
   SemanticSearchConfig
-} from '../types.js'
-import { deduplicateAgreements } from './context-window.js'
-import { extractCandidatesByEmbeddings } from './embeddings/index.js'
-import { extractCandidatesByHeuristics } from './heuristics/index.js'
+} from '../types'
+import { deduplicateAgreements } from './context-window'
+import { extractCandidatesByEmbeddings } from './embeddings/index'
+import { extractCandidatesByHeuristics } from './heuristics/index'
 
 // Re-export from context-window
-export { deduplicateAgreements } from './context-window.js'
+export { deduplicateAgreements } from './context-window'
 // Re-export embeddings
 export {
   ACTIVITY_TYPE_QUERIES,
@@ -44,7 +44,7 @@ export {
   getQueryType,
   loadQueryEmbeddings,
   SUGGESTION_QUERIES
-} from './embeddings/index.js'
+} from './embeddings/index'
 // Re-export heuristics
 export {
   ACTIVITY_KEYWORDS,
@@ -57,7 +57,7 @@ export {
   extractGoogleMapsCoords,
   isActivityUrl,
   isSocialUrl
-} from './heuristics/index.js'
+} from './heuristics/index'
 
 export interface ExtractCandidatesConfig {
   heuristics?: ExtractorOptions

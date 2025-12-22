@@ -9,15 +9,15 @@
  * - Generic scraper: Everything else (OG tags + JSON-LD)
  */
 
-import type { SocialPlatform } from '../types.js'
-import { scrapeAirbnb } from './airbnb.js'
-import { scrapeEventbrite } from './eventbrite.js'
-import { scrapeGeneric } from './generic.js'
-import { scrapeTikTok } from './tiktok.js'
-import type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types.js'
-import { scrapeYouTube } from './youtube.js'
+import type { SocialPlatform } from '../types'
+import { scrapeAirbnb } from './airbnb'
+import { scrapeEventbrite } from './eventbrite'
+import { scrapeGeneric } from './generic'
+import { scrapeTikTok } from './tiktok'
+import type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types'
+import { scrapeYouTube } from './youtube'
 
-export { extractAirbnbListingId, scrapeAirbnb } from './airbnb.js'
+export { extractAirbnbListingId, scrapeAirbnb } from './airbnb'
 export {
   type EnrichOptions,
   enrichCandidatesWithMetadata,
@@ -25,12 +25,12 @@ export {
   extractUrlsFromText,
   injectMetadataIntoText,
   scrapeAndEnrichCandidates
-} from './enrich.js'
-export { extractEventbriteId, scrapeEventbrite } from './eventbrite.js'
-export { scrapeGeneric } from './generic.js'
-export { extractTikTokVideoId, resolveTikTokUrl, scrapeTikTok } from './tiktok.js'
-export type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types.js'
-export { buildYouTubeUrl, extractYouTubeVideoId, scrapeYouTube } from './youtube.js'
+} from './enrich'
+export { extractEventbriteId, scrapeEventbrite } from './eventbrite'
+export { scrapeGeneric } from './generic'
+export { extractTikTokVideoId, resolveTikTokUrl, scrapeTikTok } from './tiktok'
+export type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types'
+export { buildYouTubeUrl, extractYouTubeVideoId, scrapeYouTube } from './youtube'
 
 /** Domains that block automated requests - don't even try */
 const BLOCKLISTED_DOMAINS = [

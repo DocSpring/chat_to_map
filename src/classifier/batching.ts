@@ -5,8 +5,8 @@
  * Uses token counting for dynamic batch sizing.
  */
 
-import type { CandidateMessage } from '../types.js'
-import { countTokens, MAX_BATCH_TOKENS, SYSTEM_PROMPT_TOKENS } from './tokenizer.js'
+import type { CandidateMessage } from '../types'
+import { countTokens, MAX_BATCH_TOKENS, SYSTEM_PROMPT_TOKENS } from './tokenizer'
 
 /**
  * Default gap between message IDs that triggers a new group.

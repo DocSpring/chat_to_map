@@ -5,7 +5,7 @@
  */
 
 import { Command } from 'commander'
-import { VERSION } from '../index.js'
+import { VERSION } from '../index'
 
 export type ExtractionMethod = 'heuristics' | 'embeddings' | 'both'
 
@@ -166,7 +166,7 @@ function createProgram(): Command {
   // ============ LIST ============
   program.command('list').description('Show previously processed chats')
 
-  return program
+  return program as Command
 }
 
 function parseMethod(value: unknown): ExtractionMethod {

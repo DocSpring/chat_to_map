@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import type { ParsedMessage } from '../types.js'
+import type { ParsedMessage } from '../types'
 import {
   getMessageContext,
   isInContextWindow,
@@ -11,7 +11,7 @@ import {
   MIN_CONTEXT_MESSAGES,
   TRUNCATION_MARKER,
   truncateMessage
-} from './context-window.js'
+} from './context-window'
 
 function createMessage(id: number, content: string, sender = 'User'): ParsedMessage {
   return {

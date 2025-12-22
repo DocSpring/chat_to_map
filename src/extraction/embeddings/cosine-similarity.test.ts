@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cosineSimilarity, findTopK } from './cosine-similarity.js'
+import { cosineSimilarity, findTopK } from './cosine-similarity'
 
 describe('Cosine Similarity', () => {
   describe('cosineSimilarity', () => {

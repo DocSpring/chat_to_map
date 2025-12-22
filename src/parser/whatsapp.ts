@@ -7,8 +7,8 @@
  * Android format: MM/DD/YY, H:MM - Sender: Message
  */
 
-import type { MediaType, ParsedMessage, ParserOptions, WhatsAppFormat } from '../types.js'
-import { normalizeApostrophes } from './index.js'
+import type { MediaType, ParsedMessage, ParserOptions, WhatsAppFormat } from '../types'
+import { normalizeApostrophes } from './index'
 
 // WhatsApp iOS format: [MM/DD/YY, H:MM:SS AM/PM] Sender: Message
 // Notes:

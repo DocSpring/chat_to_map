@@ -5,9 +5,9 @@
  * activity suggestions that don't match explicit patterns.
  */
 
-import { generateEmbeddingCacheKey } from '../../cache/key.js'
-import { DEFAULT_CACHE_TTL_SECONDS } from '../../cache/types.js'
-import { handleHttpError, handleNetworkError, httpFetch } from '../../http.js'
+import { generateEmbeddingCacheKey } from '../../cache/key'
+import { DEFAULT_CACHE_TTL_SECONDS } from '../../cache/types'
+import { handleHttpError, handleNetworkError, httpFetch } from '../../http'
 import type {
   CandidateMessage,
   CandidateSource,
@@ -18,14 +18,14 @@ import type {
   ResponseCache,
   Result,
   SemanticSearchConfig
-} from '../../types.js'
-import { findTopK } from './cosine-similarity.js'
+} from '../../types'
+import { findTopK } from './cosine-similarity'
 import activityTypes from './queries/activity-types.json' with { type: 'json' }
 import agreementQueries from './queries/agreement.json' with { type: 'json' }
 import suggestionQueries from './queries/suggestions.json' with { type: 'json' }
-import { getDefaultQueryEmbeddings } from './query-embeddings.js'
+import { getDefaultQueryEmbeddings } from './query-embeddings'
 
-export { cosineSimilarity, findTopK } from './cosine-similarity.js'
+export { cosineSimilarity, findTopK } from './cosine-similarity'
 export {
   getAllQueryEmbeddings,
   getDefaultQueryEmbeddings,
@@ -33,7 +33,7 @@ export {
   getQueryEmbeddingsDimensions,
   getQueryEmbeddingsModel,
   loadQueryEmbeddings
-} from './query-embeddings.js'
+} from './query-embeddings'
 
 const DEFAULT_MODEL = 'text-embedding-3-large'
 const DEFAULT_BATCH_SIZE = 100

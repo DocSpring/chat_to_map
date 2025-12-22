@@ -4,10 +4,10 @@
  * Convert location text to coordinates using Google Maps APIs.
  */
 
-import { generateGeocodeCacheKey } from '../cache/key.js'
-import { DEFAULT_CACHE_TTL_SECONDS } from '../cache/types.js'
-import { extractGoogleMapsCoords } from '../extraction/heuristics/url-classifier.js'
-import { httpFetch } from '../http.js'
+import { generateGeocodeCacheKey } from '../cache/key'
+import { DEFAULT_CACHE_TTL_SECONDS } from '../cache/types'
+import { extractGoogleMapsCoords } from '../extraction/heuristics/url-classifier'
+import { httpFetch } from '../http'
 import {
   type ClassifiedActivity,
   formatLocation,
@@ -16,7 +16,7 @@ import {
   type GeocoderConfig,
   type ResponseCache,
   type Result
-} from '../types.js'
+} from '../types'
 
 interface GoogleGeocodingResponse {
   status: string

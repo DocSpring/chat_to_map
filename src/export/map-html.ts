@@ -4,7 +4,7 @@
  * Generate an interactive HTML map using Leaflet.js.
  */
 
-import { CATEGORY_EMOJI, formatLocation, type GeocodedActivity, type MapConfig } from '../types.js'
+import { CATEGORY_EMOJI, formatLocation, type GeocodedActivity, type MapConfig } from '../types'
 
 const DEFAULT_ZOOM = 6
 const MARKER_COLORS = [

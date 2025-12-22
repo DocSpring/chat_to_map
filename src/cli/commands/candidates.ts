@@ -7,18 +7,18 @@
 import { writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
-import { FilesystemCache } from '../../cache/filesystem.js'
-import { countTokens } from '../../classifier/tokenizer.js'
+import { FilesystemCache } from '../../cache/filesystem'
+import { countTokens } from '../../classifier/tokenizer'
 import {
   extractCandidates,
   extractCandidatesByEmbeddings,
   extractCandidatesByHeuristics,
   VERSION
-} from '../../index.js'
-import type { CandidateMessage, ParsedMessage } from '../../types.js'
-import type { CLIArgs, ExtractionMethod } from '../args.js'
-import { formatDate, runParseWithLogs, truncate } from '../helpers.js'
-import type { Logger } from '../logger.js'
+} from '../../index'
+import type { CandidateMessage, ParsedMessage } from '../../types'
+import type { CLIArgs, ExtractionMethod } from '../args'
+import { formatDate, runParseWithLogs, truncate } from '../helpers'
+import type { Logger } from '../logger'
 
 interface CandidatesOutput {
   method: ExtractionMethod

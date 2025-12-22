@@ -6,10 +6,10 @@
 
 import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
-import { FilesystemCache } from '../../cache/filesystem.js'
-import { PipelineCache } from '../../cache/pipeline.js'
-import type { Logger } from '../logger.js'
-import { readInputFileWithCache } from './read.js'
+import { FilesystemCache } from '../../cache/filesystem'
+import { PipelineCache } from '../../cache/pipeline'
+import type { Logger } from '../logger'
+import { readInputFileWithCache } from './read'
 
 /**
  * Options for initializing the pipeline context.

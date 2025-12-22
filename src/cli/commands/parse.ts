@@ -6,11 +6,11 @@
 
 import { writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import { VERSION } from '../../index.js'
-import type { CLIArgs } from '../args.js'
-import { ensureDir } from '../io.js'
-import type { Logger } from '../logger.js'
-import { initContext, stepParse } from '../steps/index.js'
+import { VERSION } from '../../index'
+import type { CLIArgs } from '../args'
+import { ensureDir } from '../io'
+import type { Logger } from '../logger'
+import { initContext, stepParse } from '../steps/index'
 
 /**
  * Format chat source for display.

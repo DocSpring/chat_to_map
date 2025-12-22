@@ -4,12 +4,12 @@
  * Parse WhatsApp and iMessage exports into structured messages.
  */
 
-import type { ChatSource, ParsedMessage, ParseResult, ParserOptions } from '../types.js'
-import { parseIMessageChat, parseIMessageChatStream } from './imessage.js'
-import { parseWhatsAppChat, parseWhatsAppChatStream } from './whatsapp.js'
+import type { ChatSource, ParsedMessage, ParseResult, ParserOptions } from '../types'
+import { parseIMessageChat, parseIMessageChatStream } from './imessage'
+import { parseWhatsAppChat, parseWhatsAppChatStream } from './whatsapp'
 
-export { parseIMessageChat, parseIMessageChatStream } from './imessage.js'
-export { detectFormat, parseWhatsAppChat, parseWhatsAppChatStream } from './whatsapp.js'
+export { parseIMessageChat, parseIMessageChatStream } from './imessage'
+export { detectFormat, parseWhatsAppChat, parseWhatsAppChatStream } from './whatsapp'
 
 /**
  * Normalize apostrophe variants to straight apostrophe (U+0027).

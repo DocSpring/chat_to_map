@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { detectPlatform } from './index.js'
+import { detectPlatform } from './index'
 
 describe('detectPlatform', () => {
   it('detects TikTok URLs', () => {

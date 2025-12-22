@@ -18,7 +18,7 @@
  * ```
  */
 
-import type { ClassifiedActivity } from '../types/classifier.js'
+import type { ClassifiedActivity } from '../types/classifier'
 
 /**
  * A single cluster of semantically equivalent activities.

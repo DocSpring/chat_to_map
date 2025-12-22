@@ -9,7 +9,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { basename, join } from 'node:path'
-import { readInputFile } from '../io.js'
+import { readInputFile } from '../io'
 
 /**
  * Input file metadata for caching.

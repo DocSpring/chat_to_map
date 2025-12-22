@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { ClassifiedActivity, GeocodedActivity } from '../types.js'
+import type { ClassifiedActivity, GeocodedActivity } from '../types'
 
 // Mock httpFetch before importing - explicitly re-export other functions
 const mockFetch = vi.fn()
-vi.mock('../http.js', () => ({
+vi.mock('../http', () => ({
   httpFetch: mockFetch,
   // Re-implement the helper functions to avoid vi.importActual
   handleHttpError: async (response: {
@@ -106,7 +106,7 @@ describe('Geocoder Module', () => {
   })
 
   describe('geocodeLocation', async () => {
-    const { geocodeLocation } = await import('./index.js')
+    const { geocodeLocation } = await import('./index')
 
     it('calls Google Geocoding API with correct parameters', async () => {
       mockFetch.mockResolvedValue({
@@ -250,7 +250,7 @@ describe('Geocoder Module', () => {
   })
 
   describe('geocodeActivities', async () => {
-    const { geocodeActivities } = await import('./index.js')
+    const { geocodeActivities } = await import('./index')
 
     it('geocodes activities with location', async () => {
       mockFetch.mockResolvedValue({
@@ -357,7 +357,7 @@ describe('Geocoder Module', () => {
   })
 
   describe('countGeocoded', async () => {
-    const { countGeocoded } = await import('./index.js')
+    const { countGeocoded } = await import('./index')
 
     it('counts activities with coordinates', () => {
       const activities: GeocodedActivity[] = [
@@ -377,7 +377,7 @@ describe('Geocoder Module', () => {
   })
 
   describe('filterGeocoded', async () => {
-    const { filterGeocoded } = await import('./index.js')
+    const { filterGeocoded } = await import('./index')
 
     it('filters to only geocoded activities', () => {
       const activities: GeocodedActivity[] = [
@@ -396,7 +396,7 @@ describe('Geocoder Module', () => {
   })
 
   describe('calculateCenter', async () => {
-    const { calculateCenter } = await import('./index.js')
+    const { calculateCenter } = await import('./index')
 
     it('calculates center point of geocoded activities', () => {
       const activities: GeocodedActivity[] = [

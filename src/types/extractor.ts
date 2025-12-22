@@ -4,7 +4,7 @@
  * Types for candidate extraction and activity links.
  */
 
-import type { UrlType } from './parser.js'
+import type { UrlType } from './parser'
 
 /** Query type for semantic matches. */
 export type QueryType = 'suggestion' | 'agreement'

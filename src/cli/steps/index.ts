@@ -5,13 +5,13 @@
  * Each step chains to previous steps as needed.
  */
 
-export { type InitContextOptions, initContext, type PipelineContext } from './context.js'
-export { type ParseOptions, type ParseResult, stepParse } from './parse.js'
+export { type InitContextOptions, initContext, type PipelineContext } from './context'
+export { type ParseOptions, type ParseResult, stepParse } from './parse'
 export {
   cacheExtraction,
   getCachedExtraction,
   getInputMetadata,
   type InputMetadata,
   readInputFileWithCache
-} from './read.js'
-export { type ScanOptions, type ScanResult, stepScan, stepScanWithMessages } from './scan.js'
+} from './read'
+export { type ScanOptions, type ScanResult, stepScan, stepScanWithMessages } from './scan'

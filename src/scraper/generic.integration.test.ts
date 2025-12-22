@@ -7,8 +7,8 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { scrapeGeneric } from './generic.js'
-import { HttpRecorder } from './test-support/http-recorder.js'
+import { scrapeGeneric } from './generic'
+import { HttpRecorder } from './test-support/http-recorder'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { classifyUrl, extractGoogleMapsCoords, isActivityUrl } from './url-classifier.js'
+import { classifyUrl, extractGoogleMapsCoords, isActivityUrl } from './url-classifier'
 
 describe('URL Classifier', () => {
   describe('classifyUrl', () => {

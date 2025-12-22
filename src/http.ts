@@ -5,7 +5,7 @@
  * around Bun's type system conflicts with globalThis.Response.
  */
 
-import type { Result } from './types.js'
+import type { Result } from './types'
 
 /**
  * Check if running in CI environment.

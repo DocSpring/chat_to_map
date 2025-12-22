@@ -5,8 +5,8 @@
  * and extract activity/location details.
  */
 
-import { generateClassifierCacheKey } from '../cache/key.js'
-import { DEFAULT_CACHE_TTL_SECONDS } from '../cache/types.js'
+import { generateClassifierCacheKey } from '../cache/key'
+import { DEFAULT_CACHE_TTL_SECONDS } from '../cache/types'
 import type {
   ActivityCategory,
   CandidateMessage,
@@ -14,28 +14,28 @@ import type {
   ClassifierConfig,
   ResponseCache,
   Result
-} from '../types.js'
-import { DEFAULT_MODELS } from './models.js'
+} from '../types'
+import { DEFAULT_MODELS } from './models'
 import {
   buildClassificationPrompt,
   type ParsedClassification,
   parseClassificationResponse
-} from './prompt.js'
-import { callProviderWithFallbacks } from './providers.js'
-import { countTokens, MAX_BATCH_TOKENS } from './tokenizer.js'
+} from './prompt'
+import { callProviderWithFallbacks } from './providers'
+import { countTokens, MAX_BATCH_TOKENS } from './tokenizer'
 
 export {
   createSmartBatches,
   createTokenAwareBatches,
   groupCandidatesByProximity
-} from './batching.js'
-export type { ResolvedModel } from './models.js'
-export { getRequiredApiKeyEnvVar, getValidModelIds, resolveModel } from './models.js'
+} from './batching'
+export type { ResolvedModel } from './models'
+export { getRequiredApiKeyEnvVar, getValidModelIds, resolveModel } from './models'
 export {
   buildClassificationPrompt,
   type ClassificationContext,
   parseClassificationResponse
-} from './prompt.js'
+} from './prompt'
 
 const DEFAULT_BATCH_SIZE = 10
 

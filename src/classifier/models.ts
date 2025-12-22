@@ -4,7 +4,7 @@
  * Maps simple model IDs to providers and API model names.
  */
 
-import type { ClassifierProvider } from '../types.js'
+import type { ClassifierProvider } from '../types'
 
 /**
  * Model resolution result.

@@ -10,8 +10,8 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import type { ActivityCategory, ClassifiedActivity } from '../types/classifier.js'
-import { clusterActivities } from './index.js'
+import type { ActivityCategory, ClassifiedActivity } from '../types/classifier'
+import { clusterActivities } from './index'
 
 /**
  * Helper to create a ClassifiedActivity for testing.

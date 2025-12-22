@@ -8,15 +8,15 @@
  * @license AGPL-3.0
  */
 
-import { parseCliArgs } from './cli/args.js'
-import { cmdAnalyze } from './cli/commands/analyze.js'
-import { cmdCandidates } from './cli/commands/candidates.js'
-import { cmdList } from './cli/commands/list.js'
-import { cmdParse } from './cli/commands/parse.js'
-import { cmdPreview } from './cli/commands/preview.js'
-import { cmdScan } from './cli/commands/scan.js'
-import { cmdScrape } from './cli/commands/scrape.js'
-import { createLogger } from './cli/logger.js'
+import { parseCliArgs } from './cli/args'
+import { cmdAnalyze } from './cli/commands/analyze'
+import { cmdCandidates } from './cli/commands/candidates'
+import { cmdList } from './cli/commands/list'
+import { cmdParse } from './cli/commands/parse'
+import { cmdPreview } from './cli/commands/preview'
+import { cmdScan } from './cli/commands/scan'
+import { cmdScrape } from './cli/commands/scrape'
+import { createLogger } from './cli/logger'
 
 async function main(): Promise<void> {
   const args = parseCliArgs()

@@ -10,7 +10,7 @@
  */
 
 // Cache module
-export type { CachedResponse, CacheKeyComponents, ResponseCache } from './cache/index.js'
+export type { CachedResponse, CacheKeyComponents, ResponseCache } from './cache/index'
 export {
   DEFAULT_CACHE_TTL_SECONDS,
   FilesystemCache,
@@ -18,10 +18,10 @@ export {
   generateClassifierCacheKey,
   generateEmbeddingCacheKey,
   generateGeocodeCacheKey
-} from './cache/index.js'
+} from './cache/index'
 
 // Classifier module
-export type { ResolvedModel } from './classifier/index.js'
+export type { ResolvedModel } from './classifier/index'
 export {
   buildClassificationPrompt,
   type ClassificationContext,
@@ -34,7 +34,8 @@ export {
   groupCandidatesByProximity,
   parseClassificationResponse,
   resolveModel
-} from './classifier/index.js'
+} from './classifier/index'
+
 // Export module
 export {
   exportToCSV,
@@ -43,9 +44,10 @@ export {
   exportToMapHTML,
   exportToPDF,
   parseJSON
-} from './export/index.js'
+} from './export/index'
+
 // Extraction module (heuristics + embeddings)
-export type { ExtractCandidatesConfig, ExtractCandidatesResult } from './extraction/index.js'
+export type { ExtractCandidatesConfig, ExtractCandidatesResult } from './extraction/index'
 export {
   ACTIVITY_KEYWORDS,
   ACTIVITY_PATTERNS,
@@ -75,7 +77,7 @@ export {
   isSocialUrl,
   loadQueryEmbeddings,
   SUGGESTION_QUERIES
-} from './extraction/index.js'
+} from './extraction/index'
 
 // Geocoder module
 export {
@@ -84,7 +86,7 @@ export {
   filterGeocoded,
   geocodeActivities,
   geocodeLocation
-} from './geocoder/index.js'
+} from './geocoder/index'
 
 // Parser module
 export {
@@ -97,14 +99,14 @@ export {
   parseIMessageChatStream,
   parseWhatsAppChat,
   parseWhatsAppChatStream
-} from './parser/index.js'
+} from './parser/index'
 
 // Scanner module (zero API cost heuristic scanning)
-export type { QuickScanOptions, QuickScanResult } from './scanner/index.js'
-export { quickScan, quickScanMessages } from './scanner/index.js'
+export type { QuickScanOptions, QuickScanResult } from './scanner/index'
+export { quickScan, quickScanMessages } from './scanner/index'
 
 // Scraper module (social media metadata extraction)
-export type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './scraper/index.js'
+export type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './scraper/index'
 export {
   buildYouTubeUrl,
   detectPlatform,
@@ -116,9 +118,9 @@ export {
   scrapeUrl,
   scrapeUrls,
   scrapeYouTube
-} from './scraper/index.js'
+} from './scraper/index'
 
-// Types
+// Types (type-only exports)
 export type {
   ActivityCategory,
   ActivityLink,
@@ -161,7 +163,10 @@ export type {
   SourceMessage,
   UrlType,
   WhatsAppFormat
-} from './types.js'
+} from './types'
+
+// Type helper functions (value exports)
+export { CATEGORY_EMOJI, formatLocation, isMappable } from './types/classifier'
 
 /**
  * Library version.

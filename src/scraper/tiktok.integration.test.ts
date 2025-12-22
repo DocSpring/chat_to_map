@@ -9,8 +9,8 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { HttpRecorder } from './test-support/http-recorder.js'
-import { resolveTikTokUrl, scrapeTikTok } from './tiktok.js'
+import { HttpRecorder } from './test-support/http-recorder'
+import { resolveTikTokUrl, scrapeTikTok } from './tiktok'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

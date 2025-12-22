@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import type { CandidateMessage, QueryType } from '../types.js'
+import type { CandidateMessage, QueryType } from '../types'
 import {
   buildClassificationPrompt,
   type ClassificationContext,
   parseClassificationResponse
-} from './prompt.js'
+} from './prompt'
 
 const TEST_CONTEXT: ClassificationContext = {
   homeCountry: 'New Zealand',

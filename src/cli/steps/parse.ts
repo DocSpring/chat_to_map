@@ -4,9 +4,9 @@
  * Parse chat content into messages with pipeline caching.
  */
 
-import { detectChatSource, parseChatWithStats } from '../../index.js'
-import type { ChatSource, ParsedMessage } from '../../types.js'
-import type { PipelineContext } from './context.js'
+import { detectChatSource, parseChatWithStats } from '../../index'
+import type { ChatSource, ParsedMessage } from '../../types'
+import type { PipelineContext } from './context'
 
 /**
  * Result of the parse step.

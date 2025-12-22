@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { buildYouTubeUrl, extractYouTubeVideoId, scrapeYouTube } from './youtube.js'
+import { buildYouTubeUrl, extractYouTubeVideoId, scrapeYouTube } from './youtube'
 
 describe('extractYouTubeVideoId', () => {
   describe('standard watch URLs', () => {

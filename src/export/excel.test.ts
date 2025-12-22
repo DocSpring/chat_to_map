@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { GeocodedActivity } from '../types.js'
+import type { GeocodedActivity } from '../types'
 
 // Mock exceljs before importing
 const mockAddRow = vi.fn().mockReturnValue({
@@ -69,7 +69,7 @@ function createActivity(
 describe('Excel Export', () => {
   describe('exportToExcel', async () => {
     // Import after mock is set up
-    const { exportToExcel } = await import('./excel.js')
+    const { exportToExcel } = await import('./excel')
 
     beforeEach(() => {
       vi.clearAllMocks()

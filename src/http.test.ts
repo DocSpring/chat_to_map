@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { HttpResponse } from './http.js'
-import { emptyResponseError, handleHttpError, handleNetworkError } from './http.js'
-import type { ApiError } from './types.js'
+import type { HttpResponse } from './http'
+import { emptyResponseError, handleHttpError, handleNetworkError } from './http'
+import type { ApiError } from './types'
 
 // Helper to assert error result and get error
 function assertError(result: { ok: boolean; error?: ApiError }): ApiError {

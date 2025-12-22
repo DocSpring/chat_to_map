@@ -5,7 +5,7 @@
  * Based on patterns proven to work in the Python prototype.
  */
 
-import type { QueryType } from '../../types.js'
+import type { QueryType } from '../../types'
 
 export interface ActivityPattern {
   readonly name: string

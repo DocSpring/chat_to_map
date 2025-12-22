@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { extractEventbriteId, scrapeEventbrite } from './eventbrite.js'
+import { extractEventbriteId, scrapeEventbrite } from './eventbrite'
 
 describe('extractEventbriteId', () => {
   describe('ticket URLs', () => {

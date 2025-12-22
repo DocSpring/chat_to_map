@@ -12,7 +12,7 @@
  * - Snaps to message boundaries
  */
 
-import type { CandidateMessage, ParsedMessage } from '../types.js'
+import type { CandidateMessage, ParsedMessage } from '../types'
 
 export const MIN_CONTEXT_CHARS = 280
 export const MIN_CONTEXT_MESSAGES = 2

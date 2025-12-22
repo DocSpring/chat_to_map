@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { quickScan, quickScanMessages } from './index.js'
+import { quickScan, quickScanMessages } from './index'
 
 describe('quickScan', () => {
   const sampleChat = `[12/15/24, 10:30:42 AM] Alice: Hey, we should check out that new restaurant downtown

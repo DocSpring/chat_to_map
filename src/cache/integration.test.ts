@@ -9,7 +9,7 @@ import { existsSync, mkdirSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CandidateMessage, ClassifiedActivity, GeocoderConfig } from '../types.js'
+import type { CandidateMessage, ClassifiedActivity, GeocoderConfig } from '../types'
 import { FilesystemCache } from './filesystem'
 
 // Base config with required fields for all tests
@@ -20,7 +20,7 @@ const BASE_CONFIG = {
 
 // Mock the http module to track API calls
 const mockFetch = vi.fn()
-vi.mock('../http.js', () => ({
+vi.mock('../http', () => ({
   httpFetch: mockFetch,
   handleHttpError: async (response: { status: number; text: () => Promise<string> }) => {
     const errorText = await response.text()
@@ -97,7 +97,7 @@ describe('Cache Integration', () => {
 
   describe('classifyMessages cache integration', () => {
     it('calls API on cache miss', async () => {
-      const { classifyMessages } = await import('../classifier/index.js')
+      const { classifyMessages } = await import('../classifier/index')
 
       const candidates = [createCandidate(1, 'We should try that new Italian restaurant!')]
 
@@ -145,7 +145,7 @@ describe('Cache Integration', () => {
     })
 
     it('skips API call on cache hit', async () => {
-      const { classifyMessages } = await import('../classifier/index.js')
+      const { classifyMessages } = await import('../classifier/index')
 
       const candidates = [createCandidate(1, 'We should try that new Italian restaurant!')]
 
@@ -212,7 +212,7 @@ describe('Cache Integration', () => {
     })
 
     it('makes new API call for different candidates', async () => {
-      const { classifyMessages } = await import('../classifier/index.js')
+      const { classifyMessages } = await import('../classifier/index')
 
       // Mock successful API response
       const createMockResponse = (id: number) => ({
@@ -273,7 +273,7 @@ describe('Cache Integration', () => {
     const messages = [{ id: 1, content: 'Test message for embedding that is long enough' }]
 
     it('calls API on cache miss', async () => {
-      const { embedMessages } = await import('../extraction/embeddings/index.js')
+      const { embedMessages } = await import('../extraction/embeddings/index')
 
       // Mock successful API response
       mockFetch.mockResolvedValueOnce({
@@ -291,7 +291,7 @@ describe('Cache Integration', () => {
     })
 
     it('skips API call on cache hit', async () => {
-      const { embedMessages } = await import('../extraction/embeddings/index.js')
+      const { embedMessages } = await import('../extraction/embeddings/index')
 
       // Mock successful API response
       mockFetch.mockResolvedValueOnce({
@@ -319,7 +319,7 @@ describe('Cache Integration', () => {
     }
 
     it('calls API on cache miss', async () => {
-      const { geocodeActivities } = await import('../geocoder/index.js')
+      const { geocodeActivities } = await import('../geocoder/index')
 
       const suggestions = [createClassifiedActivity(1, 'Try the cafe', 'Cuba Street, Wellington')]
 
@@ -344,7 +344,7 @@ describe('Cache Integration', () => {
     })
 
     it('skips API call on cache hit', async () => {
-      const { geocodeActivities } = await import('../geocoder/index.js')
+      const { geocodeActivities } = await import('../geocoder/index')
 
       const suggestions = [createClassifiedActivity(1, 'Try the cafe', 'Cuba Street, Wellington')]
 
@@ -372,7 +372,7 @@ describe('Cache Integration', () => {
     })
 
     it('makes new API call for different locations', async () => {
-      const { geocodeActivities } = await import('../geocoder/index.js')
+      const { geocodeActivities } = await import('../geocoder/index')
 
       // Mock successful API responses
       mockFetch.mockResolvedValueOnce({

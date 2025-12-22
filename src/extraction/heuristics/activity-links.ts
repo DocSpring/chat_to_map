@@ -15,8 +15,8 @@ import type {
   ParsedMessage,
   SocialPlatform,
   UrlType
-} from '../../types.js'
-import { classifyUrl } from './url-classifier.js'
+} from '../../types'
+import { classifyUrl } from './url-classifier'
 
 // ============================================================================
 // Intent Detection Constants

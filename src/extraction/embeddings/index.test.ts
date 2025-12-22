@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { EmbeddedMessage, ParsedMessage } from '../../types.js'
+import type { EmbeddedMessage, ParsedMessage } from '../../types'
 
 // Mock httpFetch before importing - explicitly re-export other functions
 const mockFetch = vi.fn()
-vi.mock('../../http.js', () => ({
+vi.mock('../../http', () => ({
   httpFetch: mockFetch,
   // Re-implement the helper functions to avoid vi.importActual
   handleHttpError: async (response: {
@@ -82,7 +82,7 @@ describe('Embeddings Module', () => {
   })
 
   describe('embedMessages', async () => {
-    const { embedMessages } = await import('./index.js')
+    const { embedMessages } = await import('./index')
 
     it('calls OpenAI API with correct parameters', async () => {
       mockFetch.mockResolvedValue({
@@ -225,7 +225,7 @@ describe('Embeddings Module', () => {
   })
 
   describe('embedQueries', async () => {
-    const { embedQueries } = await import('./index.js')
+    const { embedQueries } = await import('./index')
 
     it('embeds query strings', async () => {
       mockFetch.mockResolvedValue({
@@ -246,7 +246,7 @@ describe('Embeddings Module', () => {
   })
 
   describe('findSemanticCandidates', async () => {
-    const { findSemanticCandidates } = await import('./index.js')
+    const { findSemanticCandidates } = await import('./index')
 
     function createEmbeddedMessage(id: number, embedding: number[]): EmbeddedMessage {
       return {
@@ -362,7 +362,7 @@ describe('Embeddings Module', () => {
   })
 
   describe('extractCandidatesByEmbeddings', async () => {
-    const { extractCandidatesByEmbeddings } = await import('./index.js')
+    const { extractCandidatesByEmbeddings } = await import('./index')
 
     it('performs full semantic search pipeline', async () => {
       // Mock embedding responses for messages (queries use pre-computed embeddings)
@@ -419,7 +419,7 @@ describe('Embeddings Module', () => {
   })
 
   describe('DEFAULT_ACTIVITY_QUERIES', async () => {
-    const { DEFAULT_ACTIVITY_QUERIES } = await import('./index.js')
+    const { DEFAULT_ACTIVITY_QUERIES } = await import('./index')
 
     it('contains activity-related queries', () => {
       expect(DEFAULT_ACTIVITY_QUERIES.length).toBeGreaterThan(0)

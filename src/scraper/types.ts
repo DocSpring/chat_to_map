@@ -4,7 +4,7 @@
  * Types for social media metadata scraping.
  */
 
-import type { SocialPlatform } from '../types.js'
+import type { SocialPlatform } from '../types'
 
 /**
  * Fetch function type for dependency injection.

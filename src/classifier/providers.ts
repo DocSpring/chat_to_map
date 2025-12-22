@@ -4,9 +4,9 @@
  * HTTP clients for Anthropic, OpenAI, and OpenRouter APIs.
  */
 
-import { emptyResponseError, handleHttpError, handleNetworkError, httpFetch } from '../http.js'
-import type { ClassifierConfig, ProviderConfig, Result } from '../types.js'
-import { DEFAULT_MODELS } from './models.js'
+import { emptyResponseError, handleHttpError, handleNetworkError, httpFetch } from '../http'
+import type { ClassifierConfig, ProviderConfig, Result } from '../types'
+import { DEFAULT_MODELS } from './models'
 
 interface AnthropicResponse {
   content: Array<{ type: string; text: string }>

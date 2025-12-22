@@ -5,9 +5,9 @@
  * Zero API cost - no AI calls, no API keys required.
  */
 
-import { extractCandidatesByHeuristics } from '../extraction/heuristics/index.js'
-import { parseChatWithStats } from '../parser/index.js'
-import type { CandidateMessage, ChatSource, ExtractorOptions, ParserOptions } from '../types.js'
+import { extractCandidatesByHeuristics } from '../extraction/heuristics/index'
+import { parseChatWithStats } from '../parser/index'
+import type { CandidateMessage, ChatSource, ExtractorOptions, ParserOptions } from '../types'
 
 /**
  * Result of a quick scan operation.

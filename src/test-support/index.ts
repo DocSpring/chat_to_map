@@ -4,10 +4,10 @@
  * Utilities for testing that require special handling of external dependencies.
  */
 
-import type { GeocodedActivity } from '../types/geocoder.js'
-import type { ActivityCategory, CandidateMessage, ClassifiedActivity } from '../types.js'
+import type { ActivityCategory, CandidateMessage, ClassifiedActivity } from '../types'
+import type { GeocodedActivity } from '../types/geocoder'
 
-export { FixtureCache } from './fixture-cache.js'
+export { FixtureCache } from './fixture-cache'
 
 /**
  * Create a CandidateMessage with default values for testing.

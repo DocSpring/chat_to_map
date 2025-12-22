@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { ParsedMessage } from '../../types.js'
-import { extractCandidatesByHeuristics } from './index.js'
+import type { ParsedMessage } from '../../types'
+import { extractCandidatesByHeuristics } from './index'
 
 function createMessage(
   id: number,

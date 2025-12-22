@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { CandidateMessage } from '../types.js'
-import { createSmartBatches, groupCandidatesByProximity } from './batching.js'
+import type { CandidateMessage } from '../types'
+import { createSmartBatches, groupCandidatesByProximity } from './batching'
 
 function createCandidate(id: number): CandidateMessage {
   return {

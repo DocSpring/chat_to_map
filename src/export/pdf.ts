@@ -10,7 +10,7 @@ import {
   formatLocation,
   type GeocodedActivity,
   type PDFConfig
-} from '../types.js'
+} from '../types'
 
 // PDFKit uses CommonJS exports, so we need to handle it carefully
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports

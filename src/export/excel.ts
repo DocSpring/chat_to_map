@@ -5,8 +5,8 @@
  * This is an optional feature - if exceljs is not available, it throws a clear error.
  */
 
-import { formatLocation, type GeocodedActivity } from '../types.js'
-import { formatDate, googleMapsLink } from './utils.js'
+import { formatLocation, type GeocodedActivity } from '../types'
+import { formatDate, googleMapsLink } from './utils'
 
 // Try to import exceljs dynamically since it's a peer dependency
 let ExcelJS: typeof import('exceljs') | null = null

@@ -11,9 +11,9 @@
  * Short URLs (vt.tiktok.com) redirect to full URLs with video IDs.
  */
 
-import { guardedFetch } from '../http.js'
-import type { FetchFn, ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types.js'
-import { extractHashtags, getNestedValue, networkError, wrapParseResult } from './utils.js'
+import { guardedFetch } from '../http'
+import type { FetchFn, ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types'
+import { extractHashtags, getNestedValue, networkError, wrapParseResult } from './utils'
 
 /**
  * Minimal response interface for redirect handling.

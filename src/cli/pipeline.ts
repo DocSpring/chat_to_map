@@ -7,7 +7,7 @@
 import { writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
-import { FilesystemCache } from '../cache/filesystem.js'
+import { FilesystemCache } from '../cache/filesystem'
 import {
   classifyMessages,
   exportToCSV,
@@ -20,7 +20,7 @@ import {
   geocodeActivities,
   parseChatWithStats,
   VERSION
-} from '../index.js'
+} from '../index'
 import type {
   CandidateMessage,
   ClassifiedActivity,
@@ -28,11 +28,11 @@ import type {
   GeocodedActivity,
   GeocoderConfig,
   ParsedMessage
-} from '../types.js'
-import type { CLIArgs } from './args.js'
-import { ensureDir, readInputFile } from './io.js'
-import type { Logger } from './logger.js'
-import { resolveContext, resolveModelConfig } from './model.js'
+} from '../types'
+import type { CLIArgs } from './args'
+import { ensureDir, readInputFile } from './io'
+import type { Logger } from './logger'
+import { resolveContext, resolveModelConfig } from './model'
 
 export async function runParse(
   input: string,

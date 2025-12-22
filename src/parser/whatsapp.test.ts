@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectFormat, parseWhatsAppChat } from './whatsapp.js'
+import { detectFormat, parseWhatsAppChat } from './whatsapp'
 
 describe('WhatsApp Parser', () => {
   describe('detectFormat', () => {

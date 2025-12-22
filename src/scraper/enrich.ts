@@ -10,10 +10,10 @@
  * - Caching via ResponseCache interface
  */
 
-import type { ResponseCache } from '../cache/types.js'
-import type { CandidateMessage } from '../types.js'
-import { scrapeUrl } from './index.js'
-import type { ScrapedMetadata, ScraperConfig } from './types.js'
+import type { ResponseCache } from '../cache/types'
+import type { CandidateMessage } from '../types'
+import { scrapeUrl } from './index'
+import type { ScrapedMetadata, ScraperConfig } from './types'
 
 const DEFAULT_TIMEOUT_MS = 4000
 const DEFAULT_CONCURRENCY = 5

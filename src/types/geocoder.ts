@@ -4,7 +4,7 @@
  * Types for geocoding and location data.
  */
 
-import type { ClassifiedActivity } from './classifier.js'
+import type { ClassifiedActivity } from './classifier'
 
 export type GeocodeSource = 'google_maps_url' | 'google_geocoding' | 'place_search'
 

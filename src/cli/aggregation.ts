@@ -13,7 +13,7 @@ import {
   formatLocation,
   type GeocodedActivity,
   type SourceMessage
-} from '../types.js'
+} from '../types'
 
 /**
  * Normalize a string for comparison (lowercase, trim, collapse whitespace).

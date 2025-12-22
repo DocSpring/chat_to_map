@@ -4,7 +4,7 @@
  * Export activities to JSON format with metadata.
  */
 
-import type { ExportMetadata, GeocodedActivity } from '../types.js'
+import type { ExportMetadata, GeocodedActivity } from '../types'
 
 interface JsonExport {
   metadata: ExportMetadata

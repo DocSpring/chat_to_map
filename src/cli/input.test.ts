@@ -6,7 +6,7 @@ import {
   getCachedExtraction,
   getInputMetadata,
   readInputFileWithCache
-} from './steps/read.js'
+} from './steps/read'
 
 const TEST_DIR = './tmp/test-input'
 const TEST_CACHE_DIR = './tmp/test-input-cache'

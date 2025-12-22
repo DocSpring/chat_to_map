@@ -6,10 +6,10 @@
  */
 
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CandidateMessage, ParsedMessage, QueryType } from '../types.js'
-import * as embeddingsModule from './embeddings/index.js'
-import * as heuristicsModule from './heuristics/index.js'
-import { deduplicateAgreements } from './index.js'
+import type { CandidateMessage, ParsedMessage, QueryType } from '../types'
+import * as embeddingsModule from './embeddings/index'
+import * as heuristicsModule from './heuristics/index'
+import { deduplicateAgreements } from './index'
 
 // Create spies after importing
 const mockExtractByEmbeddings = vi.spyOn(embeddingsModule, 'extractCandidatesByEmbeddings')
@@ -68,7 +68,7 @@ describe('extractCandidates (combined)', () => {
 
   describe('heuristics only (no embeddings config)', () => {
     it('returns heuristics results when no embeddings config provided', async () => {
-      const { extractCandidates } = await import('./index.js')
+      const { extractCandidates } = await import('./index')
 
       mockExtractByHeuristics.mockReturnValue({
         candidates: [createCandidate(1, 'We should try this restaurant', 0.8, 'regex')],
@@ -91,7 +91,7 @@ describe('extractCandidates (combined)', () => {
 
   describe('with embeddings config', () => {
     it('calls both extractors and merges results', async () => {
-      const { extractCandidates } = await import('./index.js')
+      const { extractCandidates } = await import('./index')
 
       mockExtractByHeuristics.mockReturnValue({
         candidates: [createCandidate(1, 'We should try this restaurant', 0.8, 'regex')],
@@ -123,7 +123,7 @@ describe('extractCandidates (combined)', () => {
     })
 
     it('deduplicates by messageId, keeping highest confidence', async () => {
-      const { extractCandidates } = await import('./index.js')
+      const { extractCandidates } = await import('./index')
 
       // Same message found by both, heuristics has lower confidence
       mockExtractByHeuristics.mockReturnValue({
@@ -156,7 +156,7 @@ describe('extractCandidates (combined)', () => {
     })
 
     it('keeps heuristics result when it has higher confidence', async () => {
-      const { extractCandidates } = await import('./index.js')
+      const { extractCandidates } = await import('./index')
 
       // Heuristics has higher confidence
       mockExtractByHeuristics.mockReturnValue({
@@ -188,7 +188,7 @@ describe('extractCandidates (combined)', () => {
     })
 
     it('sorts merged results by confidence descending', async () => {
-      const { extractCandidates } = await import('./index.js')
+      const { extractCandidates } = await import('./index')
 
       mockExtractByHeuristics.mockReturnValue({
         candidates: [
@@ -225,7 +225,7 @@ describe('extractCandidates (combined)', () => {
     })
 
     it('returns embeddings error if embeddings fails', async () => {
-      const { extractCandidates } = await import('./index.js')
+      const { extractCandidates } = await import('./index')
 
       mockExtractByHeuristics.mockReturnValue({
         candidates: [],
@@ -252,7 +252,7 @@ describe('extractCandidates (combined)', () => {
     })
 
     it('counts embeddings-only matches correctly', async () => {
-      const { extractCandidates } = await import('./index.js')
+      const { extractCandidates } = await import('./index')
 
       // Heuristics finds message 1
       mockExtractByHeuristics.mockReturnValue({
@@ -296,7 +296,7 @@ describe('extractCandidates (combined)', () => {
 
   describe('agreement deduplication in extractCandidates', () => {
     it('removes agreement candidates within suggestion context window', async () => {
-      const { extractCandidates } = await import('./index.js')
+      const { extractCandidates } = await import('./index')
 
       mockExtractByHeuristics.mockReturnValue({
         candidates: [
@@ -324,7 +324,7 @@ describe('extractCandidates (combined)', () => {
     })
 
     it('keeps agreements outside suggestion context window', async () => {
-      const { extractCandidates } = await import('./index.js')
+      const { extractCandidates } = await import('./index')
 
       // Create many filler messages to exceed context window
       const fillerMessages = Array.from({ length: 10 }, (_, i) =>

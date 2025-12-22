@@ -6,10 +6,10 @@
  */
 
 import { basename } from 'node:path'
-import { VERSION } from '../../index.js'
-import type { CLIArgs } from '../args.js'
-import type { Logger } from '../logger.js'
-import { initContext, stepParse, stepScan } from '../steps/index.js'
+import { VERSION } from '../../index'
+import type { CLIArgs } from '../args'
+import type { Logger } from '../logger'
+import { initContext, stepParse, stepScan } from '../steps/index'
 
 /**
  * Format date for display.

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import type { ClassifiedActivity, GeocodedActivity } from '../types.js'
+import type { ClassifiedActivity, GeocodedActivity } from '../types'
 import {
   aggregateActivities,
   aggregateGeocodedActivities,
   filterByMentionCount,
   getMostWanted
-} from './aggregation.js'
+} from './aggregation'
 
 function createActivity(
   id: number,

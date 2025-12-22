@@ -4,8 +4,8 @@
  * Export suggestions to CSV format.
  */
 
-import { formatLocation, type GeocodedActivity } from '../types.js'
-import { formatDate, formatTime, googleMapsLink } from './utils.js'
+import { formatLocation, type GeocodedActivity } from '../types'
+import { formatDate, formatTime, googleMapsLink } from './utils'
 
 const CSV_COLUMNS = [
   'id',

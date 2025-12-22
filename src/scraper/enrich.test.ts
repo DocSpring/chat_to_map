@@ -3,14 +3,14 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import type { CandidateMessage } from '../types.js'
+import type { CandidateMessage } from '../types'
 import {
   enrichCandidatesWithMetadata,
   extractUrlsFromCandidates,
   extractUrlsFromText,
   injectMetadataIntoText
-} from './enrich.js'
-import type { ScrapedMetadata } from './types.js'
+} from './enrich'
+import type { ScrapedMetadata } from './types'
 
 describe('extractUrlsFromText', () => {
   it('extracts http URLs', () => {

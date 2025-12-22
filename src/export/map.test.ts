@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { GeocodedActivity } from '../types.js'
-import { exportToMapHTML } from './map-html.js'
+import type { GeocodedActivity } from '../types'
+import { exportToMapHTML } from './map-html'
 
 function createActivity(
   id: number,
@@ -53,7 +53,7 @@ describe('Map HTML Export', () => {
       const html = exportToMapHTML(activities)
 
       expect(html).toContain('leaflet.css')
-      expect(html).toContain('leaflet.js')
+      expect(html).toContain('leaflet')
     })
 
     it('includes title in document', () => {

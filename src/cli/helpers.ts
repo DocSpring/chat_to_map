@@ -4,10 +4,10 @@
  * Shared utilities for CLI commands.
  */
 
-import { parseChatWithStats, quickScan } from '../index.js'
-import { type ActivityCategory, CATEGORY_EMOJI, type ParsedMessage } from '../types.js'
-import { readInputFile } from './io.js'
-import type { Logger } from './logger.js'
+import { parseChatWithStats, quickScan } from '../index'
+import { type ActivityCategory, CATEGORY_EMOJI, type ParsedMessage } from '../types'
+import { readInputFile } from './io'
+import type { Logger } from './logger'
 
 // ============================================================================
 // Category Display

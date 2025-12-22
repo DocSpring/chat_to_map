@@ -12,16 +12,16 @@ import type {
   ExtractorResult,
   ParsedMessage,
   QueryType
-} from '../../types.js'
-import { buildContextString, deduplicateAgreements, getMessageContext } from '../context-window.js'
-import { HIGH_SIGNAL_KEYWORDS } from './activity-links.js'
+} from '../../types'
+import { buildContextString, deduplicateAgreements, getMessageContext } from '../context-window'
+import { HIGH_SIGNAL_KEYWORDS } from './activity-links'
 import {
   ACTIVITY_KEYWORDS,
   ACTIVITY_PATTERNS,
   EXCLUSION_PATTERNS,
   URL_CONFIDENCE_MAP
-} from './patterns.js'
-import { classifyUrl, isActivityUrl, isSocialUrl } from './url-classifier.js'
+} from './patterns'
+import { classifyUrl, isActivityUrl, isSocialUrl } from './url-classifier'
 
 export {
   type ActivityLinkOptions,
@@ -30,14 +30,14 @@ export {
   extractActivityLinks,
   HIGH_SIGNAL_KEYWORDS,
   SUGGESTION_KEYWORDS
-} from './activity-links.js'
-export { ACTIVITY_KEYWORDS, ACTIVITY_PATTERNS, EXCLUSION_PATTERNS } from './patterns.js'
+} from './activity-links'
+export { ACTIVITY_KEYWORDS, ACTIVITY_PATTERNS, EXCLUSION_PATTERNS } from './patterns'
 export {
   classifyUrl,
   extractGoogleMapsCoords,
   isActivityUrl,
   isSocialUrl
-} from './url-classifier.js'
+} from './url-classifier'
 
 const DEFAULT_MIN_CONFIDENCE = 0.5
 const ACTIVITY_KEYWORD_BOOST = 0.15

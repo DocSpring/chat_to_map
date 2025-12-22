@@ -7,7 +7,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { FetchFn } from '../types.js'
+import type { FetchFn } from '../types'
 
 /**
  * Minimal response interface to work around Bun's Response type conflicts.

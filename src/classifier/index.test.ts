@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { CandidateMessage, ClassifiedActivity } from '../types.js'
+import type { CandidateMessage, ClassifiedActivity } from '../types'
 
 // Base config with required fields for all tests
 const BASE_CONFIG = {
@@ -9,7 +9,7 @@ const BASE_CONFIG = {
 
 // Mock httpFetch before importing - explicitly re-export other functions
 const mockFetch = vi.fn()
-vi.mock('../http.js', () => ({
+vi.mock('../http', () => ({
   httpFetch: mockFetch,
   // Re-implement the helper functions to avoid vi.importActual
   handleHttpError: async (response: {
@@ -100,7 +100,7 @@ describe('Classifier Module', () => {
   })
 
   describe('classifyMessages', async () => {
-    const { classifyMessages } = await import('./index.js')
+    const { classifyMessages } = await import('./index')
 
     it('calls Anthropic API with correct parameters', async () => {
       mockFetch.mockResolvedValue({
@@ -605,7 +605,7 @@ describe('Classifier Module', () => {
   })
 
   describe('filterActivities', async () => {
-    const { filterActivities } = await import('./index.js')
+    const { filterActivities } = await import('./index')
 
     function createActivity(isActivity: boolean, activityScore: number): ClassifiedActivity {
       return {
@@ -668,7 +668,7 @@ describe('Classifier Module', () => {
   })
 
   describe('groupByCategory', async () => {
-    const { groupByCategory } = await import('./index.js')
+    const { groupByCategory } = await import('./index')
 
     function createActivity(category: string): ClassifiedActivity {
       return {

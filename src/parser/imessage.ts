@@ -15,8 +15,8 @@
  * Message content
  */
 
-import type { ParsedMessage } from '../types.js'
-import { normalizeApostrophes } from './index.js'
+import type { ParsedMessage } from '../types'
+import { normalizeApostrophes } from './index'
 
 // Timestamp line pattern: Apr 02, 2025  8:52:29 AM (optional read receipt)
 const TIMESTAMP_PATTERN =

@@ -6,15 +6,15 @@
 
 import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
-import { FilesystemCache } from '../../cache/filesystem.js'
-import { buildClassificationPrompt } from '../../classifier/prompt.js'
-import { classifyMessages, VERSION } from '../../index.js'
-import { scrapeAndEnrichCandidates } from '../../scraper/enrich.js'
-import { formatLocation } from '../../types.js'
-import type { CLIArgs } from '../args.js'
-import { formatDate, getCategoryEmoji, runQuickScanWithLogs, truncate } from '../helpers.js'
-import type { Logger } from '../logger.js'
-import { resolveContext, resolveModelConfig } from '../model.js'
+import { FilesystemCache } from '../../cache/filesystem'
+import { buildClassificationPrompt } from '../../classifier/prompt'
+import { classifyMessages, VERSION } from '../../index'
+import { scrapeAndEnrichCandidates } from '../../scraper/enrich'
+import { formatLocation } from '../../types'
+import type { CLIArgs } from '../args'
+import { formatDate, getCategoryEmoji, runQuickScanWithLogs, truncate } from '../helpers'
+import type { Logger } from '../logger'
+import { resolveContext, resolveModelConfig } from '../model'
 
 export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
   if (!args.input) {

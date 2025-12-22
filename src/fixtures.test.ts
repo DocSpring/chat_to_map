@@ -8,8 +8,8 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { extractCandidatesByHeuristics } from './extraction/heuristics/index.js'
-import { parseWhatsAppChat } from './parser/whatsapp.js'
+import { extractCandidatesByHeuristics } from './extraction/heuristics/index'
+import { parseWhatsAppChat } from './parser/whatsapp'
 
 const FIXTURES_DIR = join(__dirname, '..', 'tests', 'fixtures')
 

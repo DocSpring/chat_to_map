@@ -4,7 +4,7 @@
  * AI prompt for classifying candidate messages as activities.
  */
 
-import type { CandidateMessage } from '../types.js'
+import type { CandidateMessage } from '../types'
 
 /**
  * Format context for display. Context already includes target marked with >>>.

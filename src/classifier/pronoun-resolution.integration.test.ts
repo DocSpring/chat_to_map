@@ -8,10 +8,10 @@
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { extractCandidatesByHeuristics } from '../extraction/heuristics/index.js'
-import { parseWhatsAppChat } from '../parser/whatsapp.js'
-import { FixtureCache } from '../test-support/fixture-cache.js'
-import { classifyMessages } from './index.js'
+import { extractCandidatesByHeuristics } from '../extraction/heuristics/index'
+import { parseWhatsAppChat } from '../parser/whatsapp'
+import { FixtureCache } from '../test-support/fixture-cache'
+import { classifyMessages } from './index'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)

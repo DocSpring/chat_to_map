@@ -7,8 +7,8 @@
  * Note: Airbnb redirects based on geo, so we follow redirects.
  */
 
-import { guardedFetch } from '../http.js'
-import type { FetchFn, ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types.js'
+import { guardedFetch } from '../http'
+import type { FetchFn, ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types'
 import {
   createHtmlFetchHeaders,
   DEFAULT_USER_AGENT,
@@ -18,7 +18,7 @@ import {
   handleHttpError,
   networkError,
   wrapParseResult
-} from './utils.js'
+} from './utils'
 
 /**
  * Extract listing ID from an Airbnb URL.

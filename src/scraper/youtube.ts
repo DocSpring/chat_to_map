@@ -9,9 +9,9 @@
  * - JSON-LD structured data
  */
 
-import { guardedFetch } from '../http.js'
-import type { FetchFn, ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types.js'
-import { extractHashtags, getNestedValue, networkError, wrapParseResult } from './utils.js'
+import { guardedFetch } from '../http'
+import type { FetchFn, ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './types'
+import { extractHashtags, getNestedValue, networkError, wrapParseResult } from './utils'
 
 /**
  * Full response interface for content fetching.

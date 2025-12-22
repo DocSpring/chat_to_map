@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { ParsedMessage } from '../../types.js'
-import { extractActivityLinks } from './activity-links.js'
+import type { ParsedMessage } from '../../types'
+import { extractActivityLinks } from './activity-links'
 
 /**
  * Create a mock parsed message for testing.

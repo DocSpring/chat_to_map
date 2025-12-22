@@ -4,7 +4,7 @@
  * Types for export formats (CSV, Excel, JSON, Map, PDF).
  */
 
-import type { ActivityCategory } from './classifier.js'
+import type { ActivityCategory } from './classifier'
 
 export interface MapConfig {
   readonly title?: string

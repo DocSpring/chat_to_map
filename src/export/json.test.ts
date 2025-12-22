@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { GeocodedActivity } from '../types.js'
-import { exportToJSON } from './json.js'
+import type { GeocodedActivity } from '../types'
+import { exportToJSON } from './json'
 
 function createActivity(
   id: number,

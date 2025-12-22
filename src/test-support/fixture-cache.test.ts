@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { FixtureCache } from './fixture-cache.js'
+import { FixtureCache } from './fixture-cache'
 
 describe('FixtureCache', () => {
   let tempDir: string

@@ -5,7 +5,7 @@ import {
   parseChat,
   parseChatStream,
   parseChatWithStats
-} from './index.js'
+} from './index'
 
 describe('Parser Module', () => {
   describe('normalizeApostrophes', () => {
