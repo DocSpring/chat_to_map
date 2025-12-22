@@ -30,12 +30,8 @@ describe('CLI Args', () => {
     })
 
     it('parses short flags for analyze', () => {
-      const args = parseArgs(
-        ['analyze', 'chat.txt', '-c', 'NZ', '-o', './out', '-r', 'NZ', '-q'],
-        false
-      )
+      const args = parseArgs(['analyze', 'chat.txt', '-c', 'NZ', '-o', './out', '-q'], false)
       expect(args.outputDir).toBe('./out')
-      expect(args.region).toBe('NZ')
       expect(args.quiet).toBe(true)
     })
 

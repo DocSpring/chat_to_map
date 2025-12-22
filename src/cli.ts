@@ -9,11 +9,14 @@
  */
 
 import { parseCliArgs } from './cli/args.js'
-import { cmdAnalyzeCached } from './cli/cached-pipeline.js'
-import { cmdCandidates, cmdParse, cmdPreview, cmdScan } from './cli/commands.js'
-import { cmdList } from './cli/list.js'
+import { cmdAnalyze } from './cli/commands/analyze.js'
+import { cmdCandidates } from './cli/commands/candidates.js'
+import { cmdList } from './cli/commands/list.js'
+import { cmdParse } from './cli/commands/parse.js'
+import { cmdPreview } from './cli/commands/preview.js'
+import { cmdScan } from './cli/commands/scan.js'
+import { cmdScrape } from './cli/commands/scrape.js'
 import { createLogger } from './cli/logger.js'
-import { cmdScrape } from './cli/scrape.js'
 
 async function main(): Promise<void> {
   const args = parseCliArgs()
@@ -22,7 +25,7 @@ async function main(): Promise<void> {
   try {
     switch (args.command) {
       case 'analyze':
-        await cmdAnalyzeCached(args, logger)
+        await cmdAnalyze(args, logger)
         break
 
       case 'parse':

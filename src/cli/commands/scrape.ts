@@ -7,16 +7,15 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
-import { FilesystemCache } from '../cache/filesystem.js'
-import { extractCandidatesByHeuristics, VERSION } from '../index.js'
-import { extractUrlsFromCandidates } from '../scraper/enrich.js'
-import { scrapeUrl } from '../scraper/index.js'
-import type { ScrapedMetadata } from '../scraper/types.js'
-import type { CandidateMessage } from '../types.js'
-import type { CLIArgs } from './args.js'
-import type { Logger } from './logger.js'
-import { runParse } from './pipeline.js'
-import { truncate } from './preview.js'
+import { FilesystemCache } from '../../cache/filesystem.js'
+import { extractCandidatesByHeuristics, VERSION } from '../../index.js'
+import { extractUrlsFromCandidates } from '../../scraper/enrich.js'
+import { scrapeUrl } from '../../scraper/index.js'
+import type { ScrapedMetadata } from '../../scraper/types.js'
+import type { CandidateMessage } from '../../types.js'
+import type { CLIArgs } from '../args.js'
+import { runParseWithLogs, truncate } from '../helpers.js'
+import type { Logger } from '../logger.js'
 
 interface ScrapeResult {
   url: string
@@ -50,7 +49,12 @@ async function loadCandidatesForScrape(args: CLIArgs, logger: Logger): Promise<C
     return candidates
   }
 
-  const messages = await runParse(args.input, args, logger)
+  // Parse the input file
+  const { messages } = await runParseWithLogs(args.input, logger, {
+    maxMessages: args.maxMessages
+  })
+
+  // Extract candidates
   logger.log('\n🔍 Extracting candidates (heuristics only)...')
   const result = extractCandidatesByHeuristics(messages, {
     minConfidence: args.minConfidence

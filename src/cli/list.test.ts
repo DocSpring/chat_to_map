@@ -1,7 +1,7 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { displayProcessedChats, listProcessedChats } from './list.js'
+import { displayProcessedChats, listProcessedChats } from './commands/list.js'
 import type { Logger } from './logger.js'
 
 /**

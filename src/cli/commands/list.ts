@@ -6,7 +6,7 @@
 
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { Logger } from './logger.js'
+import type { Logger } from '../logger.js'
 
 /**
  * Metadata from a processed chat result.

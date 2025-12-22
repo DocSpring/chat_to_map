@@ -160,8 +160,7 @@ export async function runGeocode(
 
   const config: GeocoderConfig = {
     apiKey,
-    regionBias: args.region,
-    defaultCountry: args.region === 'NZ' ? 'New Zealand' : undefined
+    defaultCountry: args.homeCountry
   }
 
   const results = await geocodeActivities(suggestions, config)

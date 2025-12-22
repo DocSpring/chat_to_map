@@ -1,11 +1,11 @@
 /**
- * CLI Preview and Scan Helpers
+ * CLI Helpers
  *
- * Shared utilities for preview and scan commands.
+ * Shared utilities for CLI commands.
  */
 
-import { quickScan } from '../index.js'
-import { type ActivityCategory, CATEGORY_EMOJI } from '../types.js'
+import { parseChatWithStats, quickScan } from '../index.js'
+import { type ActivityCategory, CATEGORY_EMOJI, type ParsedMessage } from '../types.js'
 import { readInputFile } from './io.js'
 import type { Logger } from './logger.js'
 
@@ -69,4 +69,39 @@ export async function runQuickScanWithLogs(
   }
 
   return { scanResult, hasNoCandidates: false }
+}
+
+// ============================================================================
+// Parse with Logging
+// ============================================================================
+
+export interface ParseWithLogsOptions {
+  maxMessages?: number | undefined
+}
+
+export interface ParseWithLogsOutput {
+  messages: ParsedMessage[]
+  messageCount: number
+  senderCount: number
+}
+
+export async function runParseWithLogs(
+  input: string,
+  logger: Logger,
+  options?: ParseWithLogsOptions
+): Promise<ParseWithLogsOutput> {
+  logger.log('\n📝 Parsing messages...')
+  const content = await readInputFile(input)
+  const parseResult = parseChatWithStats(content)
+  const messages = options?.maxMessages
+    ? [...parseResult.messages.slice(0, options.maxMessages)]
+    : [...parseResult.messages]
+  logger.success(
+    `${parseResult.messageCount.toLocaleString()} messages from ${parseResult.senders.length} senders`
+  )
+  return {
+    messages,
+    messageCount: parseResult.messageCount,
+    senderCount: parseResult.senders.length
+  }
 }

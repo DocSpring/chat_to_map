@@ -14,7 +14,6 @@ export interface CLIArgs {
   input: string
   outputDir: string
   formats: string[]
-  region: string | undefined
   minConfidence: number
   skipGeocoding: boolean
   quiet: boolean
@@ -56,7 +55,6 @@ function createProgram(): Command {
       'Output formats: csv,excel,json,map,pdf',
       'csv,excel,json,map,pdf'
     )
-    .option('-r, --region <code>', 'Region bias for geocoding (e.g., NZ, US)')
     .option('--min-confidence <num>', 'Minimum confidence threshold', '0.5')
     .option('--skip-geocoding', 'Skip geocoding step')
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
@@ -142,7 +140,7 @@ function createProgram(): Command {
     .command('geocode')
     .description('Geocode classified activities')
     .argument('<input>', 'Classified activities JSON file')
-    .option('-r, --region <code>', 'Region bias for geocoding (e.g., NZ, US)')
+    .option('-c, --home-country <name>', 'Your home country for location disambiguation')
     .option('-o, --output <file>', 'Save geocoded activities to JSON file')
     .option('-q, --quiet', 'Minimal output')
     .option('-v, --verbose', 'Verbose output')
@@ -186,7 +184,6 @@ function buildCLIArgs(commandName: string, input: string, opts: Record<string, u
     input,
     outputDir: typeof opts.outputDir === 'string' ? opts.outputDir : DEFAULT_OUTPUT_DIR,
     formats: format.split(',').map((f) => f.trim()),
-    region: typeof opts.region === 'string' ? opts.region : undefined,
     minConfidence: Number.parseFloat(String(opts.minConfidence ?? '0.5')),
     skipGeocoding: opts.skipGeocoding === true,
     quiet: opts.quiet === true,
