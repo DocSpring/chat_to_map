@@ -16,6 +16,7 @@ import { cmdParse } from './cli/commands/parse.js'
 import { cmdPreview } from './cli/commands/preview.js'
 import { cmdScan } from './cli/commands/scan.js'
 import { cmdScrape } from './cli/commands/scrape.js'
+import { cmdValidate } from './cli/commands/validate.js'
 import { createLogger } from './cli/logger.js'
 
 async function main(): Promise<void> {
@@ -26,6 +27,10 @@ async function main(): Promise<void> {
     switch (args.command) {
       case 'analyze':
         await cmdAnalyze(args, logger)
+        break
+
+      case 'validate':
+        await cmdValidate(args, logger)
         break
 
       case 'parse':

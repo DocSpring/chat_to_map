@@ -34,10 +34,26 @@ export const DEFAULT_BASE_DIR = './chat-to-map'
 export const DEFAULT_OUTPUT_DIR = `${DEFAULT_BASE_DIR}/output`
 export const DEFAULT_CACHE_DIR = `${DEFAULT_BASE_DIR}/cache`
 
+const DESCRIPTION = `Transform chat exports into interactive maps of activities and places.
+
+Supported formats (auto-detected):
+  • WhatsApp iOS (.zip export)
+  • WhatsApp Android (.zip export)
+  • iMessage (via imessage-exporter)
+
+Examples:
+  $ chat-to-map validate "WhatsApp Chat.zip"
+  $ chat-to-map validate ./imessage-export/
+  $ chat-to-map analyze "WhatsApp Chat.zip" -c "New Zealand"
+  $ chat-to-map analyze ./imessage-export/ -c "United States"
+
+For iMessage, use imessage-exporter (https://github.com/ReagentX/imessage-exporter)
+to export your chat, then point chat-to-map at the output directory.`
+
 function createProgram(): Command {
   const program = new Command()
     .name('chat-to-map')
-    .description('Transform chat exports into interactive maps of activities and places.')
+    .description(DESCRIPTION)
     .version(VERSION, '-V, --version', 'Show version number')
 
   // ============ ANALYZE (full pipeline - most common) ============
@@ -46,7 +62,7 @@ function createProgram(): Command {
     .description(
       'Run the complete pipeline (parse → candidates → scrape → classify → geocode → export)'
     )
-    .argument('<input>', 'Chat export file (.txt or .zip)')
+    .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
     .requiredOption('-c, --home-country <name>', 'Your home country for location disambiguation')
     .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
     .option('-o, --output-dir <dir>', 'Output directory', DEFAULT_OUTPUT_DIR)
@@ -63,11 +79,19 @@ function createProgram(): Command {
     .option('--dry-run', 'Show stats without API calls')
     .option('--debug', 'Print debug info')
 
+  // ============ VALIDATE ============
+  program
+    .command('validate')
+    .description('Validate a chat export: check format, count messages, list participants')
+    .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
+
   // ============ PARSE ============
   program
     .command('parse')
     .description('Parse a chat export file and show stats')
-    .argument('<input>', 'Chat export file (.txt or .zip)')
+    .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
     .option('-o, --output <file>', 'Save parsed messages to JSON file')
     .option('-m, --max-messages <num>', 'Max messages to process')
     .option('-q, --quiet', 'Minimal output')
@@ -77,7 +101,7 @@ function createProgram(): Command {
   program
     .command('scan')
     .description('Heuristic scan: show pattern matches (free, no API key)')
-    .argument('<input>', 'Chat export file (.txt or .zip)')
+    .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
     .option('-n, --max-results <num>', 'Max results to return', '10')
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
     .option('-q, --quiet', 'Minimal output')
@@ -87,7 +111,7 @@ function createProgram(): Command {
   program
     .command('preview')
     .description('AI-powered preview: classify top candidates (~$0.01)')
-    .argument('<input>', 'Chat export file (.txt or .zip)')
+    .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
     .requiredOption('-c, --home-country <name>', 'Your home country for location disambiguation')
     .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
     .option('-n, --max-results <num>', 'Max results to return', '10')
@@ -101,7 +125,7 @@ function createProgram(): Command {
   program
     .command('candidates')
     .description('Extract candidate messages (heuristics, embeddings, or both)')
-    .argument('<input>', 'Chat export file (.txt or .zip)')
+    .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
     .option('--method <method>', 'Extraction method: heuristics, embeddings, both', 'both')
     .option('--json [file]', 'Output as JSON (to file if specified, otherwise stdout)')
     .option('--min-confidence <num>', 'Minimum confidence threshold', '0.5')
