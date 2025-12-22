@@ -2,11 +2,9 @@
  * Smart Batching for Classifier
  *
  * Groups nearby candidates together so planning discussions don't get split across batches.
- * Uses token counting for dynamic batch sizing.
  */
 
 import type { CandidateMessage } from '../types'
-import { countTokens, MAX_BATCH_TOKENS, SYSTEM_PROMPT_TOKENS } from './tokenizer'
 
 /**
  * Default gap between message IDs that triggers a new group.
@@ -115,60 +113,6 @@ export function createSmartBatches(
       // Add group to current batch
       currentBatch.push(...group)
     }
-  }
-
-  // Don't forget the last batch
-  if (currentBatch.length > 0) {
-    batches.push(currentBatch)
-  }
-
-  return batches
-}
-
-/**
- * Estimate tokens for a candidate message in the prompt.
- * Includes the message header, context, and formatting.
- */
-export function estimateCandidateTokens(candidate: CandidateMessage): number {
-  // Format: ID: X | timestamp\n{context}\n---
-  const header = `ID: ${candidate.messageId} | ${candidate.timestamp.toISOString()}`
-  const context = candidate.context || `>>> ${candidate.sender}: ${candidate.content}`
-  const formatted = `---\n${header}\n${context}\n---`
-  return countTokens(formatted)
-}
-
-/**
- * Create batches based on token count, not fixed size.
- * Each batch stays under MAX_BATCH_TOKENS.
- *
- * @param candidates Candidates to batch
- * @param maxTokens Maximum tokens per batch (default: MAX_BATCH_TOKENS)
- * @returns Array of batches
- */
-export function createTokenAwareBatches(
-  candidates: readonly CandidateMessage[],
-  maxTokens = MAX_BATCH_TOKENS
-): readonly (readonly CandidateMessage[])[] {
-  if (candidates.length === 0) {
-    return []
-  }
-
-  const batches: CandidateMessage[][] = []
-  let currentBatch: CandidateMessage[] = []
-  let currentTokens = SYSTEM_PROMPT_TOKENS // Start with system prompt overhead
-
-  for (const candidate of candidates) {
-    const candidateTokens = estimateCandidateTokens(candidate)
-
-    // If adding this candidate would exceed limit, start new batch
-    if (currentTokens + candidateTokens > maxTokens && currentBatch.length > 0) {
-      batches.push(currentBatch)
-      currentBatch = []
-      currentTokens = SYSTEM_PROMPT_TOKENS
-    }
-
-    currentBatch.push(candidate)
-    currentTokens += candidateTokens
   }
 
   // Don't forget the last batch

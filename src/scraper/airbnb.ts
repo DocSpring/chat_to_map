@@ -24,7 +24,7 @@ import {
  * Extract listing ID from an Airbnb URL.
  * Handles rooms, homes, and experiences URLs.
  */
-export function extractAirbnbListingId(url: string): string | null {
+function extractAirbnbListingId(url: string): string | null {
   // Room URL: airbnb.com/rooms/12345678
   const roomMatch = url.match(/airbnb\.[^/]+\/rooms\/(\d+)/)
   if (roomMatch?.[1]) return roomMatch[1]

@@ -1,6 +1,7 @@
 {
-  "entry": ["src/index.ts", "src/cli.ts"],
+  "entry": ["src/test-support/index.ts"],
   "project": ["src/**/*.ts"],
   "ignore": ["src/**/*.test.ts", "src/**/*.spec.ts"],
-  "ignoreDependencies": ["@types/bun"]
+  "ignoreDependencies": ["@biomejs/biome"],
+  "exclude": ["unresolved"]
 }

@@ -22,10 +22,9 @@ pre-commit:
       glob: "*.ts"
       run: bunx jscpd src/
 
-    # knip disabled - fails in submodule due to .git file structure
-    # knip:
-    #   glob: "*.ts"
-    #   run: bunx knip
+    knip:
+      glob: "*.ts"
+      run: bunx knip
 
     file-length:
       run: ./scripts/check_file_length.sh {staged_files}

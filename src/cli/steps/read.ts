@@ -14,7 +14,7 @@ import { readInputFile } from '../io'
 /**
  * Input file metadata for caching.
  */
-export interface InputMetadata {
+interface InputMetadata {
   /** Original file path */
   readonly path: string
   /** Base name without extension */

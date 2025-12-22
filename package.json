@@ -60,23 +60,20 @@
     "@biomejs/biome": "^2.0.0",
     "@types/bun": "^1.2.9",
     "@types/pdfkit": "^0.17.4",
-    "@types/pluralize": "^0.0.33",
     "@vitest/coverage-v8": "^3.0.0",
     "jscpd": "^4.0.5",
-    "knip": "^5.74.0",
+    "knip": "https://pkg.pr.new/knip@991",
     "lefthook": "^1.11.0",
     "typescript": "^5.9.3",
+    "vite": "^6.0.0",
     "vitest": "^3.0.0"
   },
   "dependencies": {
     "commander": "^14.0.2",
-    "compromise": "^14.14.5",
     "exceljs": "^4.4.0",
     "js-tiktoken": "^1.0.21",
     "jszip": "^3.10.1",
-    "pdfkit": "^0.17.2",
-    "pluralize": "^8.0.0",
-    "wordpos": "^2.1.0"
+    "pdfkit": "^0.17.2"
   },
   "peerDependencies": {
     "openai": "^4.0.0",

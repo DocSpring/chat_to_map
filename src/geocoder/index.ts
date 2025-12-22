@@ -5,6 +5,7 @@
  */
 
 import { generateGeocodeCacheKey } from '../cache/key'
+import type { ResponseCache } from '../cache/types'
 import { DEFAULT_CACHE_TTL_SECONDS } from '../cache/types'
 import { extractGoogleMapsCoords } from '../extraction/heuristics/url-classifier'
 import { httpFetch } from '../http'
@@ -14,7 +15,6 @@ import {
   type GeocodedActivity,
   type GeocodeResult,
   type GeocoderConfig,
-  type ResponseCache,
   type Result
 } from '../types'
 

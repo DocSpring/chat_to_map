@@ -99,16 +99,6 @@ export function findJsonLdByType(
 }
 
 /**
- * Extract address from JSON-LD address object.
- */
-export function extractAddress(address: unknown): string | null {
-  if (!address || typeof address !== 'object') return null
-  const addr = address as Record<string, unknown>
-  const parts = [addr.addressLocality, addr.addressRegion, addr.addressCountry].filter(Boolean)
-  return parts.length > 0 ? parts.join(', ') : null
-}
-
-/**
  * Extract image URL from various formats.
  */
 export function extractImageUrl(image: unknown): string | null {

@@ -9,13 +9,13 @@
  * and their responses as separate activities.
  */
 
+import type { ResponseCache } from '../cache/types'
 import type {
   CandidateMessage,
   EmbeddingConfig,
   ExtractorOptions,
   ExtractorResult,
   ParsedMessage,
-  ResponseCache,
   Result,
   SemanticSearchConfig
 } from '../types'

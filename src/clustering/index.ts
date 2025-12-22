@@ -23,7 +23,7 @@ import type { ClassifiedActivity } from '../types/classifier'
 /**
  * A single cluster of semantically equivalent activities.
  */
-export interface ActivityCluster {
+interface ActivityCluster {
   /** The best representative for this cluster (highest confidence). */
   readonly representative: ClassifiedActivity
   /** All activities in this cluster, including the representative. */
@@ -43,10 +43,10 @@ export interface ActivityCluster {
 /**
  * Result of clustering activities.
  */
-export interface ClusterResult {
+interface ClusterResult {
   /** Clusters of related activities (sorted by instance count, descending). */
   readonly clusters: readonly ActivityCluster[]
-  /** Activities filtered out as noise (low activity score, etc). */
+  /** Activities filtered out (reserved for future use). */
   readonly filtered: readonly ClassifiedActivity[]
 }
 
@@ -54,7 +54,7 @@ export interface ClusterResult {
  * Configuration for clustering.
  * Currently empty - reserved for future options.
  */
-export type ClusterConfig = Record<string, never>
+type ClusterConfig = Record<string, never>
 
 /**
  * Generate a clustering key from normalized fields.
@@ -72,7 +72,7 @@ function getClusterKey(a: ClassifiedActivity): string {
 
 /**
  * Select the best representative from a list of activities.
- * Prefers higher confidence, then higher activity score.
+ * Prefers higher confidence.
  * @throws Error if activities array is empty
  */
 function selectRepresentative(activities: readonly ClassifiedActivity[]): ClassifiedActivity {
@@ -136,7 +136,7 @@ export function clusterActivities(
   activities: readonly ClassifiedActivity[],
   _config: ClusterConfig = {}
 ): ClusterResult {
-  // All activities are valid - no filtering by activity score
+  // All activities are valid - no filtering
   const valid: ClassifiedActivity[] = [...activities]
   const filtered: ClassifiedActivity[] = []
 

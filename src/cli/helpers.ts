@@ -35,12 +35,12 @@ export function truncate(text: string, maxLength: number): string {
 // Quick Scan with Logging
 // ============================================================================
 
-export interface QuickScanOutput {
+interface QuickScanOutput {
   scanResult: ReturnType<typeof quickScan>
   hasNoCandidates: boolean
 }
 
-export interface QuickScanWithLogsOptions {
+interface QuickScanWithLogsOptions {
   maxMessages?: number | undefined
 }
 
@@ -75,11 +75,11 @@ export async function runQuickScanWithLogs(
 // Parse with Logging
 // ============================================================================
 
-export interface ParseWithLogsOptions {
+interface ParseWithLogsOptions {
   maxMessages?: number | undefined
 }
 
-export interface ParseWithLogsOutput {
+interface ParseWithLogsOutput {
   messages: ParsedMessage[]
   messageCount: number
   senderCount: number

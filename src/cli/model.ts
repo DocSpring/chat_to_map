@@ -13,13 +13,13 @@ import {
 } from '../index'
 import type { ClassifierProvider } from '../types'
 
-export interface ResolvedModelConfig {
+interface ResolvedModelConfig {
   provider: ClassifierProvider
   apiModel: string
   apiKey: string
 }
 
-export interface ResolvedContext {
+interface ResolvedContext {
   homeCountry: string
   timezone: string | undefined
 }

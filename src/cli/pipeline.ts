@@ -14,70 +14,20 @@ import {
   exportToJSON,
   exportToMapHTML,
   exportToPDF,
-  extractCandidatesByHeuristics,
   filterActivities,
-  geocodeActivities,
-  parseChatWithStats,
   VERSION
 } from '../index'
 import type {
   CandidateMessage,
   ClassifiedActivity,
   ClassifierConfig,
-  GeocodedActivity,
-  GeocoderConfig,
-  ParsedMessage
+  GeocodedActivity
 } from '../types'
 import type { CLIArgs } from './args'
-import { ensureDir, readInputFile } from './io'
+import { ensureDir } from './io'
 import type { Logger } from './logger'
 import { resolveContext, resolveModelConfig } from './model'
 import { getCacheDir } from './steps/context'
-
-export async function runParse(
-  input: string,
-  args: CLIArgs,
-  logger: Logger
-): Promise<ParsedMessage[]> {
-  logger.log('\n📝 Parsing messages...')
-
-  const content = await readInputFile(input)
-  const result = parseChatWithStats(content)
-
-  logger.success(
-    `${result.messageCount.toLocaleString()} messages from ${result.senders.length} senders`
-  )
-  logger.success(
-    `Date range: ${result.dateRange.start.toISOString().split('T')[0]} to ${result.dateRange.end.toISOString().split('T')[0]}`
-  )
-  logger.success(`${result.urlCount} messages contain URLs`)
-
-  if (args.maxMessages !== undefined) {
-    const limited = result.messages.slice(0, args.maxMessages)
-    logger.log(`   (limited to first ${args.maxMessages} messages for testing)`)
-    return [...limited]
-  }
-
-  return [...result.messages]
-}
-
-export function runExtract(
-  messages: readonly ParsedMessage[],
-  args: CLIArgs,
-  logger: Logger
-): CandidateMessage[] {
-  logger.log('\n🔍 Extracting candidates...')
-
-  const result = extractCandidatesByHeuristics(messages, {
-    minConfidence: args.minConfidence
-  })
-
-  logger.success(`Regex patterns: ${result.regexMatches} matches`)
-  logger.success(`URL-based: ${result.urlMatches} matches`)
-  logger.success(`Total: ${result.totalUnique} unique candidates`)
-
-  return [...result.candidates]
-}
 
 export async function runClassify(
   candidates: readonly CandidateMessage[],
@@ -122,45 +72,13 @@ export async function runClassify(
     throw new Error(`Classification failed: ${result.error.message}`)
   }
 
-  // Always filter by activity score - low scores are errands/chores, not fun activities
+  // Filter activities (currently returns all - AI already excludes non-activities)
   const validActivities = filterActivities(result.value)
 
   logger.log('')
   logger.success(`Activities: ${validActivities.length}`)
 
   return validActivities
-}
-
-export async function runGeocode(
-  suggestions: readonly ClassifiedActivity[],
-  args: CLIArgs,
-  logger: Logger
-): Promise<GeocodedActivity[]> {
-  if (args.skipGeocoding) {
-    logger.log('\n📍 Skipping geocoding (--skip-geocoding)')
-    return suggestions.map((s) => ({ ...s }))
-  }
-
-  logger.log('\n📍 Geocoding locations...')
-
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY
-
-  if (!apiKey) {
-    logger.error('GOOGLE_MAPS_API_KEY not set, skipping geocoding')
-    return suggestions.map((s) => ({ ...s }))
-  }
-
-  const config: GeocoderConfig = {
-    apiKey,
-    defaultCountry: args.homeCountry
-  }
-
-  const results = await geocodeActivities(suggestions, config)
-
-  const geocoded = results.filter((s) => s.latitude !== undefined)
-  logger.success(`Successfully geocoded: ${geocoded.length}/${suggestions.length}`)
-
-  return results
 }
 
 async function exportFormat(

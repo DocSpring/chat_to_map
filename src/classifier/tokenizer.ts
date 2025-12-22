@@ -17,12 +17,6 @@ export function countTokens(text: string): number {
 }
 
 /**
- * Estimate tokens for the system prompt (without messages).
- * This is the fixed overhead for each API call.
- */
-export const SYSTEM_PROMPT_TOKENS = 350
-
-/**
  * Maximum tokens per batch. Leave room for response.
  * Claude Haiku has 200k context, GPT-4o-mini has 128k.
  * 50k is safe and allows large batches while leaving room for response.

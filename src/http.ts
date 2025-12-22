@@ -31,7 +31,7 @@ function isTestInCI(): boolean {
 /**
  * Error thrown when an uncached HTTP request is made during tests in CI.
  */
-export class UncachedHttpRequestError extends Error {
+class UncachedHttpRequestError extends Error {
   constructor(url: string) {
     super(
       `Uncached HTTP request to ${url} during tests in CI. ` +

@@ -190,7 +190,28 @@ export class PipelineCache {
       return content as T
     }
 
-    return JSON.parse(content) as T
+    const parsed = JSON.parse(content)
+
+    // Restore Date objects for stages that contain timestamps
+    if (Array.isArray(parsed)) {
+      const stagesWithTimestamps: PipelineStage[] = [
+        'messages',
+        'candidates.heuristics',
+        'candidates.embeddings',
+        'candidates.all',
+        'classifications',
+        'geocodings'
+      ]
+      if (stagesWithTimestamps.includes(stage)) {
+        for (const item of parsed) {
+          if (item && typeof item.timestamp === 'string') {
+            item.timestamp = new Date(item.timestamp)
+          }
+        }
+      }
+    }
+
+    return parsed as T
   }
 
   /**

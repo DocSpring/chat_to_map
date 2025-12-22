@@ -14,7 +14,7 @@ import { readInputFileWithCache } from './read'
 /**
  * Options for initializing the pipeline context.
  */
-export interface InitContextOptions {
+interface InitContextOptions {
   /** Skip cache and regenerate all results */
   readonly noCache?: boolean | undefined
   /** Custom cache directory (overrides env var and default) */

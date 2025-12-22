@@ -11,7 +11,7 @@ import type { PipelineContext } from './context'
 /**
  * Result of the parse step.
  */
-export interface ParseResult {
+interface ParseResult {
   /** Parsed messages */
   readonly messages: readonly ParsedMessage[]
   /** Detected chat source (whatsapp or imessage) */
@@ -31,7 +31,7 @@ export interface ParseResult {
 /**
  * Parse step options.
  */
-export interface ParseOptions {
+interface ParseOptions {
   /** Limit messages (for testing) */
   readonly maxMessages?: number | undefined
   /** Skip logging */

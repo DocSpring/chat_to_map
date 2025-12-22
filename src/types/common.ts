@@ -23,21 +23,8 @@ export type Result<T> =
   | { readonly ok: true; readonly value: T }
   | { readonly ok: false; readonly error: ApiError }
 
-// Cache Types
-/** Cached response wrapper with metadata */
-export interface CachedResponse<T = unknown> {
-  readonly data: T
-  readonly cachedAt: number
-}
-
-/** Pluggable cache interface for API responses. */
-export interface ResponseCache {
-  get<T = unknown>(hash: string): Promise<CachedResponse<T> | null>
-  set<T = unknown>(hash: string, response: CachedResponse<T>, ttlSeconds: number): Promise<void>
-}
-
 // Embeddings Types
-export interface EmbeddingProgressInfo {
+interface EmbeddingProgressInfo {
   readonly phase: 'messages' | 'queries'
   readonly batchIndex: number
   readonly totalBatches: number

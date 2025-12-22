@@ -60,7 +60,7 @@ export interface ScrapedMetadata {
 /**
  * Result of a scrape attempt.
  */
-export interface ScrapeResult {
+interface ScrapeResult {
   readonly ok: true
   readonly metadata: ScrapedMetadata
 }
@@ -68,7 +68,7 @@ export interface ScrapeResult {
 /**
  * Error from a scrape attempt.
  */
-export interface ScrapeError {
+interface ScrapeError {
   readonly ok: false
   readonly error: {
     readonly type: 'network' | 'parse' | 'blocked' | 'not_found' | 'unsupported'

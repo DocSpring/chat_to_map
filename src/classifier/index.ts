@@ -5,12 +5,12 @@
  * and extract activity/location details.
  */
 
+import type { ResponseCache } from '../cache/types'
 import type {
   ActivityCategory,
   CandidateMessage,
   ClassifiedActivity,
   ClassifierConfig,
-  ResponseCache,
   Result
 } from '../types'
 import { DEFAULT_MODELS } from './models'
@@ -22,11 +22,7 @@ import {
 import { callProviderWithFallbacks } from './providers'
 import { countTokens, MAX_BATCH_TOKENS } from './tokenizer'
 
-export {
-  createSmartBatches,
-  createTokenAwareBatches,
-  groupCandidatesByProximity
-} from './batching'
+export { createSmartBatches, groupCandidatesByProximity } from './batching'
 export type { ResolvedModel } from './models'
 export { getRequiredApiKeyEnvVar, getValidModelIds, resolveModel } from './models'
 export {

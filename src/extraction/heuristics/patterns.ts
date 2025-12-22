@@ -7,7 +7,7 @@
 
 import type { QueryType } from '../../types'
 
-export interface ActivityPattern {
+interface ActivityPattern {
   readonly name: string
   readonly pattern: RegExp
   readonly confidence: number

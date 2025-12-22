@@ -32,9 +32,8 @@ export interface CLIArgs {
   cacheDir: string | undefined
 }
 
-export const DEFAULT_BASE_DIR = './chat-to-map'
-export const DEFAULT_OUTPUT_DIR = `${DEFAULT_BASE_DIR}/output`
-export const DEFAULT_CACHE_DIR = `${DEFAULT_BASE_DIR}/cache`
+const DEFAULT_BASE_DIR = './chat-to-map'
+const DEFAULT_OUTPUT_DIR = `${DEFAULT_BASE_DIR}/output`
 
 const DESCRIPTION = `Transform chat exports into interactive maps of activities and places.
 

@@ -79,7 +79,7 @@ export interface ProviderConfig {
   readonly model?: string
 }
 
-export interface BatchInfo {
+interface BatchInfo {
   readonly batchIndex: number
   readonly totalBatches: number
   readonly candidateCount: number
@@ -87,7 +87,7 @@ export interface BatchInfo {
   readonly provider: ClassifierProvider
 }
 
-export interface BatchCompleteInfo {
+interface BatchCompleteInfo {
   readonly batchIndex: number
   readonly totalBatches: number
   readonly activityCount: number
@@ -112,47 +112,6 @@ export interface ClassifierConfig {
   readonly onBatchStart?: (info: BatchInfo) => void
   /** Called after each batch completes. Use for progress logging. */
   readonly onBatchComplete?: (info: BatchCompleteInfo) => void
-}
-
-/**
- * Raw JSON response from the LLM classifier.
- * Uses short keys to minimize token usage.
- */
-export interface ClassifierResponse {
-  /** Message ID */
-  readonly msg: number
-  /** Human-readable activity title */
-  readonly title: string | null
-  /** Activity score (0.0 = errand, 1.0 = fun) */
-  readonly score: number
-  /** Category (hike, restaurant, trip, etc.) */
-  readonly cat: string
-  /** Confidence score */
-  readonly conf: number
-  /** Is mappable (has specific location)? */
-  readonly map: boolean
-  /** Is generic (no specific name/URL/compound)? */
-  readonly gen: boolean
-  /** Is complete (JSON data fully captures info, not lossy)? */
-  readonly com: boolean
-  /** Normalized action (hike, not tramping/trekking) */
-  readonly act: string | null
-  /** Original action word before normalization */
-  readonly act_orig: string | null
-  /** Normalized object (movie, not film) */
-  readonly obj: string | null
-  /** Original object word before normalization */
-  readonly obj_orig: string | null
-  /** Venue/place name (Coffee Lab, Kazuya) */
-  readonly loc: string | null
-  /** City name */
-  readonly city: string | null
-  /** State/region name */
-  readonly state: string | null
-  /** Country name */
-  readonly country: string | null
-  /** Original location string before parsing */
-  readonly loc_orig: string | null
 }
 
 /** A single message that mentioned an activity/location. */

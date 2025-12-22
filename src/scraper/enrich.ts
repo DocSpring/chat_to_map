@@ -107,7 +107,7 @@ export function enrichCandidatesWithMetadata(
   })
 }
 
-export interface EnrichOptions extends ScraperConfig {
+interface EnrichOptions extends ScraperConfig {
   /** Callback when scraping starts */
   onScrapeStart?: (info: { urlCount: number }) => void
   /** Callback for each URL scraped */

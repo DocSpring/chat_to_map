@@ -19,17 +19,17 @@ import type { CandidateMessage, ParsedMessage } from '../types'
  * Format a message line with ISO timestamp.
  * Example: "[2024-10-11T13:34] John: Hello world"
  */
-export function formatMessageLine(msg: ParsedMessage): string {
+function formatMessageLine(msg: ParsedMessage): string {
   const iso = msg.timestamp.toISOString().slice(0, 16) // "2024-10-11T13:34"
   return `[${iso}] ${msg.sender}: ${msg.content}`
 }
 
-export const MIN_CONTEXT_CHARS = 280
+const MIN_CONTEXT_CHARS = 280
 export const MIN_CONTEXT_MESSAGES = 2
 export const MAX_MESSAGE_CHARS = 280
 export const TRUNCATION_MARKER = ' [truncated to 280 chars]'
 
-export interface MessageContext {
+interface MessageContext {
   /** Formatted context string before target */
   readonly before: string
   /** Formatted context string after target */

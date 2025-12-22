@@ -5,7 +5,7 @@
  */
 
 import { extractCandidatesByHeuristics } from '../../extraction/heuristics/index'
-import type { CandidateMessage, ParsedMessage } from '../../types'
+import type { CandidateMessage } from '../../types'
 import type { PipelineContext } from './context'
 import { stepParse } from './parse'
 
@@ -21,7 +21,7 @@ interface ScanStats {
 /**
  * Result of the scan step.
  */
-export interface ScanResult {
+interface ScanResult {
   /** Extracted candidates */
   readonly candidates: readonly CandidateMessage[]
   /** Whether result was from cache */
@@ -33,7 +33,7 @@ export interface ScanResult {
 /**
  * Scan step options.
  */
-export interface ScanOptions {
+interface ScanOptions {
   /** Minimum confidence threshold */
   readonly minConfidence?: number | undefined
   /** Limit messages (for testing) */
@@ -90,26 +90,5 @@ export function stepScan(ctx: PipelineContext, options?: ScanOptions): ScanResul
     candidates: result.candidates,
     fromCache: false,
     stats
-  }
-}
-
-/**
- * Run the scan step and return both messages and candidates.
- *
- * Useful for commands that need both (e.g., for stats display).
- */
-export function stepScanWithMessages(
-  ctx: PipelineContext,
-  options?: ScanOptions
-): ScanResult & { messages: readonly ParsedMessage[] } {
-  // Get messages first
-  const parseResult = stepParse(ctx, { maxMessages: options?.maxMessages, quiet: options?.quiet })
-
-  // Then scan (will use cached messages via parse step)
-  const scanResult = stepScan(ctx, { ...options, quiet: true })
-
-  return {
-    ...scanResult,
-    messages: parseResult.messages
   }
 }

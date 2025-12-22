@@ -138,7 +138,6 @@ export type {
   ClassifiedActivity,
   ClassifierConfig,
   ClassifierProvider,
-  ClassifierResponse,
   EmbeddedMessage,
   EmbeddingConfig,
   ExportMetadata,

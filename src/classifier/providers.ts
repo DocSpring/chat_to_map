@@ -11,7 +11,7 @@ import { emptyResponseError, handleHttpError, handleNetworkError, httpFetch } fr
 import type { ClassifierConfig, ProviderConfig, Result } from '../types'
 import { DEFAULT_MODELS } from './models'
 
-export interface ProviderCallOptions {
+interface ProviderCallOptions {
   cache?: ResponseCache | undefined
   /** Message IDs for cache key generation */
   messageIds?: readonly number[]
@@ -96,7 +96,7 @@ async function callOpenAICompatible(
  * Call a single AI provider with optional caching.
  * Caching happens here at the HTTP layer where we have both prompt and response.
  */
-export async function callProvider(
+async function callProvider(
   prompt: string,
   providerConfig: ProviderConfig,
   options?: ProviderCallOptions

@@ -6,6 +6,7 @@
  */
 
 import { generateEmbeddingCacheKey } from '../../cache/key'
+import type { ResponseCache } from '../../cache/types'
 import { DEFAULT_CACHE_TTL_SECONDS } from '../../cache/types'
 import { handleHttpError, handleNetworkError, httpFetch } from '../../http'
 import type {
@@ -15,7 +16,6 @@ import type {
   EmbeddingConfig,
   ParsedMessage,
   QueryType,
-  ResponseCache,
   Result,
   SemanticSearchConfig
 } from '../../types'
