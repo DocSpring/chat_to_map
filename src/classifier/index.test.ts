@@ -54,7 +54,8 @@ function createCandidate(id: number, content: string, sender = 'Test User'): Can
     sender,
     timestamp: new Date('2025-01-15T10:30:00Z'),
     source: { type: 'regex', pattern: 'test' },
-    confidence: 0.8
+    confidence: 0.8,
+    candidateType: 'suggestion'
   }
 }
 

@@ -10,7 +10,8 @@ import type {
   CandidateSource,
   ExtractorOptions,
   ExtractorResult,
-  ParsedMessage
+  ParsedMessage,
+  QueryType
 } from '../../types.js'
 import { HIGH_SIGNAL_KEYWORDS } from './activity-links.js'
 import {
@@ -161,6 +162,7 @@ interface RegexMatch {
   timestamp: Date
   confidence: number
   patternName: string
+  candidateType: QueryType
   urls: readonly string[] | undefined
   context: string
 }
@@ -176,6 +178,7 @@ function createRegexMatch(
   msg: ParsedMessage,
   confidence: number,
   patternName: string,
+  candidateType: QueryType,
   context: string
 ): RegexMatch {
   return {
@@ -185,6 +188,7 @@ function createRegexMatch(
     timestamp: msg.timestamp,
     confidence,
     patternName,
+    candidateType,
     urls: msg.urls,
     context
   }
@@ -199,7 +203,7 @@ function checkBuiltInPatterns(
     if (pattern.pattern.test(msg.content)) {
       const confidence = applyActivityBoost(pattern.confidence, msg.content)
       if (confidence >= minConfidence) {
-        return createRegexMatch(msg, confidence, pattern.name, context)
+        return createRegexMatch(msg, confidence, pattern.name, pattern.candidateType, context)
       }
       break
     }
@@ -217,7 +221,8 @@ function checkAdditionalPatterns(
     if (pattern.test(msg.content)) {
       const confidence = applyActivityBoost(0.7, msg.content)
       if (confidence >= minConfidence) {
-        return createRegexMatch(msg, confidence, `custom:${pattern.source}`, context)
+        // Custom patterns are assumed to be suggestions
+        return createRegexMatch(msg, confidence, `custom:${pattern.source}`, 'suggestion', context)
       }
       break
     }
@@ -266,6 +271,7 @@ interface UrlMatch {
   timestamp: Date
   confidence: number
   urlType: string
+  candidateType: QueryType
   urls: readonly string[]
   context: string
 }
@@ -342,6 +348,7 @@ function findUrlMatches(
         timestamp: msg.timestamp,
         confidence,
         urlType: best.type,
+        candidateType: 'suggestion', // Sharing a URL = suggesting
         urls: msg.urls,
         context: buildContextString(msg, ctx)
       })
@@ -357,6 +364,7 @@ interface BaseMatch {
   sender: string
   timestamp: Date
   confidence: number
+  candidateType: QueryType
   urls: readonly string[] | undefined
   context: string
 }
@@ -376,6 +384,7 @@ function upsertCandidate(
     timestamp: match.timestamp,
     source,
     confidence: match.confidence,
+    candidateType: match.candidateType,
     context: match.context,
     urls: match.urls
   }

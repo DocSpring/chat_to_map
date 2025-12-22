@@ -329,6 +329,7 @@ export function findSemanticCandidates(
       timestamp: msg.timestamp,
       source,
       confidence: similarity,
+      candidateType: getQueryType(query),
       urls: msg.urls
     })
   }

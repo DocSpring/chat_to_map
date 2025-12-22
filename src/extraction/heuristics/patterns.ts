@@ -5,11 +5,15 @@
  * Based on patterns proven to work in the Python prototype.
  */
 
+import type { QueryType } from '../../types.js'
+
 export interface ActivityPattern {
   readonly name: string
   readonly pattern: RegExp
   readonly confidence: number
   readonly description: string
+  /** Whether this pattern indicates a suggestion or agreement. */
+  readonly candidateType: QueryType
 }
 
 /**
@@ -20,37 +24,43 @@ const HIGH_CONFIDENCE_PATTERNS: readonly ActivityPattern[] = [
     name: 'bucket_list',
     pattern: /\bbucket ?list\b/i,
     confidence: 0.95,
-    description: 'Bucket list mention'
+    description: 'Bucket list mention',
+    candidateType: 'suggestion'
   },
   {
     name: 'we_should',
     pattern: /\bwe should\b(?!\s+(?:not|stop|avoid|have|be\s+careful))/i,
     confidence: 0.9,
-    description: 'We should...'
+    description: 'We should...',
+    candidateType: 'suggestion'
   },
   {
     name: 'must_visit',
     pattern: /\b(?:must visit|must go|have to visit)\b/i,
     confidence: 0.9,
-    description: 'Must visit/go...'
+    description: 'Must visit/go...',
+    candidateType: 'suggestion'
   },
   {
     name: 'lets_go',
     pattern: /\blet'?s go\b(?!\s+(?:home|back|now|already))/i,
     confidence: 0.85,
-    description: "Let's go..."
+    description: "Let's go...",
+    candidateType: 'suggestion'
   },
   {
     name: 'lets_try',
     pattern: /\blet'?s try\b/i,
     confidence: 0.85,
-    description: "Let's try..."
+    description: "Let's try...",
+    candidateType: 'suggestion'
   },
   {
     name: 'wanna_go',
     pattern: /\b(?:wanna|want to) go\b/i,
     confidence: 0.85,
-    description: 'Wanna/want to go...'
+    description: 'Wanna/want to go...',
+    candidateType: 'suggestion'
   }
 ]
 
@@ -62,49 +72,57 @@ const MEDIUM_CONFIDENCE_PATTERNS: readonly ActivityPattern[] = [
     name: 'should_we',
     pattern: /\bshould we\b(?!\s+(?:not|stop))/i,
     confidence: 0.8,
-    description: 'Should we...?'
+    description: 'Should we...?',
+    candidateType: 'suggestion'
   },
   {
     name: 'lets_do',
     pattern: /\blet'?s do\b/i,
     confidence: 0.8,
-    description: "Let's do..."
+    description: "Let's do...",
+    candidateType: 'suggestion'
   },
   {
     name: 'can_we',
     pattern: /\bcan we\b.*?\b(?:go|try|do|visit|see)\b/i,
     confidence: 0.75,
-    description: 'Can we go/try/do...?'
+    description: 'Can we go/try/do...?',
+    candidateType: 'suggestion'
   },
   {
     name: 'would_be_fun',
     pattern: /\bwould be (?:fun|cool|nice|awesome|amazing)\b/i,
     confidence: 0.75,
-    description: 'Would be fun/cool/nice...'
+    description: 'Would be fun/cool/nice...',
+    candidateType: 'suggestion'
   },
   {
     name: 'we_could',
     pattern: /\bwe could\b(?!\s+(?:not|never))/i,
     confidence: 0.7,
-    description: 'We could...'
+    description: 'We could...',
+    candidateType: 'suggestion'
   },
   {
     name: 'one_day',
     pattern: /\bone day\b.*?\b(?:go|visit|try|do|see)\b/i,
     confidence: 0.7,
-    description: 'One day we should...'
+    description: 'One day we should...',
+    candidateType: 'suggestion'
   },
   {
     name: 'next_time',
     pattern: /\bnext time\b.*?\b(?:go|visit|try|do|see|should)\b/i,
     confidence: 0.7,
-    description: 'Next time...'
+    description: 'Next time...',
+    candidateType: 'suggestion'
   },
   {
     name: 'come_back',
     pattern: /\bcome back\b.*?\b(?:and|to)\b/i,
     confidence: 0.65,
-    description: 'Come back to...'
+    description: 'Come back to...',
+    candidateType: 'suggestion'
   }
 ]
 
@@ -116,25 +134,29 @@ const LOWER_CONFIDENCE_PATTERNS: readonly ActivityPattern[] = [
     name: 'i_want_to',
     pattern: /\bi want to\b(?!\s+(?:die|cry|leave|sleep|quit|go home))/i,
     confidence: 0.6,
-    description: 'I want to...'
+    description: 'I want to...',
+    candidateType: 'suggestion'
   },
   {
     name: 'we_need_to',
     pattern: /\bwe need to\b(?!\s+(?:stop|avoid|talk|figure|think|discuss))/i,
     confidence: 0.6,
-    description: 'We need to...'
+    description: 'We need to...',
+    candidateType: 'suggestion'
   },
   {
     name: 'looks_fun',
     pattern: /\blooks? (?:fun|amazing|awesome|incredible|beautiful|great|good)\b/i,
     confidence: 0.5,
-    description: 'Looks fun/amazing...'
+    description: 'Looks fun/amazing...',
+    candidateType: 'agreement'
   },
   {
     name: 'check_out',
     pattern: /\bcheck (?:this|it) out\b/i,
     confidence: 0.5,
-    description: 'Check this out...'
+    description: 'Check this out...',
+    candidateType: 'suggestion'
   }
 ]
 

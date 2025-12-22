@@ -9,7 +9,8 @@ function createCandidate(id: number): CandidateMessage {
     sender: 'User',
     timestamp: new Date('2025-01-15T10:00:00Z'),
     source: { type: 'regex', pattern: 'test' },
-    confidence: 0.8
+    confidence: 0.8,
+    candidateType: 'suggestion'
   }
 }
 

@@ -49,7 +49,8 @@ function createCandidate(
     sender: 'Test User',
     timestamp: new Date('2025-01-15T10:00:00Z'),
     source,
-    confidence
+    confidence,
+    candidateType: 'suggestion'
   }
 }
 

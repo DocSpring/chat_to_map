@@ -5,9 +5,28 @@
  */
 
 import type { GeocodedActivity } from '../types/geocoder.js'
-import type { ActivityCategory, ClassifiedActivity } from '../types.js'
+import type { ActivityCategory, CandidateMessage, ClassifiedActivity } from '../types.js'
 
 export { FixtureCache } from './fixture-cache.js'
+
+/**
+ * Create a CandidateMessage with default values for testing.
+ */
+export function createCandidate(
+  overrides: Partial<CandidateMessage> & {
+    messageId: number
+    content: string
+  }
+): CandidateMessage {
+  return {
+    sender: 'Test User',
+    timestamp: new Date('2025-01-01'),
+    source: { type: 'regex', pattern: 'test_pattern' },
+    confidence: 0.8,
+    candidateType: 'suggestion',
+    ...overrides
+  }
+}
 
 /**
  * Create a ClassifiedActivity with default values for testing.

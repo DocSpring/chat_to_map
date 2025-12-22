@@ -26,6 +26,8 @@ export interface CandidateMessage {
   readonly timestamp: Date
   readonly source: CandidateSource
   readonly confidence: number
+  /** Whether this is a suggestion (proposing activity) or agreement (positive response). */
+  readonly candidateType: QueryType
   readonly context?: string | undefined
   readonly urls?: readonly string[] | undefined
 }

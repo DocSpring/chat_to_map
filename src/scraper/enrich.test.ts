@@ -53,6 +53,7 @@ describe('extractUrlsFromCandidates', () => {
     timestamp: new Date(),
     source: { type: 'regex', pattern: 'test' },
     confidence: 0.8,
+    candidateType: 'suggestion',
     context
   })
 
@@ -180,6 +181,7 @@ describe('enrichCandidatesWithMetadata', () => {
     timestamp: new Date(),
     source: { type: 'regex', pattern: 'test' },
     confidence: 0.8,
+    candidateType: 'suggestion',
     context
   })
 
