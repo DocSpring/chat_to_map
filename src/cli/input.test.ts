@@ -4,10 +4,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   cacheExtraction,
   getCachedExtraction,
-  getChatOutputDir,
   getInputMetadata,
   readInputFileWithCache
-} from './input.js'
+} from './steps/read.js'
 
 const TEST_DIR = './tmp/test-input'
 const TEST_CACHE_DIR = './tmp/test-input-cache'
@@ -31,7 +30,6 @@ describe('getInputMetadata', () => {
     expect(metadata.baseName).toBe('my-chat')
     expect(metadata.mtime).toBeGreaterThan(0)
     expect(metadata.hash).toMatch(/^[a-f0-9]{8}$/)
-    expect(metadata.outputDirName).toBe(`my-chat-${metadata.hash}`)
   })
 
   it('sanitizes filename for directory', async () => {
@@ -69,38 +67,6 @@ describe('getInputMetadata', () => {
   })
 })
 
-describe('getChatOutputDir', () => {
-  it('uses default output dir when not specified', () => {
-    const metadata = {
-      path: '/path/to/chat.zip',
-      baseName: 'chat',
-      mtime: 12345,
-      hash: 'abcd1234',
-      outputDirName: 'chat-abcd1234'
-    }
-
-    const outputDir = getChatOutputDir(metadata)
-
-    // path.join normalizes and removes ./
-    expect(outputDir).toBe('chat-to-map/output/chat-abcd1234')
-  })
-
-  it('uses custom output dir when specified', () => {
-    const metadata = {
-      path: '/path/to/chat.zip',
-      baseName: 'chat',
-      mtime: 12345,
-      hash: 'abcd1234',
-      outputDirName: 'chat-abcd1234'
-    }
-
-    const outputDir = getChatOutputDir(metadata, './custom/output')
-
-    // path.join normalizes and removes ./
-    expect(outputDir).toBe('custom/output/chat-abcd1234')
-  })
-})
-
 describe('extraction cache', () => {
   beforeEach(async () => {
     await mkdir(TEST_CACHE_DIR, { recursive: true })
@@ -115,8 +81,7 @@ describe('extraction cache', () => {
       path: '/path/to/chat.zip',
       baseName: 'chat',
       mtime: 12345,
-      hash: 'abcd1234',
-      outputDirName: 'chat-abcd1234'
+      hash: 'abcd1234'
     }
 
     const cached = getCachedExtraction(metadata, TEST_CACHE_DIR)
@@ -129,8 +94,7 @@ describe('extraction cache', () => {
       path: '/path/to/chat.zip',
       baseName: 'chat',
       mtime: 12345,
-      hash: 'abcd1234',
-      outputDirName: 'chat-abcd1234'
+      hash: 'abcd1234'
     }
     const content = 'Hello, this is chat content!'
 
@@ -145,14 +109,12 @@ describe('extraction cache', () => {
       path: '/path/to/chat.zip',
       baseName: 'chat',
       mtime: 12345,
-      hash: 'abcd1234',
-      outputDirName: 'chat-abcd1234'
+      hash: 'abcd1234'
     }
     const metadata2 = {
       ...metadata1,
       mtime: 67890,
-      hash: 'efgh5678',
-      outputDirName: 'chat-efgh5678'
+      hash: 'efgh5678'
     }
 
     cacheExtraction(metadata1, 'cached content', TEST_CACHE_DIR)

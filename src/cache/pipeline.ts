@@ -25,6 +25,8 @@ import { basename, join } from 'node:path'
 export type PipelineStage =
   | 'chat'
   | 'messages'
+  | 'parse_stats'
+  | 'scan_stats'
   | 'candidates.heuristics'
   | 'candidates.embeddings'
   | 'candidates.all'

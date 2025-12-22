@@ -28,6 +28,7 @@ export interface CLIArgs {
   timezone: string | undefined
   scrapeConcurrency: number
   scrapeTimeout: number
+  noCache: boolean
 }
 
 export const DEFAULT_BASE_DIR = './chat-to-map'
@@ -78,6 +79,7 @@ function createProgram(): Command {
     .option('-v, --verbose', 'Verbose output')
     .option('--dry-run', 'Show stats without API calls')
     .option('--debug', 'Print debug info')
+    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ PARSE ============
   program
@@ -90,6 +92,7 @@ function createProgram(): Command {
     .option('-m, --max-messages <num>', 'Max messages to process')
     .option('-q, --quiet', 'Minimal output')
     .option('-v, --verbose', 'Verbose output')
+    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ SCAN (heuristics only, free) ============
   program
@@ -100,6 +103,7 @@ function createProgram(): Command {
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
     .option('-q, --quiet', 'Minimal output')
     .option('-v, --verbose', 'Verbose output')
+    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ PREVIEW (AI on top heuristic candidates) ============
   program
@@ -114,6 +118,7 @@ function createProgram(): Command {
     .option('-v, --verbose', 'Verbose output')
     .option('--dry-run', 'Show stats without API calls')
     .option('--debug', 'Print debug info')
+    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ CANDIDATES (heuristics + embeddings extraction) ============
   program
@@ -128,6 +133,7 @@ function createProgram(): Command {
     .option('-v, --verbose', 'Verbose output')
     .option('--dry-run', 'Show cost estimate without API calls')
     .option('--debug', 'Print debug info')
+    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ SCRAPE (scrape URLs for metadata) ============
   program
@@ -140,6 +146,7 @@ function createProgram(): Command {
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
     .option('-q, --quiet', 'Minimal output')
     .option('-v, --verbose', 'Verbose output')
+    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ CLASSIFY ============
   program
@@ -216,7 +223,8 @@ function buildCLIArgs(commandName: string, input: string, opts: Record<string, u
     homeCountry: typeof opts.homeCountry === 'string' ? opts.homeCountry : undefined,
     timezone: typeof opts.timezone === 'string' ? opts.timezone : undefined,
     scrapeConcurrency: Number.parseInt(String(opts.concurrency ?? '5'), 10),
-    scrapeTimeout: Number.parseInt(String(opts.timeout ?? '4000'), 10)
+    scrapeTimeout: Number.parseInt(String(opts.timeout ?? '4000'), 10),
+    noCache: opts.cache === false
   }
 }
 
