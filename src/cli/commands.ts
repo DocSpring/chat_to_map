@@ -24,7 +24,7 @@ import type { CLIArgs, ExtractionMethod } from './args.js'
 import { ensureDir } from './io.js'
 import type { Logger } from './logger.js'
 import { resolveContext, resolveModelConfig } from './model.js'
-import { runClassify, runExport, runExtract, runGeocode, runParse } from './pipeline.js'
+import { runParse } from './pipeline.js'
 import { formatDate, getCategoryEmoji, runQuickScanWithLogs, truncate } from './preview.js'
 
 export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
@@ -198,42 +198,6 @@ export async function cmdScan(args: CLIArgs, logger: Logger): Promise<void> {
   }
 
   logger.log(`💡 Run 'chat-to-map preview ${basename(args.input)}' for AI-powered classification`)
-}
-
-export async function cmdAnalyze(args: CLIArgs, logger: Logger): Promise<void> {
-  if (!args.input) {
-    throw new Error('No input file specified')
-  }
-
-  logger.log(`\nChatToMap v${VERSION}`)
-  logger.log(`\n📁 Reading: ${args.input}`)
-
-  const messages = await runParse(args.input, args, logger)
-
-  if (args.dryRun) {
-    logger.log('\n📊 Dry run complete. No API calls made.')
-    return
-  }
-
-  const candidates = runExtract(messages, args, logger)
-
-  if (candidates.length === 0) {
-    logger.log('\n⚠️  No candidates found. Nothing to process.')
-    return
-  }
-
-  const suggestions = await runClassify(candidates, args, logger)
-
-  if (suggestions.length === 0) {
-    logger.log('\n⚠️  No activities found after classification.')
-    return
-  }
-
-  const geocoded = await runGeocode(suggestions, args, logger)
-  await runExport(geocoded, args, logger, args.input)
-
-  const mapPath = join(args.outputDir, 'map.html')
-  logger.log(`\n✨ Done! Open ${mapPath} to view your activity map.`)
 }
 
 export async function cmdParse(args: CLIArgs, logger: Logger): Promise<void> {
