@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { CandidateMessage } from '../types.js'
+import type { CandidateMessage, QueryType } from '../types.js'
 import {
   buildClassificationPrompt,
   type ClassificationContext,
@@ -11,7 +11,12 @@ const TEST_CONTEXT: ClassificationContext = {
   timezone: 'Pacific/Auckland'
 }
 
-function createCandidate(id: number, content: string, context = ''): CandidateMessage {
+function createCandidate(
+  id: number,
+  content: string,
+  context = '',
+  candidateType: QueryType = 'suggestion'
+): CandidateMessage {
   return {
     messageId: id,
     content,
@@ -19,7 +24,7 @@ function createCandidate(id: number, content: string, context = ''): CandidateMe
     timestamp: new Date('2025-01-15T10:30:00'),
     source: { type: 'regex', pattern: 'test' },
     confidence: 0.8,
-    candidateType: 'suggestion',
+    candidateType,
     context
   }
 }
@@ -116,6 +121,49 @@ describe('Classifier Prompt', () => {
       // Must filter romantic/intimate content
       expect(prompt).toContain('Romantic/intimate')
       expect(prompt).toContain('adult content')
+    })
+
+    it('tags agreement candidates with [AGREE]', () => {
+      const candidates = [createCandidate(1, 'Sounds great!', '', 'agreement')]
+
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
+
+      expect(prompt).toContain('ID: 1 [AGREE]')
+    })
+
+    it('does not tag suggestion candidates', () => {
+      const candidates = [createCandidate(1, 'We should try that restaurant', '', 'suggestion')]
+
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
+
+      // Check that the ID line doesn't have [AGREE] tag
+      expect(prompt).toContain('ID: 1 |')
+      expect(prompt).not.toContain('ID: 1 [AGREE]')
+    })
+
+    it('handles mixed suggestion and agreement candidates', () => {
+      const candidates = [
+        createCandidate(1, 'Lets go to that cafe', '', 'suggestion'),
+        createCandidate(2, 'Sounds fun!', '', 'agreement'),
+        createCandidate(3, 'Check out this hike', '', 'suggestion')
+      ]
+
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
+
+      expect(prompt).toContain('ID: 1 |') // No tag
+      expect(prompt).toContain('ID: 2 [AGREE]')
+      expect(prompt).toContain('ID: 3 |') // No tag
+    })
+
+    it('includes instructions for handling agreement candidates', () => {
+      const candidates = [createCandidate(1, 'Test', '', 'agreement')]
+
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
+
+      expect(prompt).toContain('[AGREE]')
+      expect(prompt).toContain('positive responses')
+      expect(prompt).toContain('Look carefully at surrounding context')
+      expect(prompt).toContain("is_act=false if context doesn't reveal")
     })
   })
 

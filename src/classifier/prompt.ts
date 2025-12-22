@@ -56,9 +56,10 @@ export function buildClassificationPrompt(
     .map((candidate) => {
       const ctx = formatContext(candidate)
       const timestamp = formatTimestamp(candidate.timestamp)
+      const typeTag = candidate.candidateType === 'agreement' ? ' [AGREE]' : ''
       return `
 ---
-ID: ${candidate.messageId} | ${timestamp}
+ID: ${candidate.messageId}${typeTag} | ${timestamp}
 ${ctx}
 ---`
     })
@@ -75,6 +76,12 @@ ${userContext}
 
 For each message marked with >>>, classify whether it's a mappable/actionable activity suggestion.
 
+Messages tagged [AGREE] are positive responses (like "sounds great!", "I'm keen") rather than direct suggestions. For these:
+- Look carefully at surrounding context to understand what's being agreed to
+- Extract activity details from the context, not the agreement message itself
+- Set is_act=false if context doesn't reveal a clear, specific activity
+- The title should describe the activity being agreed to, not the agreement
+
 URLs may have [URL_META: {...}] with scraped metadata. Use this to understand what the link is about.
 
 NORMALIZATION RULES:
@@ -85,7 +92,7 @@ NORMALIZATION RULES:
 
 CATEGORIES: restaurant, cafe, bar, hike, nature, beach, trip, hotel, event, concert, museum, entertainment, adventure, sports, gaming, art, skills, experiences, hobbies, family, social, shopping, fitness, health, food, home, pets, work, errand, appointment, other
 
-CRITICAL: The "other" category is a last resort. If you can't fit something into a specific category, it's probably not a real activity suggestion. Set is_act=false unless there's a clear, specific, actionable activity or place to visit.
+CRITICAL: The "other" category is a last resort. If you can't fit something into a specific category, it might not be a real activity suggestion. Set is_act=false unless there's a clear, specific, actionable activity or place to visit.
 
 is_act=true ONLY for specific, actionable suggestions:
 - Named places (restaurants, cafes, venues, parks, cities, countries)
