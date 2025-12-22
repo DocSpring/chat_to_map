@@ -102,7 +102,15 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
     throw new Error(`Classification failed: ${classifyResult.error.message}`)
   }
 
-  const activities = classifyResult.value.slice(0, args.maxResults)
+  // Sort by preview score: prioritize interesting over fun
+  // interestingScore * 2 + funScore means unique/novel activities rank higher
+  const sorted = [...classifyResult.value].sort((a, b) => {
+    const scoreA = a.interestingScore * 2 + a.funScore
+    const scoreB = b.interestingScore * 2 + b.funScore
+    return scoreB - scoreA
+  })
+
+  const activities = sorted.slice(0, args.maxResults)
 
   if (activities.length === 0) {
     logger.log('   No activities found after AI classification.')

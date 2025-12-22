@@ -2,6 +2,9 @@ import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig(({ mode }) => ({
+  esbuild: {
+    tsconfigRaw: '{}'
+  },
   test: {
     env: loadEnv(mode, process.cwd(), ''),
     globals: true,

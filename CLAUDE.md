@@ -116,6 +116,15 @@ task hooks:run        # Run pre-commit manually
 
 ### Testing
 
+**⚠️ Always use `bun run test`, NOT `bun test`:**
+- `bun run test` → Runs Vitest, which loads `.env` via `vitest.config.ts`
+- `bun test` → Runs Bun's native test runner, which does NOT load `.env`
+
+**VCR Testing Model:** Tests are NEVER skipped. API responses are recorded locally and replayed on CI:
+1. Run tests locally with API keys in `.env` → responses cached to fixtures
+2. Commit fixture files (`tests/fixtures/`)
+3. CI replays from cached fixtures (no real API calls needed)
+
 ```typescript
 // Test file naming
 src/parser/whatsapp.ts        // Implementation
@@ -215,4 +224,4 @@ Model ID determines provider. Set via `CLASSIFIER_MODEL` env var.
 
 ---
 
-*Last updated: 2025-12-22*
+*Last updated: 2025-12-23*

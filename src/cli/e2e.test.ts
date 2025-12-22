@@ -28,18 +28,6 @@ let tempCacheDir: string
 let initialCacheHash: string
 
 /**
- * Check if any AI API key is available for preview/classify commands.
- */
-function hasAiApiKey(): boolean {
-  return !!(
-    process.env.OPENROUTER_API_KEY ||
-    process.env.OPENAI_API_KEY ||
-    process.env.ANTHROPIC_API_KEY ||
-    process.env.GOOGLE_API_KEY
-  )
-}
-
-/**
  * Calculate SHA256 hash of all files in a directory (recursively)
  */
 function hashDirectory(dir: string): string {
@@ -318,7 +306,7 @@ describe('CLI E2E', () => {
     })
   })
 
-  describe.skipIf(!hasAiApiKey())('preview command', () => {
+  describe('preview command', () => {
     it('classifies candidates with AI', { timeout: 60000 }, () => {
       const { stdout, exitCode } = runCli(
         `preview ${FIXTURE_INPUT} --cache-dir ${tempCacheDir} -c "New Zealand"`
