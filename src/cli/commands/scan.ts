@@ -36,7 +36,10 @@ export async function cmdScan(args: CLIArgs, logger: Logger): Promise<void> {
   logger.log(`\n📁 ${basename(args.input)}`)
 
   // Initialize pipeline context
-  const ctx = await initContext(args.input, logger, { noCache: args.noCache })
+  const ctx = await initContext(args.input, logger, {
+    noCache: args.noCache,
+    cacheDir: args.cacheDir
+  })
 
   // Run parse step (for stats display)
   const parseResult = stepParse(ctx, { maxMessages: args.maxMessages })

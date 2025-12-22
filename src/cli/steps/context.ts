@@ -17,6 +17,8 @@ import { readInputFileWithCache } from './read.js'
 export interface InitContextOptions {
   /** Skip cache and regenerate all results */
   readonly noCache?: boolean | undefined
+  /** Custom cache directory (overrides env var and default) */
+  readonly cacheDir?: string | undefined
 }
 
 /**
@@ -49,12 +51,19 @@ export interface PipelineContext {
  * 2. Creates/finds pipeline run based on content hash
  * 3. Initializes API cache
  */
+/**
+ * Get the cache directory: CLI arg > env var > default.
+ */
+function getCacheDir(override?: string): string {
+  return override ?? process.env.CHAT_TO_MAP_CACHE_DIR ?? join(homedir(), '.cache', 'chat-to-map')
+}
+
 export async function initContext(
   input: string,
   logger: Logger,
   options?: InitContextOptions
 ): Promise<PipelineContext> {
-  const cacheDir = join(homedir(), '.cache', 'chat-to-map')
+  const cacheDir = getCacheDir(options?.cacheDir)
   const noCache = options?.noCache ?? false
 
   // Read input (with zip extraction caching - always cache zip extraction)

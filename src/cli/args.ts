@@ -29,6 +29,7 @@ export interface CLIArgs {
   scrapeConcurrency: number
   scrapeTimeout: number
   noCache: boolean
+  cacheDir: string | undefined
 }
 
 export const DEFAULT_BASE_DIR = './chat-to-map'
@@ -56,6 +57,12 @@ function createProgram(): Command {
     .name('chat-to-map')
     .description(DESCRIPTION)
     .version(VERSION, '-V, --version', 'Show version number')
+    // Global options inherited by all subcommands
+    .option('-q, --quiet', 'Minimal output')
+    .option('-v, --verbose', 'Verbose output')
+    .option('--debug', 'Print debug info')
+    .option('--no-cache', 'Skip cache and regenerate all results')
+    .option('--cache-dir <dir>', 'Custom cache directory (or set CHAT_TO_MAP_CACHE_DIR)')
 
   // ============ ANALYZE (full pipeline - most common) ============
   program
@@ -75,11 +82,7 @@ function createProgram(): Command {
     .option('--min-confidence <num>', 'Minimum confidence threshold', '0.5')
     .option('--skip-geocoding', 'Skip geocoding step')
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
-    .option('-q, --quiet', 'Minimal output')
-    .option('-v, --verbose', 'Verbose output')
     .option('--dry-run', 'Show stats without API calls')
-    .option('--debug', 'Print debug info')
-    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ PARSE ============
   program
@@ -90,9 +93,6 @@ function createProgram(): Command {
     .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
     .option('--json [file]', 'Output as JSON (to file if specified, otherwise stdout)')
     .option('-m, --max-messages <num>', 'Max messages to process')
-    .option('-q, --quiet', 'Minimal output')
-    .option('-v, --verbose', 'Verbose output')
-    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ SCAN (heuristics only, free) ============
   program
@@ -101,9 +101,6 @@ function createProgram(): Command {
     .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
     .option('-n, --max-results <num>', 'Max results to return', '10')
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
-    .option('-q, --quiet', 'Minimal output')
-    .option('-v, --verbose', 'Verbose output')
-    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ PREVIEW (AI on top heuristic candidates) ============
   program
@@ -114,11 +111,7 @@ function createProgram(): Command {
     .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
     .option('-n, --max-results <num>', 'Max results to return', '10')
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
-    .option('-q, --quiet', 'Minimal output')
-    .option('-v, --verbose', 'Verbose output')
     .option('--dry-run', 'Show stats without API calls')
-    .option('--debug', 'Print debug info')
-    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ CANDIDATES (heuristics + embeddings extraction) ============
   program
@@ -129,11 +122,7 @@ function createProgram(): Command {
     .option('--json [file]', 'Output as JSON (to file if specified, otherwise stdout)')
     .option('--min-confidence <num>', 'Minimum confidence threshold', '0.5')
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
-    .option('-q, --quiet', 'Minimal output')
-    .option('-v, --verbose', 'Verbose output')
     .option('--dry-run', 'Show cost estimate without API calls')
-    .option('--debug', 'Print debug info')
-    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ SCRAPE (scrape URLs for metadata) ============
   program
@@ -144,9 +133,6 @@ function createProgram(): Command {
     .option('--concurrency <num>', 'Max concurrent scrapes', '5')
     .option('--timeout <ms>', 'Timeout per URL in ms', '4000')
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
-    .option('-q, --quiet', 'Minimal output')
-    .option('-v, --verbose', 'Verbose output')
-    .option('--no-cache', 'Skip cache and regenerate all results')
 
   // ============ CLASSIFY ============
   program
@@ -156,9 +142,6 @@ function createProgram(): Command {
     .requiredOption('-c, --home-country <name>', 'Your home country for location disambiguation')
     .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
     .option('-o, --output <file>', 'Save classified activities to JSON file')
-    .option('-q, --quiet', 'Minimal output')
-    .option('-v, --verbose', 'Verbose output')
-    .option('--debug', 'Print classifier prompt')
 
   // ============ GEOCODE ============
   program
@@ -167,8 +150,6 @@ function createProgram(): Command {
     .argument('<input>', 'Classified activities JSON file')
     .option('-c, --home-country <name>', 'Your home country for location disambiguation')
     .option('-o, --output <file>', 'Save geocoded activities to JSON file')
-    .option('-q, --quiet', 'Minimal output')
-    .option('-v, --verbose', 'Verbose output')
 
   // ============ EXPORT ============
   program
@@ -181,15 +162,9 @@ function createProgram(): Command {
       'Output formats: csv,excel,json,map,pdf',
       'csv,excel,json,map,pdf'
     )
-    .option('-q, --quiet', 'Minimal output')
-    .option('-v, --verbose', 'Verbose output')
 
   // ============ LIST ============
-  program
-    .command('list')
-    .description('Show previously processed chats')
-    .option('-q, --quiet', 'Minimal output')
-    .option('-v, --verbose', 'Verbose output')
+  program.command('list').description('Show previously processed chats')
 
   return program
 }
@@ -224,7 +199,8 @@ function buildCLIArgs(commandName: string, input: string, opts: Record<string, u
     timezone: typeof opts.timezone === 'string' ? opts.timezone : undefined,
     scrapeConcurrency: Number.parseInt(String(opts.concurrency ?? '5'), 10),
     scrapeTimeout: Number.parseInt(String(opts.timeout ?? '4000'), 10),
-    noCache: opts.cache === false
+    noCache: opts.cache === false,
+    cacheDir: typeof opts.cacheDir === 'string' ? opts.cacheDir : undefined
   }
 }
 
@@ -238,17 +214,18 @@ export function parseCliArgs(): CLIArgs {
   let result: CLIArgs | null = null
 
   // Attach action handlers to capture parsed args
+  // Use optsWithGlobals() to include global options from parent program
   for (const cmd of program.commands) {
-    cmd.action((input: string, opts: Record<string, unknown>) => {
-      result = buildCLIArgs(cmd.name(), input ?? '', opts)
+    cmd.action((input: string) => {
+      result = buildCLIArgs(cmd.name(), input ?? '', cmd.optsWithGlobals())
     })
   }
 
   // Handle no-argument list command
   const listCmd = program.commands.find((c) => c.name() === 'list')
   if (listCmd) {
-    listCmd.action((opts: Record<string, unknown>) => {
-      result = buildCLIArgs('list', '', opts)
+    listCmd.action(() => {
+      result = buildCLIArgs('list', '', listCmd.optsWithGlobals())
     })
   }
 
@@ -275,15 +252,15 @@ export function parseArgs(argv: string[], exitOnHelp = true): CLIArgs {
   let result: CLIArgs | null = null
 
   for (const cmd of program.commands) {
-    cmd.action((input: string, opts: Record<string, unknown>) => {
-      result = buildCLIArgs(cmd.name(), input ?? '', opts)
+    cmd.action((input: string) => {
+      result = buildCLIArgs(cmd.name(), input ?? '', cmd.optsWithGlobals())
     })
   }
 
   const listCmd = program.commands.find((c) => c.name() === 'list')
   if (listCmd) {
-    listCmd.action((opts: Record<string, unknown>) => {
-      result = buildCLIArgs('list', '', opts)
+    listCmd.action(() => {
+      result = buildCLIArgs('list', '', listCmd.optsWithGlobals())
     })
   }
 

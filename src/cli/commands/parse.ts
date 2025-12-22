@@ -39,7 +39,10 @@ export async function cmdParse(args: CLIArgs, logger: Logger): Promise<void> {
   logger.log(`\nChatToMap v${VERSION}`)
 
   // Initialize pipeline context
-  const ctx = await initContext(args.input, logger, { noCache: args.noCache })
+  const ctx = await initContext(args.input, logger, {
+    noCache: args.noCache,
+    cacheDir: args.cacheDir
+  })
 
   // Run parse step
   const result = stepParse(ctx, { maxMessages: args.maxMessages })
@@ -49,8 +52,15 @@ export async function cmdParse(args: CLIArgs, logger: Logger): Promise<void> {
   logger.success(`Valid ${formatSource(source)} export`)
   logger.success(`${stats.messageCount.toLocaleString()} messages`)
 
-  const start = stats.dateRange.start.toISOString().split('T')[0]
-  const end = stats.dateRange.end.toISOString().split('T')[0]
+  // Dates may be strings when read from cache
+  const startDate =
+    typeof stats.dateRange.start === 'string'
+      ? new Date(stats.dateRange.start)
+      : stats.dateRange.start
+  const endDate =
+    typeof stats.dateRange.end === 'string' ? new Date(stats.dateRange.end) : stats.dateRange.end
+  const start = startDate.toISOString().split('T')[0]
+  const end = endDate.toISOString().split('T')[0]
   logger.success(`Date range: ${start} to ${end}`)
 
   logger.success(
