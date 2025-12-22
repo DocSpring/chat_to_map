@@ -12,6 +12,22 @@ export { parseIMessageChat, parseIMessageChatStream } from './imessage.js'
 export { detectFormat, parseWhatsAppChat, parseWhatsAppChatStream } from './whatsapp.js'
 
 /**
+ * Normalize apostrophe variants to straight apostrophe (U+0027).
+ *
+ * WhatsApp and iMessage exports often use curly apostrophes which don't match
+ * regex patterns that use straight apostrophes (e.g., "Let's" vs "Let's").
+ *
+ * Handles:
+ * - ' (U+2019) Right Single Quotation Mark (most common in iOS)
+ * - ' (U+2018) Left Single Quotation Mark
+ * - ʼ (U+02BC) Modifier Letter Apostrophe
+ * - ` (U+0060) Grave Accent (backtick, sometimes used as apostrophe)
+ */
+export function normalizeApostrophes(text: string): string {
+  return text.replace(/[\u2019\u2018\u02BC`]/g, "'")
+}
+
+/**
  * Detect the chat source from content.
  */
 export function detectChatSource(content: string): ChatSource {

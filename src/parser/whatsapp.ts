@@ -8,6 +8,7 @@
  */
 
 import type { MediaType, ParsedMessage, ParserOptions, WhatsAppFormat } from '../types.js'
+import { normalizeApostrophes } from './index.js'
 
 // WhatsApp iOS format: [MM/DD/YY, H:MM:SS AM/PM] Sender: Message
 // Notes:
@@ -260,7 +261,8 @@ function appendToBuilder(builder: MessageBuilder, line: string): void {
  */
 export function parseWhatsAppChat(raw: string, options?: ParserOptions): ParsedMessage[] {
   // Normalize CRLF to LF - WhatsApp exports have mixed line endings
-  const normalized = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  // Also normalize apostrophe variants (curly → straight) for regex matching
+  const normalized = normalizeApostrophes(raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n'))
   const format = resolveFormat(normalized, options)
   const { pattern, parseTimestamp } = getFormatConfig(format)
   const lines = normalized.split('\n')
@@ -356,8 +358,8 @@ export async function* parseWhatsAppChatStream(
   }
 
   for await (const rawLine of lines) {
-    // Normalize line endings - strip any trailing CR
-    const line = rawLine.replace(/\r$/, '')
+    // Normalize line endings and apostrophes
+    const line = normalizeApostrophes(rawLine.replace(/\r$/, ''))
     if (state.config === null) {
       state.lineBuffer.push(line)
       if (state.lineBuffer.length >= 20) {

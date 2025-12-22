@@ -16,6 +16,7 @@
  */
 
 import type { ParsedMessage } from '../types.js'
+import { normalizeApostrophes } from './index.js'
 
 // Timestamp line pattern: Apr 02, 2025  8:52:29 AM (optional read receipt)
 const TIMESTAMP_PATTERN =
@@ -217,7 +218,9 @@ function finalizeParserState(parserState: IMessageParserState): ParsedMessage | 
  * Parse an iMessage chat export (synchronous, for small files).
  */
 export function parseIMessageChat(raw: string): ParsedMessage[] {
-  const lines = raw.split('\n')
+  // Normalize apostrophe variants (curly → straight) for regex matching
+  const normalized = normalizeApostrophes(raw)
+  const lines = normalized.split('\n')
   const messages: ParsedMessage[] = []
   const parserState = createInitialState()
 
@@ -240,7 +243,9 @@ export async function* parseIMessageChatStream(
 ): AsyncIterable<ParsedMessage> {
   const parserState = createInitialState()
 
-  for await (const line of lines) {
+  for await (const rawLine of lines) {
+    // Normalize apostrophe variants (curly → straight) for regex matching
+    const line = normalizeApostrophes(rawLine)
     const msg = processLine(line, parserState)
     if (msg) yield msg
   }

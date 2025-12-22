@@ -1,7 +1,94 @@
 import { describe, expect, it } from 'vitest'
-import { detectChatSource, parseChat, parseChatStream, parseChatWithStats } from './index.js'
+import {
+  detectChatSource,
+  normalizeApostrophes,
+  parseChat,
+  parseChatStream,
+  parseChatWithStats
+} from './index.js'
 
 describe('Parser Module', () => {
+  describe('normalizeApostrophes', () => {
+    it('converts right single quotation mark (U+2019) to straight apostrophe', () => {
+      const input = `Let\u2019s go to the café`
+      const result = normalizeApostrophes(input)
+      expect(result).toBe("Let's go to the café")
+    })
+
+    it('converts left single quotation mark (U+2018) to straight apostrophe', () => {
+      const input = `\u2018twas the night before`
+      const result = normalizeApostrophes(input)
+      expect(result).toBe("'twas the night before")
+    })
+
+    it('converts modifier letter apostrophe (U+02BC) to straight apostrophe', () => {
+      const input = `Let\u02BCs try this`
+      const result = normalizeApostrophes(input)
+      expect(result).toBe("Let's try this")
+    })
+
+    it('converts backtick to straight apostrophe', () => {
+      const input = 'Let`s use backtick'
+      const result = normalizeApostrophes(input)
+      expect(result).toBe("Let's use backtick")
+    })
+
+    it('handles multiple apostrophe variants in one string', () => {
+      const input = `Let\u2019s go, \u2018twas fun, let\u02BCs try it\`s great`
+      const result = normalizeApostrophes(input)
+      expect(result).toBe("Let's go, 'twas fun, let's try it's great")
+    })
+
+    it('preserves straight apostrophes', () => {
+      const input = "Let's keep it simple"
+      const result = normalizeApostrophes(input)
+      expect(result).toBe("Let's keep it simple")
+    })
+
+    it('handles empty string', () => {
+      expect(normalizeApostrophes('')).toBe('')
+    })
+
+    it('handles string with no apostrophes', () => {
+      const input = 'No apostrophes here at all'
+      expect(normalizeApostrophes(input)).toBe(input)
+    })
+  })
+
+  describe('apostrophe normalization in parsing', () => {
+    it('normalizes curly apostrophes in WhatsApp messages', () => {
+      // Using curly apostrophe (U+2019) in the message
+      const content = `[1/15/25, 10:30:00 AM] John: Let\u2019s go to the restaurant`
+      const messages = parseChat(content)
+
+      expect(messages).toHaveLength(1)
+      expect(messages[0]?.content).toBe("Let's go to the restaurant")
+      // Verify it's a straight apostrophe (U+0027)
+      expect(messages[0]?.content.includes("'")).toBe(true)
+    })
+
+    it('normalizes curly apostrophes in iMessage messages', () => {
+      // Using curly apostrophe (U+2019) in the message
+      const content = `Jan 15, 2025  10:30:00 AM
+John Doe
+Let\u2019s check out that café`
+
+      const messages = parseChat(content)
+
+      expect(messages).toHaveLength(1)
+      expect(messages[0]?.content).toBe("Let's check out that café")
+    })
+
+    it('normalizes multiple apostrophe variants in a message', () => {
+      // Mix of curly right (U+2019), curly left (U+2018), modifier (U+02BC), and backtick
+      const content = `[1/15/25, 10:30:00 AM] John: Let\u2019s go, \u2018twas fun, let\u02BCs try it\`s great`
+      const messages = parseChat(content)
+
+      expect(messages).toHaveLength(1)
+      expect(messages[0]?.content).toBe("Let's go, 'twas fun, let's try it's great")
+    })
+  })
+
   describe('detectChatSource', () => {
     it('detects WhatsApp iOS format (brackets)', () => {
       const content = '[1/15/25, 10:30:00 AM] John: Hello'
