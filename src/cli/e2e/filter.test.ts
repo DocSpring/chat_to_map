@@ -15,13 +15,11 @@ describe('filter command', () => {
   it('filters on first run, uses cache on second run', () => {
     // First run: fresh filter
     const run1 = runCli(`filter ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir}`)
-    expect(run1.exitCode).toBe(0)
     expect(run1.stdout).toContain('Extraction Results')
     expect(run1.stdout).toContain('Total candidates:')
 
     // Second run: should use cache for both embed and extract
     const run2 = runCli(`filter ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir}`)
-    expect(run2.exitCode).toBe(0)
     expect(run2.stdout).toContain('Embedding messages... 📦 cached')
     expect(run2.stdout).toContain('Extracting candidates (embeddings)... 📦 cached')
   })

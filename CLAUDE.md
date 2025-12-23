@@ -116,9 +116,11 @@ task hooks:run        # Run pre-commit manually
 
 ### Testing
 
-**⚠️ Always use `bun run test`, NOT `bun test`:**
-- `bun run test` → Runs Vitest, which loads `.env` via `vitest.config.ts`
-- `bun test` → Runs Bun's native test runner, which does NOT load `.env`
+**🚨 NEVER use `bun test` - ALWAYS use `bun run test` or `task test`:**
+- ❌ `bun test` → Bun's native runner - NO .env, NO vitest config, BROKEN setup files
+- ✅ `bun run test` → Vitest - loads .env, proper config, works correctly
+- ✅ `task test` → Same as above (preferred)
+- ✅ `task test:e2e` → E2E tests only
 
 **VCR Testing Model:** Tests are NEVER skipped. API responses are recorded locally and replayed on CI:
 1. Run tests locally with API keys in `.env` → responses cached to fixtures

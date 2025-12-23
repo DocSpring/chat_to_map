@@ -153,7 +153,8 @@ function buildCliEnv(): NodeJS.ProcessEnv {
 }
 
 /**
- * Run CLI command and return output
+ * Run CLI command and return output.
+ * Throws immediately if stderr has content (surfaces errors clearly).
  */
 export function runCli(args: string): { stdout: string; stderr: string; exitCode: number } {
   const parsedArgs = parseArgs(args)
@@ -162,11 +163,19 @@ export function runCli(args: string): { stdout: string; stderr: string; exitCode
     env: buildCliEnv()
   })
 
-  return {
-    stdout: result.stdout || '',
-    stderr: result.stderr || '',
-    exitCode: result.status ?? 1
+  const stdout = result.stdout || ''
+  const stderr = result.stderr || ''
+  const exitCode = result.status ?? 1
+
+  // Surface errors immediately - much easier to debug
+  if (stderr) {
+    throw new Error(`CLI stderr:\n${stderr}`)
   }
+  if (exitCode !== 0) {
+    throw new Error(`CLI exited with code ${exitCode}\nstdout:\n${stdout}`)
+  }
+
+  return { stdout, stderr, exitCode }
 }
 
 /**
