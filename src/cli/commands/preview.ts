@@ -7,7 +7,7 @@
 import { basename } from 'node:path'
 import { buildClassificationPrompt } from '../../classifier/prompt'
 import { classifyMessages, VERSION } from '../../index'
-import { scrapeAndEnrichCandidates } from '../../scraper/enrich'
+import { extractUrlsFromCandidates, fetchMetadataForUrls } from '../../scraper/metadata'
 import type { ClassifiedActivity } from '../../types'
 import { formatLocation } from '../../types'
 import type { CLIArgs } from '../args'
@@ -150,30 +150,34 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
   const PREVIEW_CLASSIFY_COUNT = args.maxResults * 3
   const topCandidates = scanResult.candidates.slice(0, PREVIEW_CLASSIFY_COUNT)
 
-  const enrichedCandidates = await scrapeAndEnrichCandidates(topCandidates, {
-    timeout: 4000,
-    concurrency: 5,
-    cache: ctx.apiCache,
-    onScrapeStart: ({ urlCount, cachedCount }) => {
-      if (cachedCount > 0) {
-        logger.log(`\n🔗 Scraping metadata for ${urlCount} URLs (${cachedCount} cached)...`)
-      } else if (urlCount > 0) {
-        logger.log(`\n🔗 Scraping metadata for ${urlCount} URLs...`)
+  // Fetch URL metadata (stored in cache, used by classifier when building prompts)
+  const urls = extractUrlsFromCandidates(topCandidates)
+  if (urls.length > 0) {
+    await fetchMetadataForUrls(urls, {
+      timeout: 4000,
+      concurrency: 5,
+      cache: ctx.apiCache,
+      onScrapeStart: ({ urlCount, cachedCount }) => {
+        if (cachedCount > 0) {
+          logger.log(`\n🔗 Scraping metadata for ${urlCount} URLs (${cachedCount} cached)...`)
+        } else if (urlCount > 0) {
+          logger.log(`\n🔗 Scraping metadata for ${urlCount} URLs...`)
+        }
+      },
+      onDebug: args.debug ? (msg) => logger.log(`   [DEBUG] ${msg}`) : undefined,
+      onUrlScraped: ({ url, success, error, current, total }) => {
+        const domain = new URL(url).hostname.replace('www.', '')
+        if (success) {
+          logger.log(`   [${current}/${total}] ✓ ${domain}`)
+        } else {
+          logger.log(`   [${current}/${total}] ✗ ${domain}: ${error ?? 'Failed'}`)
+        }
       }
-    },
-    onDebug: args.debug ? (msg) => logger.log(`   [DEBUG] ${msg}`) : undefined,
-    onUrlScraped: ({ url, success, error, current, total }) => {
-      const domain = new URL(url).hostname.replace('www.', '')
-      if (success) {
-        logger.log(`   [${current}/${total}] ✓ ${domain}`)
-      } else {
-        logger.log(`   [${current}/${total}] ✗ ${domain}: ${error ?? 'Failed'}`)
-      }
-    }
-  })
+    })
+  }
 
   if (args.debug) {
-    const prompt = buildClassificationPrompt(enrichedCandidates, { homeCountry, timezone })
+    const prompt = buildClassificationPrompt(topCandidates, { homeCountry, timezone })
     logger.log('\n--- DEBUG: Classifier Prompt ---')
     logger.log(prompt)
     logger.log('--- END DEBUG ---\n')
@@ -181,13 +185,13 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
   }
 
   if (args.dryRun) {
-    logger.log(`\n📊 Dry run: would send ${enrichedCandidates.length} messages to ${model}`)
+    logger.log(`\n📊 Dry run: would send ${topCandidates.length} messages to ${model}`)
     return
   }
 
   const { activities, fromCache } = await stepClassify(
     ctx,
-    enrichedCandidates,
+    topCandidates,
     { provider, apiKey, model, homeCountry, timezone },
     logger
   )

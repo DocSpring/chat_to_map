@@ -123,6 +123,20 @@ const MEDIUM_CONFIDENCE_PATTERNS: readonly ActivityPattern[] = [
     confidence: 0.65,
     description: 'Come back to...',
     candidateType: 'suggestion'
+  },
+  {
+    name: 'would_you_like',
+    pattern: /\bwould you like to\b/i,
+    confidence: 0.8,
+    description: 'Would you like to...?',
+    candidateType: 'suggestion'
+  },
+  {
+    name: 'do_you_want',
+    pattern: /\bdo you (?:want|wanna)\b/i,
+    confidence: 0.8,
+    description: 'Do you want/wanna...?',
+    candidateType: 'suggestion'
   }
 ]
 

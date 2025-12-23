@@ -1,8 +1,9 @@
 /**
- * Context Enrichment with URL Metadata
+ * URL Metadata Fetching
  *
- * Scrape URLs found in candidate contexts and inject metadata inline.
- * Format: URL followed by JSON metadata on the next line.
+ * Scrape URLs to extract metadata: title, description, OpenGraph images,
+ * JSON-LD structured data, creator info, categories, etc.
+ * Results are cached to avoid re-fetching.
  *
  * Features:
  * - Parallel scraping (default 5 concurrent)
@@ -44,70 +45,7 @@ export function extractUrlsFromCandidates(candidates: readonly CandidateMessage[
   return [...urls]
 }
 
-/**
- * Format scraped metadata as compact JSON for injection.
- * Only includes non-null fields to minimize prompt tokens.
- */
-function formatMetadataJson(metadata: ScrapedMetadata): string {
-  const obj: Record<string, unknown> = {
-    platform: metadata.platform
-  }
-  if (metadata.title) obj.title = metadata.title
-  if (metadata.description) obj.description = metadata.description.slice(0, 200)
-  if (metadata.creator) obj.creator = metadata.creator
-  if (metadata.categories?.length) obj.categories = metadata.categories
-  return JSON.stringify(obj)
-}
-
-/**
- * Inject metadata JSON after each URL in text.
- * Returns the enriched text with metadata on lines after URLs.
- */
-export function injectMetadataIntoText(
-  text: string,
-  metadataMap: Map<string, ScrapedMetadata>
-): string {
-  // Find all URLs and their positions
-  const urlMatches = [...text.matchAll(URL_REGEX)]
-  if (urlMatches.length === 0) return text
-
-  // Build result by processing URLs in reverse order (to preserve positions)
-  let result = text
-  for (let i = urlMatches.length - 1; i >= 0; i--) {
-    const match = urlMatches[i]
-    if (!match || match.index === undefined) continue
-
-    const url = match[0]
-    const metadata = metadataMap.get(url)
-    if (!metadata) continue
-
-    const insertPos = match.index + url.length
-    const json = formatMetadataJson(metadata)
-    result = `${result.slice(0, insertPos)}\n[URL_META: ${json}]${result.slice(insertPos)}`
-  }
-
-  return result
-}
-
-/**
- * Enrich candidate contexts with scraped URL metadata.
- * Modifies the context field to include metadata JSON after each URL.
- */
-export function enrichCandidatesWithMetadata(
-  candidates: readonly CandidateMessage[],
-  metadataMap: Map<string, ScrapedMetadata>
-): CandidateMessage[] {
-  return candidates.map((candidate) => {
-    const context = candidate.context ?? `>>> ${candidate.sender}: ${candidate.content}`
-    const enrichedContext = injectMetadataIntoText(context, metadataMap)
-    return {
-      ...candidate,
-      context: enrichedContext
-    }
-  })
-}
-
-interface EnrichOptions extends ScraperConfig {
+interface FetchOptions extends ScraperConfig {
   /** Callback when scraping starts (only called if there are uncached URLs) */
   onScrapeStart?: ((info: { urlCount: number; cachedCount: number }) => void) | undefined
   /** Callback for each URL scraped (always called - success or failure) */
@@ -150,12 +88,12 @@ function isCachedError(data: CachedScrapeResult): data is CachedError {
  */
 async function scrapeWithCache(
   url: string,
-  options: EnrichOptions
+  options: FetchOptions
 ): Promise<{ url: string; metadata: ScrapedMetadata | null; error?: string | undefined }> {
   const cache = options.cache
   const cacheKey = generateUrlCacheKey(url)
 
-  // Check cache first (already handled in scrapeAndEnrichCandidates)
+  // Check cache first (already handled in fetchMetadataForUrls)
   // This function is only called for uncached URLs
 
   // Scrape with timeout
@@ -194,19 +132,17 @@ async function scrapeWithCache(
 }
 
 /**
- * Scrape all URLs found in candidates and return enriched candidates.
- * Best-effort: failures are silently skipped (no metadata injected).
+ * Fetch metadata for a list of URLs.
+ * Best-effort: failures are silently skipped.
  * Uses parallel scraping with configurable concurrency.
  * Caches both successes and failures to avoid re-fetching.
  */
-export async function scrapeAndEnrichCandidates(
-  candidates: readonly CandidateMessage[],
-  options: EnrichOptions = {}
-): Promise<CandidateMessage[]> {
-  const urls = extractUrlsFromCandidates(candidates)
-
+export async function fetchMetadataForUrls(
+  urls: readonly string[],
+  options: FetchOptions = {}
+): Promise<Map<string, ScrapedMetadata>> {
   if (urls.length === 0) {
-    return [...candidates]
+    return new Map()
   }
 
   const metadataMap = new Map<string, ScrapedMetadata>()
@@ -267,5 +203,5 @@ export async function scrapeAndEnrichCandidates(
     }
   }
 
-  return enrichCandidatesWithMetadata(candidates, metadataMap)
+  return metadataMap
 }

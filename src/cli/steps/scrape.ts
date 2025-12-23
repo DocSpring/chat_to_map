@@ -1,11 +1,12 @@
 /**
  * Scrape Step
  *
- * Scrape URLs from candidates and enrich with metadata.
+ * Scrape URLs from candidates and return metadata.
  * Uses parallel scraping with caching.
  */
 
-import { extractUrlsFromCandidates, scrapeAndEnrichCandidates } from '../../scraper/enrich'
+import { extractUrlsFromCandidates, fetchMetadataForUrls } from '../../scraper/metadata'
+import type { ScrapedMetadata } from '../../scraper/types'
 import type { CandidateMessage } from '../../types'
 import type { PipelineContext } from './context'
 
@@ -22,9 +23,11 @@ interface ScrapeStats {
 /**
  * Result of the scrape step.
  */
-interface ScrapeResult {
-  /** Enriched candidates with URL metadata */
-  readonly candidates: readonly CandidateMessage[]
+interface ScrapeStepResult {
+  /** Map of URL to scraped metadata */
+  readonly metadataMap: Map<string, ScrapedMetadata>
+  /** URLs found in candidates */
+  readonly urls: readonly string[]
   /** Whether result was from cache */
   readonly fromCache: boolean
   /** Scrape stats */
@@ -43,6 +46,11 @@ interface ScrapeOptions {
   readonly verbose?: boolean | undefined
 }
 
+/** Serializable version of metadata map for caching */
+interface CachedMetadata {
+  readonly entries: Array<[string, ScrapedMetadata]>
+}
+
 /**
  * Run the scrape step.
  *
@@ -53,18 +61,19 @@ export async function stepScrape(
   ctx: PipelineContext,
   candidates: readonly CandidateMessage[],
   options?: ScrapeOptions
-): Promise<ScrapeResult> {
+): Promise<ScrapeStepResult> {
   const { pipelineCache, apiCache, logger, noCache } = ctx
 
   // Check pipeline cache (skip if noCache)
   if (!noCache && pipelineCache.hasStage('scrape_stats')) {
     const stats = pipelineCache.getStage<ScrapeStats>('scrape_stats')
-    const enriched = pipelineCache.getStage<CandidateMessage[]>('enriched_candidates')
-    if (stats && enriched) {
+    const cached = pipelineCache.getStage<CachedMetadata>('scrape_metadata')
+    if (stats && cached) {
       if (!options?.quiet) {
         logger.log('\n🔗 Scraping URLs... 📦 cached')
       }
-      return { candidates: enriched, fromCache: true, stats }
+      const metadataMap = new Map(cached.entries)
+      return { metadataMap, urls: [...metadataMap.keys()], fromCache: true, stats }
     }
   }
 
@@ -82,8 +91,7 @@ export async function stepScrape(
       cachedCount: 0
     }
     pipelineCache.setStage('scrape_stats', stats)
-    pipelineCache.setStage('enriched_candidates', [...candidates])
-    return { candidates, fromCache: false, stats }
+    return { metadataMap: new Map(), urls: [], fromCache: false, stats }
   }
 
   if (!options?.quiet) {
@@ -95,7 +103,7 @@ export async function stepScrape(
   let failedCount = 0
   let cachedCount = 0
 
-  const enriched = await scrapeAndEnrichCandidates(candidates, {
+  const metadataMap = await fetchMetadataForUrls(urls, {
     timeout: options?.timeout ?? 4000,
     cache: apiCache,
     onScrapeStart: (info) => {
@@ -129,13 +137,13 @@ export async function stepScrape(
     cachedCount
   }
 
-  // Cache results
+  // Cache results (convert Map to array for JSON serialization)
   pipelineCache.setStage('scrape_stats', stats)
-  pipelineCache.setStage('enriched_candidates', [...enriched])
+  pipelineCache.setStage('scrape_metadata', { entries: [...metadataMap.entries()] })
 
   if (!options?.quiet) {
     logger.log(`   ✓ ${successCount} scraped, ${failedCount} failed, ${cachedCount} cached`)
   }
 
-  return { candidates: enriched, fromCache: false, stats }
+  return { metadataMap, urls, fromCache: false, stats }
 }

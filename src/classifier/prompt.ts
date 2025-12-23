@@ -2,20 +2,79 @@
  * Classification Prompt
  *
  * AI prompt for classifying candidate messages as activities.
+ * Includes URL metadata enrichment for better context.
  */
 
 import { VALID_CATEGORIES } from '../categories'
+import type { ScrapedMetadata } from '../scraper/types'
 import type { CandidateMessage } from '../types'
+
+/** URL regex - matches http/https URLs */
+const URL_REGEX = /https?:\/\/[^\s<>"{}|\\^`[\]]+/g
+
+/**
+ * Format scraped metadata as compact JSON for injection.
+ * Only includes non-null fields to minimize prompt tokens.
+ */
+function formatMetadataJson(metadata: ScrapedMetadata): string {
+  const obj: Record<string, unknown> = {}
+  if (metadata.title) obj.title = metadata.title
+  if (metadata.description) obj.description = metadata.description.slice(0, 200)
+  if (metadata.creator) obj.creator = metadata.creator
+  if (metadata.categories?.length) obj.categories = metadata.categories
+  return JSON.stringify(obj)
+}
+
+/**
+ * Inject metadata JSON after each URL in text.
+ * Returns the enriched text with metadata on lines after URLs.
+ */
+export function injectMetadataIntoText(
+  text: string,
+  metadataMap: Map<string, ScrapedMetadata>
+): string {
+  // Find all URLs and their positions
+  const urlMatches = [...text.matchAll(URL_REGEX)]
+  if (urlMatches.length === 0) return text
+
+  // Build result by processing URLs in reverse order (to preserve positions)
+  let result = text
+  for (let i = urlMatches.length - 1; i >= 0; i--) {
+    const match = urlMatches[i]
+    if (!match || match.index === undefined) continue
+
+    const url = match[0]
+    const metadata = metadataMap.get(url)
+    if (!metadata) continue
+
+    const insertPos = match.index + url.length
+    const json = formatMetadataJson(metadata)
+    result = `${result.slice(0, insertPos)}\n[URL_META: ${json}]${result.slice(insertPos)}`
+  }
+
+  return result
+}
 
 /**
  * Format context for display. Context already includes target marked with >>>.
+ * Optionally enriches URLs with scraped metadata.
  */
-function formatContext(candidate: CandidateMessage): string {
-  if (candidate.context) {
-    return candidate.context
+function formatContext(
+  candidate: CandidateMessage,
+  metadataMap?: Map<string, ScrapedMetadata>
+): string {
+  let context = candidate.context
+  if (!context) {
+    // Fallback if no context
+    context = `>>> ${candidate.sender}: ${candidate.content}`
   }
-  // Fallback if no context
-  return `>>> ${candidate.sender}: ${candidate.content}`
+
+  // Enrich with URL metadata if provided
+  if (metadataMap && metadataMap.size > 0) {
+    context = injectMetadataIntoText(context, metadataMap)
+  }
+
+  return context
 }
 
 /**
@@ -40,6 +99,8 @@ export interface ClassificationContext {
   readonly homeCountry: string
   /** User's timezone (e.g., "Pacific/Auckland") - optional, helps with temporal context */
   readonly timezone?: string | undefined
+  /** URL metadata map for enriching context - optional */
+  readonly urlMetadata?: Map<string, ScrapedMetadata> | undefined
 }
 
 /**
@@ -55,7 +116,7 @@ export function buildClassificationPrompt(
 
   const messagesText = candidates
     .map((candidate) => {
-      const ctx = formatContext(candidate)
+      const ctx = formatContext(candidate, context.urlMetadata)
       const timestamp = formatTimestamp(candidate.timestamp)
       const typeTag = candidate.candidateType === 'agreement' ? ' [AGREE]' : ''
       return `

@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import type { ScrapedMetadata } from '../scraper/types'
 import type { CandidateMessage, QueryType } from '../types'
 import {
   buildClassificationPrompt,
   type ClassificationContext,
+  injectMetadataIntoText,
   parseClassificationResponse
 } from './prompt'
 
@@ -322,6 +324,157 @@ Hope this helps!`
 
       // Should throw when no IDs match
       expect(() => parseClassificationResponse(response, [999])).toThrow(/no matching message IDs/)
+    })
+  })
+
+  describe('injectMetadataIntoText', () => {
+    const metadata: ScrapedMetadata = {
+      platform: 'airbnb',
+      canonicalUrl: 'https://airbnb.com/rooms/123',
+      contentId: '123',
+      title: 'Cozy Cabin',
+      description: 'A beautiful cabin in the woods',
+      hashtags: [],
+      creator: 'Host Name',
+      thumbnailUrl: null,
+      categories: ['accommodation'],
+      suggestedKeywords: []
+    }
+
+    it('injects metadata after URL', () => {
+      const text = 'Check out https://airbnb.com/rooms/123 for our trip'
+      const metadataMap = new Map([['https://airbnb.com/rooms/123', metadata]])
+
+      const result = injectMetadataIntoText(text, metadataMap)
+
+      expect(result).toContain('https://airbnb.com/rooms/123')
+      expect(result).toContain('[URL_META:')
+      expect(result).toContain('"title":"Cozy Cabin"')
+    })
+
+    it('handles multiple URLs', () => {
+      const text = 'See https://a.com and https://b.com'
+      const metadataMap = new Map<string, ScrapedMetadata>([
+        [
+          'https://a.com',
+          { ...metadata, platform: 'other', canonicalUrl: 'https://a.com', title: 'Site A' }
+        ],
+        [
+          'https://b.com',
+          { ...metadata, platform: 'other', canonicalUrl: 'https://b.com', title: 'Site B' }
+        ]
+      ])
+
+      const result = injectMetadataIntoText(text, metadataMap)
+
+      expect(result).toContain('"title":"Site A"')
+      expect(result).toContain('"title":"Site B"')
+    })
+
+    it('skips URLs without metadata', () => {
+      const text = 'See https://unknown.com'
+      const result = injectMetadataIntoText(text, new Map())
+
+      expect(result).toBe(text)
+    })
+
+    it('returns original text if no URLs', () => {
+      const text = 'No links here'
+      const result = injectMetadataIntoText(text, new Map())
+
+      expect(result).toBe(text)
+    })
+
+    it('truncates long descriptions', () => {
+      const longDesc = 'A'.repeat(300)
+      const metadataWithLongDesc = { ...metadata, description: longDesc }
+      const text = 'Check https://airbnb.com/rooms/123'
+      const metadataMap = new Map([['https://airbnb.com/rooms/123', metadataWithLongDesc]])
+
+      const result = injectMetadataIntoText(text, metadataMap)
+
+      // Description should be truncated to 200 chars
+      expect(result).not.toContain('A'.repeat(300))
+      expect(result).toContain('A'.repeat(200))
+    })
+
+    it('omits null fields from JSON', () => {
+      const minimalMetadata: ScrapedMetadata = {
+        platform: 'other',
+        canonicalUrl: 'https://example.com',
+        contentId: null,
+        title: 'Test',
+        description: null,
+        hashtags: [],
+        creator: null,
+        thumbnailUrl: null,
+        categories: [],
+        suggestedKeywords: []
+      }
+      const text = 'Check https://example.com'
+      const metadataMap = new Map([['https://example.com', minimalMetadata]])
+
+      const result = injectMetadataIntoText(text, metadataMap)
+
+      expect(result).toContain('"title":"Test"')
+      expect(result).not.toContain('"description"')
+      expect(result).not.toContain('"creator"')
+      // platform is no longer included in the JSON output
+      expect(result).not.toContain('"platform"')
+    })
+  })
+
+  describe('buildClassificationPrompt with URL metadata', () => {
+    const metadata: ScrapedMetadata = {
+      platform: 'youtube',
+      canonicalUrl: 'https://youtube.com/watch?v=abc',
+      contentId: 'abc',
+      title: 'Cool Video',
+      description: 'A cool video about stuff',
+      hashtags: [],
+      creator: 'Creator',
+      thumbnailUrl: 'https://img.youtube.com/abc.jpg',
+      categories: ['video'],
+      suggestedKeywords: []
+    }
+
+    it('enriches candidate contexts with URL metadata', () => {
+      const candidates = [createCandidate(1, 'test', 'Watch https://youtube.com/watch?v=abc')]
+      const metadataMap = new Map([['https://youtube.com/watch?v=abc', metadata]])
+      const contextWithMetadata: ClassificationContext = {
+        ...TEST_CONTEXT,
+        urlMetadata: metadataMap
+      }
+
+      const prompt = buildClassificationPrompt(candidates, contextWithMetadata)
+
+      expect(prompt).toContain('[URL_META:')
+      expect(prompt).toContain('"title":"Cool Video"')
+    })
+
+    it('handles candidates without matching URLs', () => {
+      const candidates = [createCandidate(1, 'No URLs here')]
+      const metadataMap = new Map([['https://other.com', metadata]])
+      const contextWithMetadata: ClassificationContext = {
+        ...TEST_CONTEXT,
+        urlMetadata: metadataMap
+      }
+
+      const prompt = buildClassificationPrompt(candidates, contextWithMetadata)
+
+      expect(prompt).toContain('No URLs here')
+      // Should not have actual metadata injected (the prompt instructions mention [URL_META: {...}] as format)
+      expect(prompt).not.toContain('"title":"Cool Video"')
+    })
+
+    it('works without URL metadata', () => {
+      const candidates = [createCandidate(1, 'Watch https://youtube.com/watch?v=abc')]
+
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
+
+      expect(prompt).toContain('https://youtube.com/watch?v=abc')
+      // Should not have actual metadata injected - checking for a specific title that would only appear from enrichment
+      expect(prompt).not.toContain('"title":"Cool Video"')
     })
   })
 })

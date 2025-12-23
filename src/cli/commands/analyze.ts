@@ -13,7 +13,7 @@ import {
   parseChatWithStats,
   VERSION
 } from '../../index'
-import { scrapeAndEnrichCandidates } from '../../scraper/enrich'
+import { extractUrlsFromCandidates, fetchMetadataForUrls } from '../../scraper/metadata'
 import type {
   CandidateMessage,
   ClassifiedActivity,
@@ -88,37 +88,39 @@ export async function cmdAnalyze(args: CLIArgs, logger: Logger): Promise<void> {
     return
   }
 
-  // Step 3: Scrape URLs
-  let enrichedCandidates: CandidateMessage[]
-  if (pipelineCache.hasStage('scraped_urls')) {
-    enrichedCandidates = pipelineCache.getStage<CandidateMessage[]>('scraped_urls') ?? candidates
-    logger.log('\n🔗 Scraping URLs... 📦 cached')
-  } else {
-    enrichedCandidates = await scrapeAndEnrichCandidates(candidates, {
-      timeout: args.scrapeTimeout,
-      concurrency: args.scrapeConcurrency,
-      cache: apiCache,
-      onScrapeStart: ({ urlCount, cachedCount }) => {
-        if (cachedCount > 0) {
-          logger.log(`\n🔗 Scraping ${urlCount} URLs (${cachedCount} cached)...`)
-        } else if (urlCount > 0) {
-          logger.log(`\n🔗 Scraping ${urlCount} URLs...`)
-        }
-      },
-      onDebug: args.debug ? (msg) => logger.log(`   [DEBUG] ${msg}`) : undefined,
-      onUrlScraped: ({ url, success, error, current, total }) => {
-        const domain = new URL(url).hostname.replace('www.', '')
-        if (success) {
-          if (args.verbose || args.debug) {
-            logger.log(`   [${current}/${total}] ✓ ${domain}`)
+  // Step 3: Scrape URLs (fetch metadata, don't modify candidates)
+  const urls = extractUrlsFromCandidates(candidates)
+  if (urls.length > 0) {
+    if (pipelineCache.hasStage('scrape_metadata')) {
+      logger.log('\n🔗 Scraping URLs... 📦 cached')
+    } else {
+      await fetchMetadataForUrls(urls, {
+        timeout: args.scrapeTimeout,
+        concurrency: args.scrapeConcurrency,
+        cache: apiCache,
+        onScrapeStart: ({ urlCount, cachedCount }) => {
+          if (cachedCount > 0) {
+            logger.log(`\n🔗 Scraping ${urlCount} URLs (${cachedCount} cached)...`)
+          } else if (urlCount > 0) {
+            logger.log(`\n🔗 Scraping ${urlCount} URLs...`)
           }
-        } else {
-          // Always show errors
-          logger.log(`   [${current}/${total}] ✗ ${domain}: ${error ?? 'Failed'}`)
+        },
+        onDebug: args.debug ? (msg) => logger.log(`   [DEBUG] ${msg}`) : undefined,
+        onUrlScraped: ({ url, success, error, current, total }) => {
+          const domain = new URL(url).hostname.replace('www.', '')
+          if (success) {
+            if (args.verbose || args.debug) {
+              logger.log(`   [${current}/${total}] ✓ ${domain}`)
+            }
+          } else {
+            // Always show errors
+            logger.log(`   [${current}/${total}] ✗ ${domain}: ${error ?? 'Failed'}`)
+          }
         }
-      }
-    })
-    pipelineCache.setStage('scraped_urls', enrichedCandidates)
+      })
+      // Note: metadata is cached in apiCache, no need to store in pipelineCache
+      // The classifier will look up metadata when building prompts
+    }
   }
 
   // Step 4: Classify with AI
@@ -128,7 +130,7 @@ export async function cmdAnalyze(args: CLIArgs, logger: Logger): Promise<void> {
     logger.log('\n🤖 Classifying... 📦 cached')
     logger.success(`${classifications.length} activities`)
   } else {
-    classifications = await runClassify(enrichedCandidates, args, logger)
+    classifications = await runClassify(candidates, args, logger)
     pipelineCache.setStage('classifications', classifications)
   }
 

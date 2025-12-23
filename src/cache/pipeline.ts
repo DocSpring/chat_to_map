@@ -34,11 +34,10 @@ export type PipelineStage =
   | 'preview_activities'
   | 'embed_stats'
   | 'scrape_stats'
+  | 'scrape_metadata'
   | 'candidates.heuristics'
   | 'candidates.embeddings'
   | 'candidates.all'
-  | 'enriched_candidates'
-  | 'scraped_urls'
   | 'classifications'
   | 'geocodings'
 
