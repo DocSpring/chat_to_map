@@ -112,10 +112,10 @@ function createProgram(): Command {
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
     .option('--dry-run', 'Show stats without API calls')
 
-  // ============ CANDIDATES (heuristics + embeddings extraction) ============
+  // ============ FILTER (heuristics + embeddings extraction) ============
   program
-    .command('candidates')
-    .description('Extract candidate messages (heuristics, embeddings, or both)')
+    .command('filter')
+    .description('Filter messages into candidates (heuristics, embeddings, or both)')
     .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
     .option('--method <method>', 'Extraction method: heuristics, embeddings, both', 'both')
     .option('--json [file]', 'Output as JSON (to file if specified, otherwise stdout)')
@@ -137,7 +137,7 @@ function createProgram(): Command {
   program
     .command('classify')
     .description('Classify candidates using AI')
-    .argument('<input>', 'Candidates JSON file from candidates command')
+    .argument('<input>', 'Candidates JSON file from filter command')
     .requiredOption('-c, --home-country <name>', 'Your home country for location disambiguation')
     .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
     .option('-o, --output <file>', 'Save classified activities to JSON file')

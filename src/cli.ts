@@ -10,7 +10,7 @@
 
 import { parseCliArgs } from './cli/args'
 import { cmdAnalyze } from './cli/commands/analyze'
-import { cmdCandidates } from './cli/commands/candidates'
+import { cmdFilter } from './cli/commands/filter'
 import { cmdList } from './cli/commands/list'
 import { cmdParse } from './cli/commands/parse'
 import { cmdPreview } from './cli/commands/preview'
@@ -40,8 +40,8 @@ async function main(): Promise<void> {
         await cmdPreview(args, logger)
         break
 
-      case 'candidates':
-        await cmdCandidates(args, logger)
+      case 'filter':
+        await cmdFilter(args, logger)
         break
 
       case 'scrape':

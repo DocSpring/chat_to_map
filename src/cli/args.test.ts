@@ -88,39 +88,39 @@ describe('CLI Args', () => {
       expect(args.minConfidence).toBe(0.75)
     })
 
-    it('parses candidates command with input', () => {
-      const args = parseArgs(['candidates', 'chat.txt'], false)
-      expect(args.command).toBe('candidates')
+    it('parses filter command with input', () => {
+      const args = parseArgs(['filter', 'chat.txt'], false)
+      expect(args.command).toBe('filter')
       expect(args.input).toBe('chat.txt')
     })
 
     it('parses --method option with valid values', () => {
-      expect(parseArgs(['candidates', 'chat.txt', '--method', 'heuristics'], false).method).toBe(
+      expect(parseArgs(['filter', 'chat.txt', '--method', 'heuristics'], false).method).toBe(
         'heuristics'
       )
-      expect(parseArgs(['candidates', 'chat.txt', '--method', 'embeddings'], false).method).toBe(
+      expect(parseArgs(['filter', 'chat.txt', '--method', 'embeddings'], false).method).toBe(
         'embeddings'
       )
-      expect(parseArgs(['candidates', 'chat.txt', '--method', 'both'], false).method).toBe('both')
+      expect(parseArgs(['filter', 'chat.txt', '--method', 'both'], false).method).toBe('both')
     })
 
     it('defaults --method to "both"', () => {
-      const args = parseArgs(['candidates', 'chat.txt'], false)
+      const args = parseArgs(['filter', 'chat.txt'], false)
       expect(args.method).toBe('both')
     })
 
     it('falls back to "both" for invalid --method values', () => {
-      const args = parseArgs(['candidates', 'chat.txt', '--method', 'invalid'], false)
+      const args = parseArgs(['filter', 'chat.txt', '--method', 'invalid'], false)
       expect(args.method).toBe('both')
     })
 
     it('parses --json option', () => {
-      const args = parseArgs(['candidates', 'chat.txt', '--json', 'output.json'], false)
+      const args = parseArgs(['filter', 'chat.txt', '--json', 'output.json'], false)
       expect(args.jsonOutput).toBe('output.json')
     })
 
     it('defaults --json to undefined', () => {
-      const args = parseArgs(['candidates', 'chat.txt'], false)
+      const args = parseArgs(['filter', 'chat.txt'], false)
       expect(args.jsonOutput).toBeUndefined()
     })
 

@@ -113,12 +113,12 @@ function formatCandidatesText(output: CandidatesOutput, logger: Logger): void {
   }
 }
 
-export async function cmdCandidates(args: CLIArgs, logger: Logger): Promise<void> {
+export async function cmdFilter(args: CLIArgs, logger: Logger): Promise<void> {
   if (!args.input) {
     throw new Error('No input file specified')
   }
 
-  logger.log(`\nChatToMap Candidates v${VERSION}`)
+  logger.log(`\nChatToMap Filter v${VERSION}`)
   logger.log(`\n📁 ${basename(args.input)}`)
 
   // Parse messages
