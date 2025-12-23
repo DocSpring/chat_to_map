@@ -38,7 +38,7 @@ interface ResolveOptions {
 
 interface ResolvedUserContext {
   homeCountry: string
-  timezone?: string | undefined
+  timezone: string
 }
 
 const GEOIP_APIS = [
@@ -229,11 +229,13 @@ export async function resolveUserContext(
     )
   }
 
+  if (!timezone) {
+    throw new Error('Could not determine timezone. Use --timezone or set TIMEZONE env var.')
+  }
+
   // Log final resolved values
   logger?.log(`\n📍 Home country: ${homeCountry}${countrySource ? ` (${countrySource})` : ''}`)
-  if (timezone) {
-    logger?.log(`   Timezone: ${timezone}${timezoneSource ? ` (${timezoneSource})` : ''}`)
-  }
+  logger?.log(`   Timezone: ${timezone}${timezoneSource ? ` (${timezoneSource})` : ''}`)
 
   return { homeCountry, timezone }
 }

@@ -1,7 +1,13 @@
 {
   "entry": ["src/test-support/index.ts"],
   "project": ["src/**/*.ts"],
-  "ignore": ["src/**/*.test.ts", "src/**/*.spec.ts"],
+  "ignore": [
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/cli/e2e/setup.ts",
+    "src/cli/e2e/vitest.config.ts",
+    "src/cli/e2e/helpers.ts"
+  ],
   "ignoreDependencies": ["@biomejs/biome"],
   "exclude": ["unresolved"]
 }

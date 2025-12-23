@@ -43,9 +43,12 @@ function createEmbeddingCallbacks(logger: Logger) {
       durationMs: number
     }) => {
       if (info.phase === 'messages' && !info.cacheHit) {
-        logger.log(
-          `   [${info.batchIndex + 1}/${info.totalBatches}] Embedded ${info.itemsInBatch} messages (${info.durationMs}ms)`
-        )
+        const batchNum = info.batchIndex + 1
+        // Log every 10th batch or the last batch
+        if (batchNum % 10 === 0 || batchNum === info.totalBatches) {
+          const percent = Math.floor((batchNum / info.totalBatches) * 100)
+          logger.log(`   ${percent}% embedded (${batchNum}/${info.totalBatches} batches)`)
+        }
       }
     }
   }

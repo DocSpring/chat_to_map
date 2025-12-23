@@ -9,6 +9,7 @@ export default defineConfig(({ mode }) => ({
     env: loadEnv(mode, process.cwd(), ''),
     globals: true,
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    exclude: ['src/cli/e2e/**/*.test.ts', 'node_modules/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

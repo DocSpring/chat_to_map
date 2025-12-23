@@ -4,7 +4,7 @@
  * Shared utilities for CLI commands.
  */
 
-import { parseChatWithStats, quickScan } from '../index'
+import { parseChatWithStats } from '../index'
 import { type ActivityCategory, CATEGORY_EMOJI, type ParsedMessage } from '../types'
 import { readInputFile } from './io'
 import type { Logger } from './logger'
@@ -29,46 +29,6 @@ export function formatDate(date: Date | string): string {
 export function truncate(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text
   return `${text.slice(0, maxLength - 3)}...`
-}
-
-// ============================================================================
-// Quick Scan with Logging
-// ============================================================================
-
-interface QuickScanOutput {
-  scanResult: ReturnType<typeof quickScan>
-  hasNoCandidates: boolean
-}
-
-interface QuickScanWithLogsOptions {
-  maxMessages?: number | undefined
-}
-
-export async function runQuickScanWithLogs(
-  input: string,
-  logger: Logger,
-  options?: QuickScanWithLogsOptions
-): Promise<QuickScanOutput> {
-  const content = await readInputFile(input)
-  const scanResult = quickScan(content, { maxMessages: options?.maxMessages })
-
-  const startDate = formatDate(scanResult.dateRange.start)
-  const endDate = formatDate(scanResult.dateRange.end)
-  logger.log(
-    `   ${scanResult.messageCount.toLocaleString()} messages from ${scanResult.senderCount} senders`
-  )
-  logger.log(`   Date range: ${startDate} to ${endDate}`)
-
-  if (options?.maxMessages !== undefined) {
-    logger.log(`   (limited to first ${options.maxMessages} messages for testing)`)
-  }
-
-  if (scanResult.candidates.length === 0) {
-    logger.log('\n⚠️  No activity suggestions found in this chat.')
-    return { scanResult, hasNoCandidates: true }
-  }
-
-  return { scanResult, hasNoCandidates: false }
 }
 
 // ============================================================================

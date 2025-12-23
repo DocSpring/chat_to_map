@@ -30,6 +30,8 @@ export type PipelineStage =
   | 'parse_stats'
   | 'scan_stats'
   | 'filter_stats'
+  | 'preview_stats'
+  | 'preview_activities'
   | 'candidates.heuristics'
   | 'candidates.embeddings'
   | 'candidates.all'
