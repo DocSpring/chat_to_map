@@ -662,14 +662,14 @@ describe('Classifier Module', () => {
         createActivity('food'),
         createActivity('nature'),
         createActivity('food'),
-        createActivity('food')
+        createActivity('entertainment')
       ]
 
       const groups = groupByCategory(suggestions)
 
       expect(groups.get('food')).toHaveLength(2)
       expect(groups.get('nature')).toHaveLength(1)
-      expect(groups.get('food')).toHaveLength(1)
+      expect(groups.get('entertainment')).toHaveLength(1)
     })
 
     it('handles empty array', () => {

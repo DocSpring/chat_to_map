@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { hashContent, PipelineCache } from './pipeline'
+import { PipelineCache } from './pipeline'
 
 describe('PipelineCache', () => {
   let tempDir: string
@@ -21,67 +21,47 @@ describe('PipelineCache', () => {
     rmSync(tempDir, { recursive: true, force: true })
   })
 
-  describe('hashContent', () => {
-    it('generates consistent hash for same content', () => {
-      const content = 'Hello, world!'
-      const hash1 = hashContent(content)
-      const hash2 = hashContent(content)
-      expect(hash1).toBe(hash2)
-    })
-
-    it('generates different hash for different content', () => {
-      const hash1 = hashContent('Hello')
-      const hash2 = hashContent('World')
-      expect(hash1).not.toBe(hash2)
-    })
-
-    it('returns 16-character hex string', () => {
-      const hash = hashContent('test')
-      expect(hash).toMatch(/^[a-f0-9]{16}$/)
-    })
-  })
-
   describe('initRun', () => {
     it('creates run directory', () => {
-      const run = cache.initRun('test-chat.zip', 'chat content')
+      const run = cache.initRun('test-chat.zip', 'abc123def456')
       expect(run.runDir).toContain('test-chat')
-      expect(run.contentHash).toBe(hashContent('chat content'))
+      expect(run.fileHash).toBe('abc123def456')
     })
 
     it('sanitizes filename', () => {
-      const run = cache.initRun('WhatsApp Chat - John Doe.zip', 'content')
+      const run = cache.initRun('WhatsApp Chat - John Doe.zip', 'hash123')
       expect(run.runDir).toContain('WhatsApp_Chat_-_John_Doe')
     })
 
     it('sets current run', () => {
-      cache.initRun('test.zip', 'content')
+      cache.initRun('test.zip', 'hash123')
       expect(cache.getCurrentRun()).not.toBeNull()
     })
   })
 
   describe('findLatestRun', () => {
     it('returns null when no runs exist', () => {
-      const run = cache.findLatestRun('test.zip', 'content')
+      const run = cache.findLatestRun('test.zip', 'hash123')
       expect(run).toBeNull()
     })
 
     it('finds existing run with matching hash', () => {
-      const content = 'test content'
-      cache.initRun('test.zip', content)
+      const fileHash = 'abc123def456'
+      cache.initRun('test.zip', fileHash)
 
       // Create new cache instance
       const cache2 = new PipelineCache(tempDir)
-      const run = cache2.findLatestRun('test.zip', content)
+      const run = cache2.findLatestRun('test.zip', fileHash)
 
       expect(run).not.toBeNull()
-      expect(run?.contentHash).toBe(hashContent(content))
+      expect(run?.fileHash).toBe(fileHash)
     })
 
-    it('returns null for different content hash', () => {
-      cache.initRun('test.zip', 'original content')
+    it('returns null for different hash', () => {
+      cache.initRun('test.zip', 'original_hash')
 
       const cache2 = new PipelineCache(tempDir)
-      const run = cache2.findLatestRun('test.zip', 'different content')
+      const run = cache2.findLatestRun('test.zip', 'different_hash')
 
       expect(run).toBeNull()
     })
@@ -89,17 +69,17 @@ describe('PipelineCache', () => {
 
   describe('getOrCreateRun', () => {
     it('creates new run when none exists', () => {
-      const run = cache.getOrCreateRun('test.zip', 'content')
+      const run = cache.getOrCreateRun('test.zip', 'hash123')
       expect(run).not.toBeNull()
-      expect(run.contentHash).toBe(hashContent('content'))
+      expect(run.fileHash).toBe('hash123')
     })
 
     it('reuses existing run with matching hash', () => {
-      const content = 'test content'
-      const run1 = cache.initRun('test.zip', content)
+      const fileHash = 'abc123def456'
+      const run1 = cache.initRun('test.zip', fileHash)
 
       const cache2 = new PipelineCache(tempDir)
-      const run2 = cache2.getOrCreateRun('test.zip', content)
+      const run2 = cache2.getOrCreateRun('test.zip', fileHash)
 
       expect(run2.runDir).toBe(run1.runDir)
     })
@@ -107,7 +87,7 @@ describe('PipelineCache', () => {
 
   describe('stage operations', () => {
     beforeEach(() => {
-      cache.initRun('test.zip', 'content')
+      cache.initRun('test.zip', 'hash123')
     })
 
     it('hasStage returns false for missing stage', () => {
@@ -162,7 +142,7 @@ describe('PipelineCache', () => {
     })
 
     it('returns directory after initialization', () => {
-      cache.initRun('test.zip', 'content')
+      cache.initRun('test.zip', 'hash123')
       expect(cache.getRunDir()).toContain('test')
     })
   })
@@ -174,9 +154,9 @@ describe('PipelineCache', () => {
     })
 
     it('lists all runs for an input file', () => {
-      cache.initRun('test.zip', 'content1')
-      cache.initRun('test.zip', 'content2')
-      cache.initRun('test.zip', 'content3')
+      cache.initRun('test.zip', 'hash1')
+      cache.initRun('test.zip', 'hash2')
+      cache.initRun('test.zip', 'hash3')
 
       const cache2 = new PipelineCache(tempDir)
       const runs = cache2.listRuns('test.zip')
@@ -185,8 +165,8 @@ describe('PipelineCache', () => {
     })
 
     it('sorts runs by datetime descending', () => {
-      cache.initRun('test.zip', 'content1')
-      cache.initRun('test.zip', 'content2')
+      cache.initRun('test.zip', 'hash1')
+      cache.initRun('test.zip', 'hash2')
 
       const cache2 = new PipelineCache(tempDir)
       const runs = cache2.listRuns('test.zip')

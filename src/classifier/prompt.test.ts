@@ -99,11 +99,12 @@ describe('Classifier Prompt', () => {
 
       const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
 
-      expect(prompt).toContain('restaurant')
-      expect(prompt).toContain('cafe')
-      expect(prompt).toContain('hike')
-      expect(prompt).toContain('beach')
-      expect(prompt).toContain('concert')
+      // Check for some category names from VALID_CATEGORIES
+      expect(prompt).toContain('food')
+      expect(prompt).toContain('nature')
+      expect(prompt).toContain('entertainment')
+      expect(prompt).toContain('travel')
+      expect(prompt).toContain('music')
     })
 
     it('includes normalization rules', () => {
@@ -224,13 +225,13 @@ describe('Classifier Prompt', () => {
 
     it('handles response with markdown code block', () => {
       const response = `\`\`\`json
-[{"msg": 1, "title": "Beach day", "fun": 0.9, "int": 0.5, "cat": "beach", "conf": 0.95, "gen": true, "com": true, "act": "beach", "act_orig": "beach", "obj": null, "obj_orig": null, "venue": null, "city": "Malibu", "region": "California", "country": "USA"}]
+[{"msg": 1, "title": "Beach day", "fun": 0.9, "int": 0.5, "cat": "nature", "conf": 0.95, "gen": true, "com": true, "act": "beach", "act_orig": "beach", "obj": null, "obj_orig": null, "venue": null, "city": "Malibu", "region": "California", "country": "USA"}]
 \`\`\``
 
       const parsed = parseClassificationResponse(response)
 
       expect(parsed).toHaveLength(1)
-      expect(parsed[0]?.cat).toBe('beach')
+      expect(parsed[0]?.cat).toBe('nature')
     })
 
     it('handles response with extra text around JSON', () => {

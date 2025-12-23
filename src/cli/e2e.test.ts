@@ -207,18 +207,24 @@ afterAll(() => {
   rmSync(tempCacheDir, { recursive: true, force: true })
 })
 
-describe('CLI E2E', () => {
+// E2E tests must run sequentially - they share cache state
+describe.sequential('CLI E2E', () => {
   describe('parse command', () => {
-    it('parses the fixture and shows message count', () => {
-      const { stdout, exitCode } = runCli(`parse ${FIXTURE_INPUT} --cache-dir ${tempCacheDir}`)
+    it('parses on first run, uses cache on second run', () => {
+      // First run: fresh parse
+      const run1 = runCli(`parse ${FIXTURE_INPUT} --cache-dir ${tempCacheDir}`)
+      expect(run1.exitCode).toBe(0)
+      expect(run1.stdout).toMatch(/\d+ messages/)
+      expect(run1.stdout).toContain('Parsing messages...')
+      expect(run1.stdout).not.toContain('cached')
 
-      expect(exitCode).toBe(0)
-      expect(stdout).toMatch(/\d+ messages/)
+      // Second run: should use cache
+      const run2 = runCli(`parse ${FIXTURE_INPUT} --cache-dir ${tempCacheDir}`)
+      expect(run2.exitCode).toBe(0)
+      expect(run2.stdout).toContain('Parsing messages... 📦 cached')
     })
 
     it('writes parse_stats.json to cache', () => {
-      runCli(`parse ${FIXTURE_INPUT} --cache-dir ${tempCacheDir}`)
-
       const stats = readCacheJson<ParseStats>(tempCacheDir, 'parse_stats.json')
       expect(stats.messageCount).toBeGreaterThanOrEqual(280)
       expect(stats.senderCount).toBeGreaterThanOrEqual(2)
@@ -228,8 +234,6 @@ describe('CLI E2E', () => {
     })
 
     it('writes messages.json to cache', () => {
-      runCli(`parse ${FIXTURE_INPUT} --cache-dir ${tempCacheDir}`)
-
       const chatDir = findChatCacheDir(tempCacheDir)
       expect(chatDir).not.toBeNull()
       if (chatDir) {
@@ -246,17 +250,22 @@ describe('CLI E2E', () => {
   })
 
   describe('scan command', () => {
-    it('finds candidates from heuristics', () => {
-      const { stdout, exitCode } = runCli(`scan ${FIXTURE_INPUT} --cache-dir ${tempCacheDir}`)
+    it('scans on first run, uses cache on second run', () => {
+      // First run: fresh scan (parse is already cached from above)
+      const run1 = runCli(`scan ${FIXTURE_INPUT} --cache-dir ${tempCacheDir}`)
+      expect(run1.exitCode).toBe(0)
+      expect(run1.stdout).toContain('Heuristic scan found')
+      expect(run1.stdout).toContain('potential activities')
+      // First scan run should NOT show cached (even though parse is cached)
+      expect(run1.stdout).not.toMatch(/Heuristic scan found.*cached/)
 
-      expect(exitCode).toBe(0)
-      expect(stdout).toContain('Heuristic scan found')
-      expect(stdout).toContain('potential activities')
+      // Second run: should use cached heuristics
+      const run2 = runCli(`scan ${FIXTURE_INPUT} --cache-dir ${tempCacheDir}`)
+      expect(run2.exitCode).toBe(0)
+      expect(run2.stdout).toMatch(/Heuristic scan found.*📦 cached/)
     })
 
     it('writes scan_stats.json to cache', () => {
-      runCli(`scan ${FIXTURE_INPUT} --cache-dir ${tempCacheDir}`)
-
       const stats = readCacheJson<ScanStats>(tempCacheDir, 'scan_stats.json')
       expect(stats.totalUnique).toBeGreaterThanOrEqual(7)
       expect(stats.regexMatches).toBeGreaterThanOrEqual(8)
@@ -264,8 +273,6 @@ describe('CLI E2E', () => {
     })
 
     it('writes candidates.heuristics.json to cache', () => {
-      runCli(`scan ${FIXTURE_INPUT} --cache-dir ${tempCacheDir}`)
-
       const candidates = readCacheJson<Candidate[]>(tempCacheDir, 'candidates.heuristics.json')
       expect(candidates.length).toBeGreaterThanOrEqual(7)
 
@@ -313,7 +320,8 @@ describe('CLI E2E', () => {
       )
 
       expect(exitCode).toBe(0)
-      expect(stdout).toContain('candidates to')
+      // Check that classification ran (either fresh or cached)
+      expect(stdout).toMatch(/candidates/)
     })
 
     it('shows classified activities in output', { timeout: 60000 }, () => {

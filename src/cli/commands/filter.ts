@@ -1,35 +1,33 @@
 /**
- * Candidates Command
+ * Filter Command
  *
  * Extract candidate messages using heuristics and/or embeddings.
+ * Caches results to pipeline cache for subsequent steps.
  */
 
 import { writeFile } from 'node:fs/promises'
 import { basename } from 'node:path'
-import { FilesystemCache } from '../../cache/filesystem'
 import { countTokens } from '../../classifier/tokenizer'
-import {
-  extractCandidates,
-  extractCandidatesByEmbeddings,
-  extractCandidatesByHeuristics,
-  VERSION
-} from '../../index'
+import { extractCandidatesByEmbeddings, extractCandidatesByHeuristics, VERSION } from '../../index'
 import type { CandidateMessage, ParsedMessage } from '../../types'
 import type { CLIArgs, ExtractionMethod } from '../args'
-import { formatDate, runParseWithLogs, truncate } from '../helpers'
+import { formatDate, truncate } from '../helpers'
 import type { Logger } from '../logger'
-import { getCacheDir } from '../steps/context'
+import { initContext, type PipelineContext } from '../steps/context'
+import { stepParse } from '../steps/parse'
 
-interface CandidatesOutput {
+interface FilterOutput {
   method: ExtractionMethod
-  stats: {
-    totalCandidates: number
-    heuristicsMatches?: number
-    regexMatches?: number
-    urlMatches?: number
-    embeddingsMatches?: number
-  }
+  stats: FilterStats
   candidates: readonly CandidateMessage[]
+}
+
+interface FilterStats {
+  totalCandidates: number
+  heuristicsMatches?: number | undefined
+  regexMatches?: number | undefined
+  urlMatches?: number | undefined
+  embeddingsMatches?: number | undefined
 }
 
 const EMBEDDING_COST_PER_MILLION_TOKENS = 0.13
@@ -44,7 +42,6 @@ function createEmbeddingCallbacks(logger: Logger) {
       cacheHit: boolean
       durationMs: number
     }) => {
-      // Only log non-cached requests to reduce noise
       if (info.phase === 'messages' && !info.cacheHit) {
         logger.log(
           `   [${info.batchIndex + 1}/${info.totalBatches}] Embedded ${info.itemsInBatch} messages (${info.durationMs}ms)`
@@ -72,7 +69,7 @@ function estimateEmbeddingCost(messages: readonly ParsedMessage[], logger: Logge
   logger.log(`   Estimated cost: $${costDollars.toFixed(4)}`)
 }
 
-function formatCandidatesText(output: CandidatesOutput, logger: Logger): void {
+function formatCandidatesText(output: FilterOutput, logger: Logger): void {
   const { method, stats, candidates } = output
 
   logger.log(`\n📊 Extraction Results (method: ${method})`)
@@ -113,6 +110,123 @@ function formatCandidatesText(output: CandidatesOutput, logger: Logger): void {
   }
 }
 
+/**
+ * Run heuristics extraction, using cache if available.
+ */
+function runHeuristics(
+  ctx: PipelineContext,
+  messages: readonly ParsedMessage[],
+  minConfidence?: number
+): { candidates: readonly CandidateMessage[]; stats: FilterStats; fromCache: boolean } {
+  const { pipelineCache, logger } = ctx
+
+  // Check cache
+  if (pipelineCache.hasStage('candidates.heuristics')) {
+    const cached = pipelineCache.getStage<CandidateMessage[]>('candidates.heuristics') ?? []
+    logger.log('\n🔍 Extracting candidates (heuristics)... 📦 cached')
+    return {
+      candidates: cached,
+      stats: {
+        totalCandidates: cached.length,
+        heuristicsMatches: cached.length
+      },
+      fromCache: true
+    }
+  }
+
+  logger.log('\n🔍 Extracting candidates (heuristics)...')
+  const extractorOptions = minConfidence !== undefined ? { minConfidence } : undefined
+  const result = extractCandidatesByHeuristics(messages, extractorOptions)
+
+  // Cache results
+  pipelineCache.setStage('candidates.heuristics', [...result.candidates])
+  pipelineCache.setStage('scan_stats', {
+    totalUnique: result.totalUnique,
+    regexMatches: result.regexMatches,
+    urlMatches: result.urlMatches
+  })
+
+  return {
+    candidates: result.candidates,
+    stats: {
+      totalCandidates: result.totalUnique,
+      heuristicsMatches: result.totalUnique,
+      regexMatches: result.regexMatches,
+      urlMatches: result.urlMatches
+    },
+    fromCache: false
+  }
+}
+
+/**
+ * Run embeddings extraction, using cache if available.
+ */
+async function runEmbeddings(
+  ctx: PipelineContext,
+  messages: readonly ParsedMessage[],
+  logger: Logger
+): Promise<{ candidates: readonly CandidateMessage[]; fromCache: boolean }> {
+  const { pipelineCache, apiCache } = ctx
+
+  // Check cache
+  if (pipelineCache.hasStage('candidates.embeddings')) {
+    const cached = pipelineCache.getStage<CandidateMessage[]>('candidates.embeddings') ?? []
+    logger.log('\n🔍 Embeddings extraction... 📦 cached')
+    return { candidates: cached, fromCache: true }
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    throw new Error('OPENAI_API_KEY required for embeddings extraction')
+  }
+
+  logger.log('\n🔍 Extracting candidates (embeddings)...')
+  const result = await extractCandidatesByEmbeddings(
+    messages,
+    { apiKey, ...createEmbeddingCallbacks(logger) },
+    undefined,
+    apiCache
+  )
+
+  if (!result.ok) {
+    throw new Error(`Embeddings extraction failed: ${result.error.message}`)
+  }
+
+  // Cache results
+  pipelineCache.setStage('candidates.embeddings', [...result.value])
+
+  return { candidates: result.value, fromCache: false }
+}
+
+/**
+ * Merge heuristics and embeddings candidates, deduplicating by messageId.
+ */
+function mergeCandidates(
+  heuristics: readonly CandidateMessage[],
+  embeddings: readonly CandidateMessage[]
+): CandidateMessage[] {
+  const seen = new Set<number>()
+  const merged: CandidateMessage[] = []
+
+  // Heuristics first (higher priority)
+  for (const c of heuristics) {
+    if (!seen.has(c.messageId)) {
+      seen.add(c.messageId)
+      merged.push(c)
+    }
+  }
+
+  // Then embeddings
+  for (const c of embeddings) {
+    if (!seen.has(c.messageId)) {
+      seen.add(c.messageId)
+      merged.push(c)
+    }
+  }
+
+  return merged
+}
+
 export async function cmdFilter(args: CLIArgs, logger: Logger): Promise<void> {
   if (!args.input) {
     throw new Error('No input file specified')
@@ -121,100 +235,81 @@ export async function cmdFilter(args: CLIArgs, logger: Logger): Promise<void> {
   logger.log(`\nChatToMap Filter v${VERSION}`)
   logger.log(`\n📁 ${basename(args.input)}`)
 
-  // Parse messages
-  const { messages } = await runParseWithLogs(args.input, logger, {
-    maxMessages: args.maxMessages
+  // Create pipeline context
+  const ctx = await initContext(args.input, logger, {
+    cacheDir: args.cacheDir,
+    noCache: args.noCache
   })
+
+  // Parse messages
+  const parseResult = stepParse(ctx, { maxMessages: args.maxMessages })
 
   // Dry run: show cost estimate and exit
   if (args.dryRun && (args.method === 'embeddings' || args.method === 'both')) {
-    estimateEmbeddingCost(messages, logger)
+    estimateEmbeddingCost(parseResult.messages, logger)
     return
   }
 
-  const cacheDir = getCacheDir(args.cacheDir)
-  const cache = new FilesystemCache(cacheDir)
-
-  let output: CandidatesOutput
+  let output: FilterOutput
 
   if (args.method === 'heuristics') {
-    logger.log('\n🔍 Extracting candidates (heuristics only)...')
-    const result = extractCandidatesByHeuristics(messages, {
-      minConfidence: args.minConfidence
-    })
+    const result = runHeuristics(ctx, parseResult.messages, args.minConfidence)
     output = {
       method: 'heuristics',
-      stats: {
-        totalCandidates: result.totalUnique,
-        heuristicsMatches: result.totalUnique,
-        regexMatches: result.regexMatches,
-        urlMatches: result.urlMatches
-      },
+      stats: result.stats,
       candidates: result.candidates
     }
   } else if (args.method === 'embeddings') {
-    const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY required for embeddings extraction')
-    }
-
-    logger.log('\n🔍 Extracting candidates (embeddings only)...')
-    const result = await extractCandidatesByEmbeddings(
-      messages,
-      { apiKey, ...createEmbeddingCallbacks(logger) },
-      undefined,
-      cache
-    )
-
-    if (!result.ok) {
-      throw new Error(`Embeddings extraction failed: ${result.error.message}`)
-    }
-
+    const result = await runEmbeddings(ctx, parseResult.messages, logger)
     output = {
       method: 'embeddings',
       stats: {
-        totalCandidates: result.value.length,
-        embeddingsMatches: result.value.length
+        totalCandidates: result.candidates.length,
+        embeddingsMatches: result.candidates.length
       },
-      candidates: result.value
+      candidates: result.candidates
     }
+
+    // Save filter stats
+    ctx.pipelineCache.setStage('filter_stats', {
+      totalCandidates: result.candidates.length,
+      embeddingsMatches: result.candidates.length
+    })
   } else {
+    // Both: heuristics + embeddings
+    const heuristicsResult = runHeuristics(ctx, parseResult.messages, args.minConfidence)
+
+    let embeddingsResult: { candidates: readonly CandidateMessage[]; fromCache: boolean }
     const apiKey = process.env.OPENAI_API_KEY
 
-    logger.log('\n🔍 Extracting candidates (heuristics + embeddings)...')
-
-    const result = await extractCandidates(
-      messages,
-      apiKey
-        ? {
-            heuristics: { minConfidence: args.minConfidence },
-            embeddings: { config: { apiKey, ...createEmbeddingCallbacks(logger) } },
-            cache
-          }
-        : {
-            heuristics: { minConfidence: args.minConfidence },
-            cache
-          }
-    )
-
-    if (!result.ok) {
-      throw new Error(`Extraction failed: ${result.error.message}`)
+    if (apiKey) {
+      embeddingsResult = await runEmbeddings(ctx, parseResult.messages, logger)
+    } else {
+      logger.log('   (embeddings skipped - OPENAI_API_KEY not set)')
+      embeddingsResult = { candidates: [], fromCache: false }
     }
+
+    // Merge and deduplicate
+    const merged = mergeCandidates(heuristicsResult.candidates, embeddingsResult.candidates)
+
+    // Cache merged results
+    ctx.pipelineCache.setStage('candidates.all', merged)
+    ctx.pipelineCache.setStage('filter_stats', {
+      totalCandidates: merged.length,
+      heuristicsMatches: heuristicsResult.candidates.length,
+      embeddingsMatches: embeddingsResult.candidates.length
+    })
 
     output = {
       method: 'both',
       stats: {
-        totalCandidates: result.value.totalUnique,
-        heuristicsMatches: result.value.regexMatches + result.value.urlMatches,
-        regexMatches: result.value.regexMatches,
-        urlMatches: result.value.urlMatches,
-        embeddingsMatches: result.value.embeddingsMatches
+        totalCandidates: merged.length,
+        heuristicsMatches: heuristicsResult.stats.heuristicsMatches,
+        regexMatches: heuristicsResult.stats.regexMatches,
+        urlMatches: heuristicsResult.stats.urlMatches,
+        embeddingsMatches: embeddingsResult.candidates.length
       },
-      candidates: result.value.candidates
-    }
-
-    if (!apiKey) {
-      logger.log('   (embeddings skipped - OPENAI_API_KEY not set)')
+      candidates: merged
     }
   }
 

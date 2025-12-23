@@ -7,7 +7,7 @@
 import { homedir } from 'node:os'
 import { basename, join } from 'node:path'
 import { FilesystemCache } from '../../cache/filesystem'
-import { PipelineCache } from '../../cache/pipeline'
+import { hashFileBytes, PipelineCache } from '../../cache/pipeline'
 import type { Logger } from '../logger'
 import { readInputFileWithMetadata } from './read'
 
@@ -44,20 +44,21 @@ export interface PipelineContext {
 }
 
 /**
- * Initialize pipeline context for an input file.
- *
- * This is the entry point for all pipeline operations:
- * 1. Reads input file (with zip extraction caching)
- * 2. Creates/finds pipeline run based on content hash
- * 3. Initializes API cache
- */
-/**
  * Get the cache directory: CLI arg > env var > default.
  */
 export function getCacheDir(override?: string): string {
   return override ?? process.env.CHAT_TO_MAP_CACHE_DIR ?? join(homedir(), '.cache', 'chat-to-map')
 }
 
+/**
+ * Initialize pipeline context for an input file.
+ *
+ * This is the entry point for all pipeline operations:
+ * 1. Hashes file bytes once
+ * 2. Finds or creates pipeline run based on hash
+ * 3. Reads input file (with zip extraction caching)
+ * 4. Initializes API cache
+ */
 export async function initContext(
   input: string,
   logger: Logger,
@@ -66,26 +67,31 @@ export async function initContext(
   const cacheDir = getCacheDir(options?.cacheDir)
   const noCache = options?.noCache ?? false
 
+  // Hash file once upfront
+  const fileHash = hashFileBytes(input)
+
   // Initialize caches
   const pipelineCache = new PipelineCache(cacheDir)
   const apiCache = new FilesystemCache(cacheDir)
 
-  // Check if we have cached chat.txt content (uses SHA256 of input file bytes)
+  // Find existing run or prepare for new one
+  const existingRun = noCache ? null : pipelineCache.findLatestRun(input, fileHash)
+
   let content: string
   let fromCache = false
 
-  const cachedContent = noCache ? null : pipelineCache.getCachedChatContent(input)
-  if (cachedContent) {
-    content = cachedContent.content
+  if (existingRun && pipelineCache.hasStage('chat')) {
+    // Use cached chat.txt content
+    content = pipelineCache.getStage<string>('chat') ?? ''
     fromCache = true
-    logger.log(`\n📂 Cache: ${basename(cachedContent.runDir)}`)
+    logger.log(`\n📂 Cache: ${basename(existingRun.runDir)}`)
   } else {
     // Read and extract the input file
     const { content: extractedContent } = await readInputFileWithMetadata(input)
     content = extractedContent
 
-    // Create new pipeline run using file hash and cache chat.txt
-    const run = pipelineCache.initRunFromFile(input)
+    // Create new pipeline run and cache chat.txt
+    const run = pipelineCache.initRun(input, fileHash)
     pipelineCache.setStage('chat', content)
     if (noCache) {
       logger.log(`\n📂 Cache: ${basename(run.runDir)} (--no-cache: regenerating)`)

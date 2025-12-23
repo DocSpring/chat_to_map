@@ -29,6 +29,7 @@ export type PipelineStage =
   | 'messages'
   | 'parse_stats'
   | 'scan_stats'
+  | 'filter_stats'
   | 'candidates.heuristics'
   | 'candidates.embeddings'
   | 'candidates.all'
@@ -38,16 +39,9 @@ export type PipelineStage =
 
 interface PipelineRunMeta {
   inputFile: string
-  contentHash: string
+  fileHash: string
   createdAt: string
   runDir: string
-}
-
-/**
- * Calculate SHA256 hash of content string.
- */
-export function hashContent(content: string): string {
-  return createHash('sha256').update(content).digest('hex').slice(0, 16)
 }
 
 /**
@@ -101,14 +95,25 @@ export class PipelineCache {
   }
 
   /**
-   * Initialize a new pipeline run for an input file.
-   * Creates the run directory based on datetime and content hash.
+   * Find or create a run for this input file.
+   * Reuses existing run if hash matches, otherwise creates new.
    */
-  initRun(inputFilename: string, content: string): PipelineRunMeta {
-    const hash = hashContent(content)
+  getOrCreateRun(inputFilename: string, fileHash: string): PipelineRunMeta {
+    const existing = this.findLatestRun(inputFilename, fileHash)
+    if (existing) {
+      return existing
+    }
+    return this.initRun(inputFilename, fileHash)
+  }
+
+  /**
+   * Initialize a new pipeline run for an input file.
+   * Creates the run directory based on datetime and file hash.
+   */
+  initRun(inputFilename: string, fileHash: string): PipelineRunMeta {
     const datetime = formatDatetimeForDir()
     const safeName = sanitizeFilename(basename(inputFilename, '.zip').replace('.txt', ''))
-    const runDirName = `${datetime}-${hash}`
+    const runDirName = `${datetime}-${fileHash}`
     const runDir = join(this.chatsDir, safeName, runDirName)
 
     if (!existsSync(runDir)) {
@@ -117,7 +122,7 @@ export class PipelineCache {
 
     this.currentRun = {
       inputFile: inputFilename,
-      contentHash: hash,
+      fileHash,
       createdAt: datetime,
       runDir
     }
@@ -126,15 +131,14 @@ export class PipelineCache {
   }
 
   /**
-   * Find the most recent run for a given input file and content hash.
+   * Find the most recent run for a given input file and hash.
    * Returns null if no matching run exists.
    */
-  findLatestRun(inputFilename: string, content: string): PipelineRunMeta | null {
-    const hash = hashContent(content)
+  findLatestRun(inputFilename: string, fileHash: string): PipelineRunMeta | null {
     const safeName = sanitizeFilename(basename(inputFilename, '.zip').replace('.txt', ''))
     const inputDir = join(this.chatsDir, safeName)
 
-    const latestRunDir = findLatestRunDirByHash(inputDir, hash)
+    const latestRunDir = findLatestRunDirByHash(inputDir, fileHash)
     if (!latestRunDir) {
       return null
     }
@@ -142,24 +146,12 @@ export class PipelineCache {
     const datetime = latestRunDir.slice(0, 19)
     this.currentRun = {
       inputFile: inputFilename,
-      contentHash: hash,
+      fileHash,
       createdAt: datetime,
       runDir: join(inputDir, latestRunDir)
     }
 
     return this.currentRun
-  }
-
-  /**
-   * Find or create a run for this input.
-   * Reuses existing run if content hash matches, otherwise creates new.
-   */
-  getOrCreateRun(inputFilename: string, content: string): PipelineRunMeta {
-    const existing = this.findLatestRun(inputFilename, content)
-    if (existing) {
-      return existing
-    }
-    return this.initRun(inputFilename, content)
   }
 
   /**
@@ -272,72 +264,11 @@ export class PipelineCache {
         const datetime = parts.join('-')
         return {
           inputFile: inputFilename,
-          contentHash: hash,
+          fileHash: hash,
           createdAt: datetime,
           runDir: join(inputDir, e.name)
         }
       })
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-  }
-
-  /**
-   * Get cached chat.txt content for an input file.
-   * Uses the file's SHA256 hash (from bytes) to find matching cache.
-   * Returns null if no cached content exists.
-   */
-  getCachedChatContent(inputPath: string): { content: string; runDir: string } | null {
-    const fileHash = hashFileBytes(inputPath)
-    const safeName = sanitizeFilename(basename(inputPath, '.zip').replace('.txt', ''))
-    const inputDir = join(this.chatsDir, safeName)
-
-    const latestRunDir = findLatestRunDirByHash(inputDir, fileHash)
-    if (!latestRunDir) {
-      return null
-    }
-
-    const runDir = join(inputDir, latestRunDir)
-    const chatPath = join(runDir, 'chat.txt')
-
-    if (!existsSync(chatPath)) {
-      return null
-    }
-
-    // Set current run so other methods work
-    const datetime = latestRunDir.slice(0, 19)
-    this.currentRun = {
-      inputFile: inputPath,
-      contentHash: fileHash,
-      createdAt: datetime,
-      runDir
-    }
-
-    return {
-      content: readFileSync(chatPath, 'utf-8'),
-      runDir
-    }
-  }
-
-  /**
-   * Initialize a new pipeline run using the input file's SHA256 hash.
-   */
-  initRunFromFile(inputPath: string): PipelineRunMeta {
-    const fileHash = hashFileBytes(inputPath)
-    const datetime = formatDatetimeForDir()
-    const safeName = sanitizeFilename(basename(inputPath, '.zip').replace('.txt', ''))
-    const runDirName = `${datetime}-${fileHash}`
-    const runDir = join(this.chatsDir, safeName, runDirName)
-
-    if (!existsSync(runDir)) {
-      mkdirSync(runDir, { recursive: true })
-    }
-
-    this.currentRun = {
-      inputFile: inputPath,
-      contentHash: fileHash,
-      createdAt: datetime,
-      runDir
-    }
-
-    return this.currentRun
   }
 }

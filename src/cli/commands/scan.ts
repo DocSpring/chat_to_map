@@ -58,10 +58,13 @@ export async function cmdScan(args: CLIArgs, logger: Logger): Promise<void> {
   const scanResult = stepScan(ctx, {
     maxMessages: args.maxMessages,
     minConfidence: args.minConfidence,
-    quiet: true // parse step already logged
+    quiet: true // we log our own message below
   })
 
-  logger.log(`\n🔍 Heuristic scan found ${scanResult.stats.totalUnique} potential activities`)
+  const cachedSuffix = scanResult.fromCache ? ' 📦 cached' : ''
+  logger.log(
+    `\n🔍 Heuristic scan found ${scanResult.stats.totalUnique} potential activities${cachedSuffix}`
+  )
   logger.log(`   Regex patterns: ${scanResult.stats.regexMatches} matches`)
   logger.log(`   URL-based: ${scanResult.stats.urlMatches} matches`)
 

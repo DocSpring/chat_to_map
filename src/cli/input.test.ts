@@ -1,7 +1,7 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { PipelineCache } from '../cache/pipeline'
+import { hashFileBytes, PipelineCache } from '../cache/pipeline'
 import { getInputMetadata, readInputFileWithMetadata } from './steps/read'
 
 const TEST_DIR = './tmp/test-input'
@@ -137,9 +137,10 @@ describe('PipelineCache chat content caching', () => {
     await writeFile(filePath, 'test zip content')
 
     const cache = new PipelineCache(TEST_CACHE_DIR)
-    const cached = cache.getCachedChatContent(filePath)
+    const fileHash = hashFileBytes(filePath)
+    const run = cache.findLatestRun(filePath, fileHash)
 
-    expect(cached).toBeNull()
+    expect(run).toBeNull()
   })
 
   it('caches and retrieves chat.txt content', async () => {
@@ -147,17 +148,20 @@ describe('PipelineCache chat content caching', () => {
     await writeFile(filePath, 'test zip content')
 
     const cache = new PipelineCache(TEST_CACHE_DIR)
+    const fileHash = hashFileBytes(filePath)
     const content = 'Hello, this is chat content!'
 
     // Initialize run and save chat.txt
-    cache.initRunFromFile(filePath)
+    cache.initRun(filePath, fileHash)
     cache.setStage('chat', content)
 
-    // Retrieve from cache
-    const cached = cache.getCachedChatContent(filePath)
+    // Retrieve from cache with new instance
+    const cache2 = new PipelineCache(TEST_CACHE_DIR)
+    const run = cache2.findLatestRun(filePath, fileHash)
 
-    expect(cached).not.toBeNull()
-    expect(cached?.content).toBe(content)
+    expect(run).not.toBeNull()
+    expect(cache2.hasStage('chat')).toBe(true)
+    expect(cache2.getStage<string>('chat')).toBe(content)
   })
 
   it('invalidates cache when file content changes', async () => {
@@ -165,17 +169,20 @@ describe('PipelineCache chat content caching', () => {
     await writeFile(filePath, 'original zip content')
 
     const cache = new PipelineCache(TEST_CACHE_DIR)
+    const originalHash = hashFileBytes(filePath)
 
     // Cache with original content
-    cache.initRunFromFile(filePath)
+    cache.initRun(filePath, originalHash)
     cache.setStage('chat', 'cached chat content')
 
     // Modify the file (different bytes = different hash)
     await writeFile(filePath, 'modified zip content')
+    const newHash = hashFileBytes(filePath)
 
     // Should not find cache since file hash changed
-    const cached = cache.getCachedChatContent(filePath)
+    const cache2 = new PipelineCache(TEST_CACHE_DIR)
+    const run = cache2.findLatestRun(filePath, newHash)
 
-    expect(cached).toBeNull()
+    expect(run).toBeNull()
   })
 })

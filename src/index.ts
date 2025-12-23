@@ -19,7 +19,8 @@ export {
   generateEmbeddingCacheKey,
   generateGeocodeCacheKey
 } from './cache/index'
-
+// Categories and default activities
+export { VALID_CATEGORIES } from './categories'
 // Classifier module
 export type { ResolvedModel } from './classifier/index'
 export {
@@ -35,7 +36,13 @@ export {
   parseClassificationResponse,
   resolveModel
 } from './classifier/index'
-
+export {
+  DEFAULT_ACTIVITIES,
+  findMatchingDefaultActivity,
+  getAllDefaultActivities,
+  getDefaultActivitiesForCategory,
+  isDefaultActivity
+} from './default-activities'
 // Export module
 export {
   exportToCSV,
@@ -45,7 +52,6 @@ export {
   exportToPDF,
   parseJSON
 } from './export/index'
-
 // Extraction module (heuristics + embeddings)
 export type { ExtractCandidatesConfig, ExtractCandidatesResult } from './extraction/index'
 export {
@@ -78,7 +84,6 @@ export {
   loadQueryEmbeddings,
   SUGGESTION_QUERIES
 } from './extraction/index'
-
 // Geocoder module
 export {
   calculateCenter,
@@ -87,7 +92,6 @@ export {
   geocodeActivities,
   geocodeLocation
 } from './geocoder/index'
-
 // Images module
 export type { ImageFetchConfig, ImageResult, ImageSource } from './images/index'
 export {
@@ -97,7 +101,6 @@ export {
   fetchPixabayImage,
   fetchWikipediaImage
 } from './images/index'
-
 // Parser module
 export {
   detectChatSource,
@@ -110,11 +113,9 @@ export {
   parseWhatsAppChat,
   parseWhatsAppChatStream
 } from './parser/index'
-
 // Scanner module (zero API cost heuristic scanning)
 export type { QuickScanOptions, QuickScanResult } from './scanner/index'
 export { quickScan, quickScanMessages } from './scanner/index'
-
 // Scraper module (social media metadata extraction)
 export type { ScrapedMetadata, ScrapeOutcome, ScraperConfig } from './scraper/index'
 export {
@@ -129,7 +130,6 @@ export {
   scrapeUrls,
   scrapeYouTube
 } from './scraper/index'
-
 // Types (type-only exports)
 export type {
   ActivityCategory,
@@ -173,7 +173,6 @@ export type {
   UrlType,
   WhatsAppFormat
 } from './types'
-
 // Type helper functions (value exports)
 export { CATEGORY_EMOJI, formatLocation, isMappable } from './types/classifier'
 
