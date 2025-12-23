@@ -4,8 +4,8 @@
  * AI prompt for classifying candidate messages as activities.
  */
 
+import { VALID_CATEGORIES } from '../categories'
 import type { CandidateMessage } from '../types'
-import { VALID_CATEGORIES } from './categories'
 
 /**
  * Format context for display. Context already includes target marked with >>>.

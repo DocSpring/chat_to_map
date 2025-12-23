@@ -58,7 +58,7 @@ function createClassifiedActivity(id: number, activity: string, city: string): C
     activity,
     funScore: 0.8,
     interestingScore: 0.5,
-    category: 'restaurant',
+    category: 'food',
     confidence: 0.9,
     originalMessage: `Lets go to ${city}`,
     sender: 'Test User',

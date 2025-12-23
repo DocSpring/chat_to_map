@@ -2,7 +2,7 @@
  * Pipeline Cache (Layer 1)
  *
  * Per-run pipeline cache that stores outputs for each pipeline step.
- * Organized by input file with datetime and content hash for versioning.
+ * Organized by input file with datetime and file hash for versioning.
  *
  * Directory structure:
  * ```
@@ -16,6 +16,8 @@
  * ├── classifications.json
  * └── geocodings.json
  * ```
+ *
+ * The sha256 is computed from the input file bytes (NOT content).
  */
 
 import { createHash } from 'node:crypto'
@@ -42,10 +44,18 @@ interface PipelineRunMeta {
 }
 
 /**
- * Calculate SHA256 hash of content.
+ * Calculate SHA256 hash of content string.
  */
 export function hashContent(content: string): string {
   return createHash('sha256').update(content).digest('hex').slice(0, 16)
+}
+
+/**
+ * Calculate SHA256 hash of file bytes.
+ */
+export function hashFileBytes(filePath: string): string {
+  const bytes = readFileSync(filePath)
+  return createHash('sha256').update(new Uint8Array(bytes)).digest('hex').slice(0, 16)
 }
 
 /**
@@ -60,6 +70,23 @@ function formatDatetimeForDir(date: Date = new Date()): string {
  */
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9_\-.]/g, '_').slice(0, 100)
+}
+
+/**
+ * Find the latest run directory matching a hash suffix.
+ * Returns the directory name or null if none found.
+ */
+function findLatestRunDirByHash(inputDir: string, hash: string): string | null {
+  if (!existsSync(inputDir)) {
+    return null
+  }
+  const entries = readdirSync(inputDir, { withFileTypes: true })
+  const matchingRuns = entries
+    .filter((e) => e.isDirectory() && e.name.endsWith(`-${hash}`))
+    .map((e) => e.name)
+    .sort()
+    .reverse()
+  return matchingRuns[0] ?? null
 }
 
 /**
@@ -107,23 +134,7 @@ export class PipelineCache {
     const safeName = sanitizeFilename(basename(inputFilename, '.zip').replace('.txt', ''))
     const inputDir = join(this.chatsDir, safeName)
 
-    if (!existsSync(inputDir)) {
-      return null
-    }
-
-    // Find all run directories matching this hash
-    const entries = readdirSync(inputDir, { withFileTypes: true })
-    const matchingRuns = entries
-      .filter((e) => e.isDirectory() && e.name.endsWith(`-${hash}`))
-      .map((e) => e.name)
-      .sort()
-      .reverse()
-
-    if (matchingRuns.length === 0) {
-      return null
-    }
-
-    const latestRunDir = matchingRuns[0]
+    const latestRunDir = findLatestRunDirByHash(inputDir, hash)
     if (!latestRunDir) {
       return null
     }
@@ -267,5 +278,66 @@ export class PipelineCache {
         }
       })
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+
+  /**
+   * Get cached chat.txt content for an input file.
+   * Uses the file's SHA256 hash (from bytes) to find matching cache.
+   * Returns null if no cached content exists.
+   */
+  getCachedChatContent(inputPath: string): { content: string; runDir: string } | null {
+    const fileHash = hashFileBytes(inputPath)
+    const safeName = sanitizeFilename(basename(inputPath, '.zip').replace('.txt', ''))
+    const inputDir = join(this.chatsDir, safeName)
+
+    const latestRunDir = findLatestRunDirByHash(inputDir, fileHash)
+    if (!latestRunDir) {
+      return null
+    }
+
+    const runDir = join(inputDir, latestRunDir)
+    const chatPath = join(runDir, 'chat.txt')
+
+    if (!existsSync(chatPath)) {
+      return null
+    }
+
+    // Set current run so other methods work
+    const datetime = latestRunDir.slice(0, 19)
+    this.currentRun = {
+      inputFile: inputPath,
+      contentHash: fileHash,
+      createdAt: datetime,
+      runDir
+    }
+
+    return {
+      content: readFileSync(chatPath, 'utf-8'),
+      runDir
+    }
+  }
+
+  /**
+   * Initialize a new pipeline run using the input file's SHA256 hash.
+   */
+  initRunFromFile(inputPath: string): PipelineRunMeta {
+    const fileHash = hashFileBytes(inputPath)
+    const datetime = formatDatetimeForDir()
+    const safeName = sanitizeFilename(basename(inputPath, '.zip').replace('.txt', ''))
+    const runDirName = `${datetime}-${fileHash}`
+    const runDir = join(this.chatsDir, safeName, runDirName)
+
+    if (!existsSync(runDir)) {
+      mkdirSync(runDir, { recursive: true })
+    }
+
+    this.currentRun = {
+      inputFile: inputPath,
+      contentHash: fileHash,
+      createdAt: datetime,
+      runDir
+    }
+
+    return this.currentRun
   }
 }

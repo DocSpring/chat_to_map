@@ -88,6 +88,16 @@ export {
   geocodeLocation
 } from './geocoder/index'
 
+// Images module
+export type { ImageFetchConfig, ImageResult, ImageSource } from './images/index'
+export {
+  fetchGooglePlacesPhoto,
+  fetchImageForActivity,
+  fetchImagesForActivities,
+  fetchPixabayImage,
+  fetchWikipediaImage
+} from './images/index'
+
 // Parser module
 export {
   detectChatSource,

@@ -26,7 +26,7 @@ import type {
 import type { CLIArgs } from './args'
 import { ensureDir } from './io'
 import type { Logger } from './logger'
-import { resolveContext, resolveModelConfig } from './model'
+import { resolveModelConfig, resolveUserContext } from './model'
 import { getCacheDir } from './steps/context'
 
 export async function runClassify(
@@ -36,7 +36,13 @@ export async function runClassify(
 ): Promise<ClassifiedActivity[]> {
   // Resolve model and context
   const { provider, apiModel: model, apiKey } = resolveModelConfig()
-  const { homeCountry, timezone } = resolveContext(args.homeCountry, args.timezone)
+  const cacheDir = getCacheDir(args.cacheDir)
+  const { homeCountry, timezone } = await resolveUserContext({
+    argsHomeCountry: args.homeCountry,
+    argsTimezone: args.timezone,
+    cacheDir,
+    logger
+  })
   const batchSize = 10
   const totalBatches = Math.ceil(candidates.length / batchSize)
 
@@ -44,7 +50,6 @@ export async function runClassify(
   logger.log(`   Processing in ${totalBatches} batches of ${batchSize}`)
 
   // Use filesystem cache for API responses
-  const cacheDir = getCacheDir(args.cacheDir)
   const cache = new FilesystemCache(cacheDir)
 
   const config: ClassifierConfig = {
@@ -55,9 +60,15 @@ export async function runClassify(
     timezone,
     batchSize,
     onBatchStart: (info) => {
-      logger.log(
-        `   [${info.batchIndex + 1}/${info.totalBatches}] Sending ${info.candidateCount} candidates...`
-      )
+      if (info.fromCache) {
+        logger.log(
+          `   [${info.batchIndex + 1}/${info.totalBatches}] ${info.candidateCount} candidates 📦 cached`
+        )
+      } else {
+        logger.log(
+          `   [${info.batchIndex + 1}/${info.totalBatches}] Sending ${info.candidateCount} candidates...`
+        )
+      }
     },
     onBatchComplete: (info) => {
       logger.log(

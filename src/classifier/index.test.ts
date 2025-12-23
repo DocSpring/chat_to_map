@@ -112,7 +112,7 @@ describe('Classifier Module', () => {
                   message_id: 1,
 
                   activity: 'Test',
-                  category: 'restaurant',
+                  category: 'food',
                   confidence: 0.9
                 }
               ])
@@ -153,7 +153,7 @@ describe('Classifier Module', () => {
                     message_id: 1,
 
                     activity: 'Test',
-                    category: 'restaurant',
+                    category: 'food',
                     confidence: 0.9
                   }
                 ])
@@ -194,7 +194,7 @@ describe('Classifier Module', () => {
                     message_id: 1,
 
                     activity: 'Test',
-                    category: 'restaurant',
+                    category: 'food',
                     confidence: 0.9
                   }
                 ])
@@ -230,7 +230,7 @@ describe('Classifier Module', () => {
                   message_id: 1,
 
                   activity: 'Italian Restaurant',
-                  category: 'restaurant',
+                  category: 'food',
                   confidence: 0.95,
                   city: 'Rome',
                   country: 'Italy'
@@ -253,7 +253,7 @@ describe('Classifier Module', () => {
       if (result.ok) {
         expect(result.value).toHaveLength(1)
         expect(result.value[0]?.activity).toBe('Italian Restaurant')
-        expect(result.value[0]?.category).toBe('restaurant')
+        expect(result.value[0]?.category).toBe('food')
       }
     })
 
@@ -345,7 +345,7 @@ describe('Classifier Module', () => {
         message_id: i + 1,
 
         activity: 'Test',
-        category: 'restaurant',
+        category: 'food',
         confidence: 0.9
       }))
 
@@ -423,7 +423,7 @@ describe('Classifier Module', () => {
                   message_id: 1,
 
                   activity: 'Test',
-                  category: 'restaurant',
+                  category: 'food',
                   confidence: 0.9
                 }
               ])
@@ -482,7 +482,7 @@ describe('Classifier Module', () => {
                     message_id: 1,
 
                     activity: 'Fallback Test',
-                    category: 'restaurant',
+                    category: 'food',
                     confidence: 0.9
                   }
                 ])
@@ -603,7 +603,7 @@ describe('Classifier Module', () => {
         activity: 'Test',
         funScore: 0.7,
         interestingScore: 0.5,
-        category: 'restaurant',
+        category: 'food',
         confidence: 0.9,
         originalMessage: 'Test',
         sender: 'User',
@@ -659,17 +659,17 @@ describe('Classifier Module', () => {
 
     it('groups suggestions by category', () => {
       const suggestions = [
-        createActivity('restaurant'),
-        createActivity('hike'),
-        createActivity('restaurant'),
-        createActivity('cafe')
+        createActivity('food'),
+        createActivity('nature'),
+        createActivity('food'),
+        createActivity('food')
       ]
 
       const groups = groupByCategory(suggestions)
 
-      expect(groups.get('restaurant')).toHaveLength(2)
-      expect(groups.get('hike')).toHaveLength(1)
-      expect(groups.get('cafe')).toHaveLength(1)
+      expect(groups.get('food')).toHaveLength(2)
+      expect(groups.get('nature')).toHaveLength(1)
+      expect(groups.get('food')).toHaveLength(1)
     })
 
     it('handles empty array', () => {

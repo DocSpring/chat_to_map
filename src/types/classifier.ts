@@ -4,11 +4,11 @@
  * Types for AI classification and aggregation.
  */
 
-export type { ActivityCategory } from '../classifier/categories'
+export type { ActivityCategory } from '../categories'
 // Re-export from categories (source of truth)
-export { CATEGORY_EMOJI, VALID_CATEGORIES } from '../classifier/categories'
+export { CATEGORY_EMOJI, VALID_CATEGORIES } from '../categories'
 
-import type { ActivityCategory } from '../classifier/categories'
+import type { ActivityCategory } from '../categories'
 
 export interface ClassifiedActivity {
   readonly messageId: number
@@ -85,6 +85,8 @@ interface BatchInfo {
   readonly candidateCount: number
   readonly model: string
   readonly provider: ClassifierProvider
+  /** Whether this batch result is from cache */
+  readonly fromCache: boolean
 }
 
 interface BatchCompleteInfo {

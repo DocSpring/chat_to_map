@@ -522,7 +522,7 @@ describe('clusterActivities', () => {
           city: 'Auckland',
           timestamp: new Date('2025-02-01T10:00:00Z'),
           sender: 'Charlie',
-          category: 'restaurant' as ActivityCategory
+          category: 'food' as ActivityCategory
         })
       ]
 

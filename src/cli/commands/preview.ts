@@ -13,7 +13,7 @@ import { formatLocation } from '../../types'
 import type { CLIArgs } from '../args'
 import { formatDate, getCategoryEmoji, runQuickScanWithLogs, truncate } from '../helpers'
 import type { Logger } from '../logger'
-import { resolveContext, resolveModelConfig } from '../model'
+import { resolveModelConfig, resolveUserContext } from '../model'
 import { getCacheDir } from '../steps/context'
 
 export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
@@ -34,30 +34,39 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
   }
 
   const { provider, apiModel: model, apiKey } = resolveModelConfig()
-  const { homeCountry, timezone } = resolveContext(args.homeCountry, args.timezone)
+  const cacheDir = getCacheDir(args.cacheDir)
+  const { homeCountry, timezone } = await resolveUserContext({
+    argsHomeCountry: args.homeCountry,
+    argsTimezone: args.timezone,
+    cacheDir,
+    logger
+  })
 
   const PREVIEW_CLASSIFY_COUNT = args.maxResults * 3
   const topCandidates = scanResult.candidates.slice(0, PREVIEW_CLASSIFY_COUNT)
 
   logger.log(`\n🔍 Quick scan found ${scanResult.stats.totalUnique} potential activities`)
 
-  const cacheDir = getCacheDir(args.cacheDir)
   const cache = new FilesystemCache(cacheDir)
 
   const enrichedCandidates = await scrapeAndEnrichCandidates(topCandidates, {
     timeout: 4000,
     concurrency: 5,
     cache,
-    onScrapeStart: ({ urlCount }) => {
-      if (urlCount > 0) {
+    onScrapeStart: ({ urlCount, cachedCount }) => {
+      if (cachedCount > 0) {
+        logger.log(`\n🔗 Scraping metadata for ${urlCount} URLs (${cachedCount} cached)...`)
+      } else {
         logger.log(`\n🔗 Scraping metadata for ${urlCount} URLs...`)
       }
     },
-    onUrlScraped: ({ url, success, current, total }) => {
-      if (args.debug) {
-        const status = success ? '✓' : '✗'
-        const domain = new URL(url).hostname.replace('www.', '')
-        logger.log(`   [${current}/${total}] ${status} ${domain}`)
+    onDebug: args.debug ? (msg) => logger.log(`   [DEBUG] ${msg}`) : undefined,
+    onUrlScraped: ({ url, success, error, current, total }) => {
+      const domain = new URL(url).hostname.replace('www.', '')
+      if (success) {
+        logger.log(`   [${current}/${total}] ✓ ${domain}`)
+      } else {
+        logger.log(`   [${current}/${total}] ✗ ${domain}: ${error ?? 'Failed'}`)
       }
     }
   })
@@ -85,12 +94,14 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
       timezone,
       batchSize: 30,
       onBatchStart: (info) => {
-        if (info.totalBatches === 1) {
-          logger.log(`\n🤖 Sending ${info.candidateCount} candidates to ${info.model}...`)
+        if (info.fromCache) {
+          logger.log(`\n🤖 Classifying ${info.candidateCount} candidates... 📦 cached\n`)
+        } else if (info.totalBatches === 1) {
+          logger.log(`\n🤖 Sending ${info.candidateCount} candidates to ${info.model}...\n`)
         } else {
           logger.log(
             `\n🤖 Batch ${info.batchIndex + 1}/${info.totalBatches}: ` +
-              `sending ${info.candidateCount} candidates to ${info.model}...`
+              `sending ${info.candidateCount} candidates to ${info.model}...\n`
           )
         }
       }

@@ -98,14 +98,23 @@ export async function cmdAnalyze(args: CLIArgs, logger: Logger): Promise<void> {
       timeout: args.scrapeTimeout,
       concurrency: args.scrapeConcurrency,
       cache: apiCache,
-      onScrapeStart: ({ urlCount }) => {
-        logger.log(urlCount > 0 ? `\n🔗 Scraping ${urlCount} URLs...` : '\n🔗 No URLs to scrape')
+      onScrapeStart: ({ urlCount, cachedCount }) => {
+        if (cachedCount > 0) {
+          logger.log(`\n🔗 Scraping ${urlCount} URLs (${cachedCount} cached)...`)
+        } else if (urlCount > 0) {
+          logger.log(`\n🔗 Scraping ${urlCount} URLs...`)
+        }
       },
-      onUrlScraped: ({ url, success, current, total }) => {
-        if (args.verbose) {
-          const status = success ? '✓' : '✗'
-          const domain = new URL(url).hostname.replace('www.', '')
-          logger.log(`   [${current}/${total}] ${status} ${domain}`)
+      onDebug: args.debug ? (msg) => logger.log(`   [DEBUG] ${msg}`) : undefined,
+      onUrlScraped: ({ url, success, error, current, total }) => {
+        const domain = new URL(url).hostname.replace('www.', '')
+        if (success) {
+          if (args.verbose || args.debug) {
+            logger.log(`   [${current}/${total}] ✓ ${domain}`)
+          }
+        } else {
+          // Always show errors
+          logger.log(`   [${current}/${total}] ✗ ${domain}: ${error ?? 'Failed'}`)
         }
       }
     })

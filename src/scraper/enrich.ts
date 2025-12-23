@@ -108,36 +108,57 @@ export function enrichCandidatesWithMetadata(
 }
 
 interface EnrichOptions extends ScraperConfig {
-  /** Callback when scraping starts */
-  onScrapeStart?: (info: { urlCount: number }) => void
-  /** Callback for each URL scraped */
-  onUrlScraped?: (info: { url: string; success: boolean; current: number; total: number }) => void
+  /** Callback when scraping starts (only called if there are uncached URLs) */
+  onScrapeStart?: ((info: { urlCount: number; cachedCount: number }) => void) | undefined
+  /** Callback for each URL scraped (always called - success or failure) */
+  onUrlScraped?:
+    | ((info: {
+        url: string
+        success: boolean
+        error?: string | undefined
+        current: number
+        total: number
+      }) => void)
+    | undefined
+  /** Callback for debug logging */
+  onDebug?: ((message: string) => void) | undefined
   /** Max concurrent scrapes (default 5) */
-  concurrency?: number
+  concurrency?: number | undefined
   /** Cache for scrape results */
-  cache?: ResponseCache
+  cache?: ResponseCache | undefined
 }
 
 /** Cache TTL for scraped metadata (24 hours - URLs don't change often) */
 const SCRAPE_CACHE_TTL_SECONDS = 24 * 60 * 60
 
+/** Cache TTL for scrape errors (1 hour - don't hammer failing URLs) */
+const SCRAPE_ERROR_CACHE_TTL_SECONDS = 60 * 60
+
+/** Marker for cached errors */
+interface CachedError {
+  error: true
+  message: string
+}
+
+type CachedScrapeResult = ScrapedMetadata | CachedError
+
+function isCachedError(data: CachedScrapeResult): data is CachedError {
+  return 'error' in data && data.error === true
+}
+
 /**
  * Scrape a single URL with timeout and caching.
+ * Caches both successes and failures.
  */
 async function scrapeWithCache(
   url: string,
   options: EnrichOptions
-): Promise<{ url: string; metadata: ScrapedMetadata | null }> {
+): Promise<{ url: string; metadata: ScrapedMetadata | null; error?: string | undefined }> {
   const cache = options.cache
   const cacheKey = generateUrlCacheKey(url)
 
-  // Check cache first
-  if (cache) {
-    const cached = await cache.get<ScrapedMetadata>(cacheKey)
-    if (cached) {
-      return { url, metadata: cached.data }
-    }
-  }
+  // Check cache first (already handled in scrapeAndEnrichCandidates)
+  // This function is only called for uncached URLs
 
   // Scrape with timeout
   const timeoutMs = options.timeout ?? DEFAULT_TIMEOUT_MS
@@ -155,17 +176,36 @@ async function scrapeWithCache(
       }
       return { url, metadata: result.metadata }
     }
-  } catch {
-    // Timeout or other error - silently skip
-  }
 
-  return { url, metadata: null }
+    // Scrape returned error
+    const errorMsg = result.error?.message ?? 'Unknown error'
+    if (cache) {
+      await cache.set(
+        cacheKey,
+        { data: { error: true, message: errorMsg } as CachedError, cachedAt: Date.now() },
+        SCRAPE_ERROR_CACHE_TTL_SECONDS
+      )
+    }
+    return { url, metadata: null, error: errorMsg }
+  } catch (e) {
+    // Timeout or other error
+    const errorMsg = e instanceof Error ? e.message : 'Timeout'
+    if (cache) {
+      await cache.set(
+        cacheKey,
+        { data: { error: true, message: errorMsg } as CachedError, cachedAt: Date.now() },
+        SCRAPE_ERROR_CACHE_TTL_SECONDS
+      )
+    }
+    return { url, metadata: null, error: errorMsg }
+  }
 }
 
 /**
  * Scrape all URLs found in candidates and return enriched candidates.
  * Best-effort: failures are silently skipped (no metadata injected).
  * Uses parallel scraping with configurable concurrency.
+ * Caches both successes and failures to avoid re-fetching.
  */
 export async function scrapeAndEnrichCandidates(
   candidates: readonly CandidateMessage[],
@@ -177,24 +217,61 @@ export async function scrapeAndEnrichCandidates(
     return [...candidates]
   }
 
-  options.onScrapeStart?.({ urlCount: urls.length })
-
   const metadataMap = new Map<string, ScrapedMetadata>()
+  const cache = options.cache
+
+  // Check cache first to separate cached vs uncached URLs
+  const uncachedUrls: string[] = []
+  if (cache) {
+    for (const url of urls) {
+      const cacheKey = generateUrlCacheKey(url)
+      const cached = await cache.get<CachedScrapeResult>(cacheKey)
+      if (cached) {
+        if (isCachedError(cached.data)) {
+          options.onDebug?.(`Cache HIT (error): ${url} -> ${cached.data.message}`)
+          // Don't add to metadataMap - it's a cached error
+        } else {
+          options.onDebug?.(`Cache HIT: ${url} -> ${cacheKey}`)
+          metadataMap.set(url, cached.data)
+        }
+      } else {
+        options.onDebug?.(`Cache MISS: ${url} -> ${cacheKey}`)
+        uncachedUrls.push(url)
+      }
+    }
+  } else {
+    uncachedUrls.push(...urls)
+  }
+
+  // Only call onScrapeStart if there are uncached URLs to fetch
+  if (uncachedUrls.length > 0) {
+    options.onScrapeStart?.({
+      urlCount: uncachedUrls.length,
+      cachedCount: urls.length - uncachedUrls.length
+    })
+  }
+
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY
   let completed = 0
 
-  // Process URLs in parallel batches
-  for (let i = 0; i < urls.length; i += concurrency) {
-    const batch = urls.slice(i, i + concurrency)
+  // Process only uncached URLs in parallel batches
+  for (let i = 0; i < uncachedUrls.length; i += concurrency) {
+    const batch = uncachedUrls.slice(i, i + concurrency)
     const results = await Promise.all(batch.map((url) => scrapeWithCache(url, options)))
 
-    for (const { url, metadata } of results) {
+    for (const { url, metadata, error } of results) {
       completed++
       const success = metadata !== null
       if (metadata) {
         metadataMap.set(url, metadata)
       }
-      options.onUrlScraped?.({ url, success, current: completed, total: urls.length })
+      options.onUrlScraped?.({
+        url,
+        success,
+        error,
+        current: completed,
+        total: uncachedUrls.length
+      })
     }
   }
 

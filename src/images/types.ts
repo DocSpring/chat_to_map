@@ -12,7 +12,6 @@ export type ImageSource =
   | 'google_places' // Google Places Photos API
   | 'wikipedia' // Wikipedia/Wikimedia Commons
   | 'pixabay' // Pixabay stock photos
-  | 'fallback' // Category emoji/icon
 
 /**
  * Result of fetching an image for an activity.
@@ -22,20 +21,22 @@ export interface ImageResult {
   readonly url: string
 
   /** Image data (for embedding in PDF) */
-  readonly data?: Uint8Array
+  readonly data?: Uint8Array | undefined
 
   /** Image dimensions */
-  readonly width?: number
-  readonly height?: number
+  readonly width?: number | undefined
+  readonly height?: number | undefined
 
   /** Source that provided the image */
   readonly source: ImageSource
 
   /** Attribution info (required for some sources) */
-  readonly attribution?: {
-    readonly name: string
-    readonly url: string
-  }
+  readonly attribution?:
+    | {
+        readonly name: string
+        readonly url: string
+      }
+    | undefined
 }
 
 /**
@@ -43,17 +44,17 @@ export interface ImageResult {
  */
 export interface ImageFetchConfig {
   /** Skip Pixabay image search */
-  readonly skipPixabay?: boolean
+  readonly skipPixabay?: boolean | undefined
 
   /** Skip Wikipedia image lookup */
-  readonly skipWikipedia?: boolean
+  readonly skipWikipedia?: boolean | undefined
 
   /** Skip Google Places Photos */
-  readonly skipGooglePlaces?: boolean
+  readonly skipGooglePlaces?: boolean | undefined
 
   /** Pixabay API key */
-  readonly pixabayApiKey?: string
+  readonly pixabayApiKey?: string | undefined
 
   /** Google Places API key */
-  readonly googlePlacesApiKey?: string
+  readonly googlePlacesApiKey?: string | undefined
 }

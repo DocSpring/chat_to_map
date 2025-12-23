@@ -14,7 +14,7 @@ function createActivity(
     activity,
     funScore: 0.7,
     interestingScore: 0.5,
-    category: 'restaurant',
+    category: 'food',
     confidence: 0.9,
     originalMessage: 'Original message',
     sender: 'Test User',

@@ -16,6 +16,9 @@ export interface CLIArgs {
   formats: string[]
   minConfidence: number
   skipGeocoding: boolean
+  skipPixabay: boolean
+  skipWikipedia: boolean
+  skipGooglePlaces: boolean
   quiet: boolean
   verbose: boolean
   dryRun: boolean
@@ -70,8 +73,8 @@ function createProgram(): Command {
       'Run the complete pipeline (parse → filter → scrape → classify → geocode → fetch-images → export)'
     )
     .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
-    .requiredOption('-c, --home-country <name>', 'Your home country for location disambiguation')
-    .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
+    .option('-c, --home-country <name>', 'Your home country (auto-detected from IP if not set)')
+    .option('--timezone <tz>', 'Your timezone (auto-detected from system if not set)')
     .option('-o, --output-dir <dir>', 'Output directory', DEFAULT_OUTPUT_DIR)
     .option(
       '-f, --format <formats>',
@@ -106,8 +109,8 @@ function createProgram(): Command {
     .command('preview')
     .description('AI-powered preview: classify top candidates (~$0.01)')
     .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
-    .requiredOption('-c, --home-country <name>', 'Your home country for location disambiguation')
-    .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
+    .option('-c, --home-country <name>', 'Your home country (auto-detected from IP if not set)')
+    .option('--timezone <tz>', 'Your timezone (auto-detected from system if not set)')
     .option('-n, --max-results <num>', 'Max results to return', '10')
     .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
     .option('--dry-run', 'Show stats without API calls')
@@ -138,8 +141,8 @@ function createProgram(): Command {
     .command('classify')
     .description('Classify candidates using AI')
     .argument('<input>', 'Candidates JSON file from filter command')
-    .requiredOption('-c, --home-country <name>', 'Your home country for location disambiguation')
-    .option('--timezone <tz>', 'Your timezone, e.g. Pacific/Auckland')
+    .option('-c, --home-country <name>', 'Your home country (auto-detected from IP if not set)')
+    .option('--timezone <tz>', 'Your timezone (auto-detected from system if not set)')
     .option('-o, --output <file>', 'Save classified activities to JSON file')
 
   // ============ GEOCODE ============
@@ -195,6 +198,9 @@ function buildCLIArgs(commandName: string, input: string, opts: Record<string, u
     formats: format.split(',').map((f) => f.trim()),
     minConfidence: Number.parseFloat(String(opts.minConfidence ?? '0.5')),
     skipGeocoding: opts.skipGeocoding === true,
+    skipPixabay: opts.skipPixabay === true,
+    skipWikipedia: opts.skipWikipedia === true,
+    skipGooglePlaces: opts.skipGooglePlaces === true,
     quiet: opts.quiet === true,
     verbose: opts.verbose === true,
     dryRun: opts.dryRun === true,

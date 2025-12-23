@@ -106,7 +106,7 @@ export function generateGeocodeCacheKey(location: string, regionBias?: string): 
 export function generateUrlCacheKey(url: string): string {
   // Sanitize URL for filename: replace invalid chars with _, collapse multiple _
   const sanitized = url
-    .replace(/[^a-zA-Z0-9.-]/g, '_')
+    .replace(/[^a-zA-Z0-9_-]/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '')
     .slice(0, 80)

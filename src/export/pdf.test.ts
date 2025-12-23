@@ -5,7 +5,7 @@ import { exportToPDF } from './pdf'
 function createActivity(
   id: number,
   activity: string,
-  category: string = 'restaurant',
+  category: string = 'food',
   lat?: number,
   lng?: number
 ): GeocodedActivity {
@@ -38,7 +38,7 @@ function createActivity(
 describe('PDF Export', () => {
   describe('exportToPDF', () => {
     it('returns a Uint8Array', async () => {
-      const activities = [createActivity(1, 'Test', 'restaurant', 41.9, 12.5)]
+      const activities = [createActivity(1, 'Test', 'food', 41.9, 12.5)]
 
       const result = await exportToPDF(activities)
 
@@ -47,7 +47,7 @@ describe('PDF Export', () => {
     })
 
     it('creates PDF with default title', async () => {
-      const activities = [createActivity(1, 'Test', 'restaurant', 41.9, 12.5)]
+      const activities = [createActivity(1, 'Test', 'food', 41.9, 12.5)]
 
       const result = await exportToPDF(activities)
 
@@ -56,7 +56,7 @@ describe('PDF Export', () => {
     })
 
     it('uses custom title when provided', async () => {
-      const activities = [createActivity(1, 'Test', 'restaurant', 41.9, 12.5)]
+      const activities = [createActivity(1, 'Test', 'food', 41.9, 12.5)]
 
       const result = await exportToPDF(activities, { title: 'My Custom Title' })
 
@@ -64,7 +64,7 @@ describe('PDF Export', () => {
     })
 
     it('includes subtitle when provided', async () => {
-      const activities = [createActivity(1, 'Test', 'restaurant', 41.9, 12.5)]
+      const activities = [createActivity(1, 'Test', 'food', 41.9, 12.5)]
 
       const result = await exportToPDF(activities, { subtitle: 'My Subtitle' })
 
@@ -73,8 +73,8 @@ describe('PDF Export', () => {
 
     it('handles multiple activities', async () => {
       const activities = [
-        createActivity(1, 'Test 1', 'restaurant', 41.9, 12.5),
-        createActivity(2, 'Test 2', 'hike', 40.7, -74.0)
+        createActivity(1, 'Test 1', 'food', 41.9, 12.5),
+        createActivity(2, 'Test 2', 'nature', 40.7, -74.0)
       ]
 
       const result = await exportToPDF(activities)
@@ -84,9 +84,9 @@ describe('PDF Export', () => {
 
     it('handles multiple categories', async () => {
       const activities = [
-        createActivity(1, 'Restaurant 1', 'restaurant', 41.9, 12.5),
-        createActivity(2, 'Restaurant 2', 'restaurant', 40.7, -74.0),
-        createActivity(3, 'Hike 1', 'hike', 41.0, 12.0)
+        createActivity(1, 'Restaurant 1', 'food', 41.9, 12.5),
+        createActivity(2, 'Restaurant 2', 'food', 40.7, -74.0),
+        createActivity(3, 'Hike 1', 'nature', 41.0, 12.0)
       ]
 
       const result = await exportToPDF(activities)
@@ -96,11 +96,11 @@ describe('PDF Export', () => {
 
     it('filters by category when specified', async () => {
       const activities = [
-        createActivity(1, 'Restaurant 1', 'restaurant', 41.9, 12.5),
-        createActivity(2, 'Hike 1', 'hike', 40.7, -74.0)
+        createActivity(1, 'Restaurant 1', 'food', 41.9, 12.5),
+        createActivity(2, 'Hike 1', 'nature', 40.7, -74.0)
       ]
 
-      const result = await exportToPDF(activities, { filterByCategory: ['restaurant'] })
+      const result = await exportToPDF(activities, { filterByCategory: ['food'] })
 
       expect(result.length).toBeGreaterThan(100)
     })
@@ -113,7 +113,7 @@ describe('PDF Export', () => {
     })
 
     it('handles activities without coordinates', async () => {
-      const activities = [createActivity(1, 'Without coords', 'hike')]
+      const activities = [createActivity(1, 'Without coords', 'nature')]
 
       const result = await exportToPDF(activities)
 
@@ -122,7 +122,7 @@ describe('PDF Export', () => {
 
     it('handles activities with location', async () => {
       const activity: GeocodedActivity = {
-        ...createActivity(1, 'Restaurant', 'restaurant', 41.9, 12.5),
+        ...createActivity(1, 'Restaurant', 'food', 41.9, 12.5),
         city: 'Rome',
         country: 'Italy'
       }
@@ -134,7 +134,7 @@ describe('PDF Export', () => {
 
     it('handles many activities', async () => {
       const activities = Array.from({ length: 50 }, (_, i) =>
-        createActivity(i + 1, `Activity ${i + 1}`, 'restaurant', 41.9 + i * 0.01, 12.5)
+        createActivity(i + 1, `Activity ${i + 1}`, 'food', 41.9 + i * 0.01, 12.5)
       )
 
       const result = await exportToPDF(activities)
@@ -144,10 +144,10 @@ describe('PDF Export', () => {
 
     it('handles all category types', async () => {
       const categories = [
-        'restaurant',
-        'cafe',
+        'food',
+        'food',
         'bar',
-        'hike',
+        'nature',
         'nature',
         'beach',
         'trip',
@@ -173,9 +173,9 @@ describe('PDF Export', () => {
 
     it('handles multiple senders', async () => {
       const activities = [
-        { ...createActivity(1, 'Test 1', 'restaurant'), sender: 'User A' },
-        { ...createActivity(2, 'Test 2', 'hike'), sender: 'User B' },
-        { ...createActivity(3, 'Test 3', 'cafe'), sender: 'User A' }
+        { ...createActivity(1, 'Test 1', 'food'), sender: 'User A' },
+        { ...createActivity(2, 'Test 2', 'nature'), sender: 'User B' },
+        { ...createActivity(3, 'Test 3', 'food'), sender: 'User A' }
       ]
 
       const result = await exportToPDF(activities)
@@ -184,7 +184,7 @@ describe('PDF Export', () => {
     })
 
     it('produces valid PDF header', async () => {
-      const activities = [createActivity(1, 'Test', 'restaurant', 41.9, 12.5)]
+      const activities = [createActivity(1, 'Test', 'food', 41.9, 12.5)]
 
       const result = await exportToPDF(activities)
 

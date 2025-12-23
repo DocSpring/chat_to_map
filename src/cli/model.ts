@@ -19,29 +19,8 @@ interface ResolvedModelConfig {
   apiKey: string
 }
 
-interface ResolvedContext {
-  homeCountry: string
-  timezone: string | undefined
-}
-
-/**
- * Resolve user context from CLI args or environment variables.
- * HOME_COUNTRY env var is used if --home-country not provided.
- * TIMEZONE env var is used if --timezone not provided.
- */
-export function resolveContext(
-  argsHomeCountry: string | undefined,
-  argsTimezone: string | undefined
-): ResolvedContext {
-  const homeCountry = argsHomeCountry ?? process.env.HOME_COUNTRY
-  if (!homeCountry) {
-    throw new Error('--home-country is required (or set HOME_COUNTRY env var)')
-  }
-
-  const timezone = argsTimezone ?? process.env.TIMEZONE
-
-  return { homeCountry, timezone }
-}
+// Re-export resolveUserContext from user-settings (replaces old sync resolveContext)
+export { resolveUserContext } from './user-settings'
 
 /**
  * Resolve model configuration from environment.

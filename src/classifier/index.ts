@@ -5,6 +5,7 @@
  * and extract activity/location details.
  */
 
+import { generateClassifierCacheKey } from '../cache/key'
 import type { ResponseCache } from '../cache/types'
 import type {
   ActivityCategory,
@@ -31,7 +32,7 @@ export {
   parseClassificationResponse
 } from './prompt'
 
-import { VALID_CATEGORIES } from './categories'
+import { VALID_CATEGORIES } from '../categories'
 
 const DEFAULT_BATCH_SIZE = 10
 
@@ -167,13 +168,18 @@ export async function classifyMessages(
     const batch = batches[i]
     if (!batch) continue
 
-    // Call onBatchStart BEFORE the API call
+    // Check cache BEFORE calling onBatchStart
+    const messages = batch.map((c) => ({ messageId: c.messageId, content: c.content }))
+    const cacheKey = generateClassifierCacheKey(config.provider, model, messages)
+    const cached = cache ? await cache.get<string>(cacheKey) : null
+
     config.onBatchStart?.({
       batchIndex: i,
       totalBatches: batches.length,
       candidateCount: batch.length,
       model,
-      provider: config.provider
+      provider: config.provider,
+      fromCache: cached !== null
     })
 
     const startTime = Date.now()

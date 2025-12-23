@@ -1,12 +1,8 @@
 import { mkdir, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import {
-  cacheExtraction,
-  getCachedExtraction,
-  getInputMetadata,
-  readInputFileWithCache
-} from './steps/read'
+import { PipelineCache } from '../cache/pipeline'
+import { getInputMetadata, readInputFileWithMetadata } from './steps/read'
 
 const TEST_DIR = './tmp/test-input'
 const TEST_CACHE_DIR = './tmp/test-input-cache'
@@ -67,88 +63,26 @@ describe('getInputMetadata', () => {
   })
 })
 
-describe('extraction cache', () => {
-  beforeEach(async () => {
-    await mkdir(TEST_CACHE_DIR, { recursive: true })
-  })
-
-  afterEach(async () => {
-    await rm(TEST_CACHE_DIR, { recursive: true, force: true })
-  })
-
-  it('returns null for uncached content', () => {
-    const metadata = {
-      path: '/path/to/chat.zip',
-      baseName: 'chat',
-      mtime: 12345,
-      hash: 'abcd1234'
-    }
-
-    const cached = getCachedExtraction(metadata, TEST_CACHE_DIR)
-
-    expect(cached).toBeNull()
-  })
-
-  it('caches and retrieves content', () => {
-    const metadata = {
-      path: '/path/to/chat.zip',
-      baseName: 'chat',
-      mtime: 12345,
-      hash: 'abcd1234'
-    }
-    const content = 'Hello, this is chat content!'
-
-    cacheExtraction(metadata, content, TEST_CACHE_DIR)
-    const cached = getCachedExtraction(metadata, TEST_CACHE_DIR)
-
-    expect(cached).toBe(content)
-  })
-
-  it('invalidates cache when mtime changes', () => {
-    const metadata1 = {
-      path: '/path/to/chat.zip',
-      baseName: 'chat',
-      mtime: 12345,
-      hash: 'abcd1234'
-    }
-    const metadata2 = {
-      ...metadata1,
-      mtime: 67890,
-      hash: 'efgh5678'
-    }
-
-    cacheExtraction(metadata1, 'cached content', TEST_CACHE_DIR)
-
-    // Same cache path but different mtime
-    const cached = getCachedExtraction(metadata2, TEST_CACHE_DIR)
-
-    expect(cached).toBeNull()
-  })
-})
-
-describe('readInputFileWithCache', () => {
+describe('readInputFileWithMetadata', () => {
   beforeEach(async () => {
     await mkdir(TEST_DIR, { recursive: true })
-    await mkdir(TEST_CACHE_DIR, { recursive: true })
   })
 
   afterEach(async () => {
     await rm(TEST_DIR, { recursive: true, force: true })
-    await rm(TEST_CACHE_DIR, { recursive: true, force: true })
   })
 
   it('reads plain text files', async () => {
     const filePath = join(TEST_DIR, 'chat.txt')
     await writeFile(filePath, 'Hello World')
 
-    const result = await readInputFileWithCache(filePath, { cacheDir: TEST_CACHE_DIR })
+    const result = await readInputFileWithMetadata(filePath)
 
     expect(result.content).toBe('Hello World')
-    expect(result.fromCache).toBe(false)
     expect(result.metadata.baseName).toBe('chat')
   })
 
-  it('reads and caches zip files', async () => {
+  it('reads zip files', async () => {
     const JSZip = await import('jszip')
     const zip = new JSZip.default()
     zip.file('_chat.txt', 'Zip content here')
@@ -157,33 +91,8 @@ describe('readInputFileWithCache', () => {
     const filePath = join(TEST_DIR, 'chat.zip')
     await writeFile(filePath, zipContent)
 
-    // First read - should not be cached
-    const result1 = await readInputFileWithCache(filePath, { cacheDir: TEST_CACHE_DIR })
-    expect(result1.content).toBe('Zip content here')
-    expect(result1.fromCache).toBe(false)
-
-    // Second read - should be cached
-    const result2 = await readInputFileWithCache(filePath, { cacheDir: TEST_CACHE_DIR })
-    expect(result2.content).toBe('Zip content here')
-    expect(result2.fromCache).toBe(true)
-  })
-
-  it('skips cache when requested', async () => {
-    const filePath = join(TEST_DIR, 'chat.txt')
-    await writeFile(filePath, 'Content')
-
-    // Pre-cache some content
-    const metadata = await getInputMetadata(filePath)
-    cacheExtraction(metadata, 'Old cached content', TEST_CACHE_DIR)
-
-    // Read with skipCache - should get actual file content
-    const result = await readInputFileWithCache(filePath, {
-      cacheDir: TEST_CACHE_DIR,
-      skipCache: true
-    })
-
-    expect(result.content).toBe('Content')
-    expect(result.fromCache).toBe(false)
+    const result = await readInputFileWithMetadata(filePath)
+    expect(result.content).toBe('Zip content here')
   })
 
   it('throws on zip without chat file', async () => {
@@ -195,9 +104,7 @@ describe('readInputFileWithCache', () => {
     const filePath = join(TEST_DIR, 'bad.zip')
     await writeFile(filePath, zipContent)
 
-    await expect(readInputFileWithCache(filePath, { cacheDir: TEST_CACHE_DIR })).rejects.toThrow(
-      'No chat file found'
-    )
+    await expect(readInputFileWithMetadata(filePath)).rejects.toThrow('No chat file found')
   })
 
   it('finds .txt files in zip', async () => {
@@ -209,7 +116,66 @@ describe('readInputFileWithCache', () => {
     const filePath = join(TEST_DIR, 'whatsapp.zip')
     await writeFile(filePath, zipContent)
 
-    const result = await readInputFileWithCache(filePath, { cacheDir: TEST_CACHE_DIR })
+    const result = await readInputFileWithMetadata(filePath)
     expect(result.content).toBe('Chat content')
+  })
+})
+
+describe('PipelineCache chat content caching', () => {
+  beforeEach(async () => {
+    await mkdir(TEST_DIR, { recursive: true })
+    await mkdir(TEST_CACHE_DIR, { recursive: true })
+  })
+
+  afterEach(async () => {
+    await rm(TEST_DIR, { recursive: true, force: true })
+    await rm(TEST_CACHE_DIR, { recursive: true, force: true })
+  })
+
+  it('returns null for uncached content', async () => {
+    const filePath = join(TEST_DIR, 'chat.zip')
+    await writeFile(filePath, 'test zip content')
+
+    const cache = new PipelineCache(TEST_CACHE_DIR)
+    const cached = cache.getCachedChatContent(filePath)
+
+    expect(cached).toBeNull()
+  })
+
+  it('caches and retrieves chat.txt content', async () => {
+    const filePath = join(TEST_DIR, 'chat.zip')
+    await writeFile(filePath, 'test zip content')
+
+    const cache = new PipelineCache(TEST_CACHE_DIR)
+    const content = 'Hello, this is chat content!'
+
+    // Initialize run and save chat.txt
+    cache.initRunFromFile(filePath)
+    cache.setStage('chat', content)
+
+    // Retrieve from cache
+    const cached = cache.getCachedChatContent(filePath)
+
+    expect(cached).not.toBeNull()
+    expect(cached?.content).toBe(content)
+  })
+
+  it('invalidates cache when file content changes', async () => {
+    const filePath = join(TEST_DIR, 'chat.zip')
+    await writeFile(filePath, 'original zip content')
+
+    const cache = new PipelineCache(TEST_CACHE_DIR)
+
+    // Cache with original content
+    cache.initRunFromFile(filePath)
+    cache.setStage('chat', 'cached chat content')
+
+    // Modify the file (different bytes = different hash)
+    await writeFile(filePath, 'modified zip content')
+
+    // Should not find cache since file hash changed
+    const cached = cache.getCachedChatContent(filePath)
+
+    expect(cached).toBeNull()
   })
 })

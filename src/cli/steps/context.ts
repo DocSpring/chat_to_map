@@ -9,7 +9,7 @@ import { basename, join } from 'node:path'
 import { FilesystemCache } from '../../cache/filesystem'
 import { PipelineCache } from '../../cache/pipeline'
 import type { Logger } from '../logger'
-import { readInputFileWithCache } from './read'
+import { readInputFileWithMetadata } from './read'
 
 /**
  * Options for initializing the pipeline context.
@@ -66,19 +66,32 @@ export async function initContext(
   const cacheDir = getCacheDir(options?.cacheDir)
   const noCache = options?.noCache ?? false
 
-  // Read input (with zip extraction caching - always cache zip extraction)
-  const { content, fromCache } = await readInputFileWithCache(input, { cacheDir })
-
   // Initialize caches
   const pipelineCache = new PipelineCache(cacheDir)
   const apiCache = new FilesystemCache(cacheDir)
 
-  // Get or create pipeline run (always get the run dir, even if noCache)
-  const run = pipelineCache.getOrCreateRun(input, content)
-  if (noCache) {
-    logger.log(`\n📂 Cache: ${basename(run.runDir)} (--no-cache: regenerating)`)
+  // Check if we have cached chat.txt content (uses SHA256 of input file bytes)
+  let content: string
+  let fromCache = false
+
+  const cachedContent = noCache ? null : pipelineCache.getCachedChatContent(input)
+  if (cachedContent) {
+    content = cachedContent.content
+    fromCache = true
+    logger.log(`\n📂 Cache: ${basename(cachedContent.runDir)}`)
   } else {
-    logger.log(`\n📂 Cache: ${basename(run.runDir)}`)
+    // Read and extract the input file
+    const { content: extractedContent } = await readInputFileWithMetadata(input)
+    content = extractedContent
+
+    // Create new pipeline run using file hash and cache chat.txt
+    const run = pipelineCache.initRunFromFile(input)
+    pipelineCache.setStage('chat', content)
+    if (noCache) {
+      logger.log(`\n📂 Cache: ${basename(run.runDir)} (--no-cache: regenerating)`)
+    } else {
+      logger.log(`\n📂 Cache: ${basename(run.runDir)}`)
+    }
   }
 
   return {
