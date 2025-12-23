@@ -35,6 +35,7 @@ export type PipelineStage =
   | 'embed_stats'
   | 'scrape_stats'
   | 'scrape_metadata'
+  | 'classify_stats'
   | 'candidates.heuristics'
   | 'candidates.embeddings'
   | 'candidates.all'

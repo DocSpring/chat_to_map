@@ -33,7 +33,8 @@ export {
   groupByCategory,
   groupCandidatesByProximity,
   parseClassificationResponse,
-  resolveModel
+  resolveModel,
+  sortActivitiesByScore
 } from './classifier/index'
 export {
   DEFAULT_ACTIVITIES,

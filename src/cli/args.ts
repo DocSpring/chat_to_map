@@ -42,8 +42,7 @@ const DEFAULT_OUTPUT_DIR = `${DEFAULT_BASE_DIR}/output`
 const DESCRIPTION = `Transform chat exports into interactive maps of activities and places.
 
 Supported formats (auto-detected):
-  • WhatsApp iOS (.zip export)
-  • WhatsApp Android (.zip export)
+  • WhatsApp iOS/Android (.zip export)
   • iMessage (via imessage-exporter)
 
 Examples:
@@ -151,11 +150,15 @@ function createProgram(): Command {
   // ============ CLASSIFY ============
   program
     .command('classify')
-    .description('Classify candidates using AI')
-    .argument('<input>', 'Candidates JSON file from filter command')
+    .description('Classify candidates into activities using AI')
+    .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
     .option('-c, --home-country <name>', 'Your home country (auto-detected from IP if not set)')
     .option('--timezone <tz>', 'Your timezone (auto-detected from system if not set)')
-    .option('-o, --output <file>', 'Save classified activities to JSON file')
+    .option('--json [file]', 'Output as JSON (to file if specified, otherwise stdout)')
+    .option('-n, --max-results <num>', 'Max results to display', '10')
+    .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
+    .option('-a, --all', 'Show all activities (default: top 10)')
+    .option('--dry-run', 'Show stats without API calls')
 
   // ============ GEOCODE ============
   program

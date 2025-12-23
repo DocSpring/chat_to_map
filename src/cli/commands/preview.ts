@@ -6,7 +6,7 @@
 
 import { basename } from 'node:path'
 import { buildClassificationPrompt } from '../../classifier/prompt'
-import { classifyMessages, VERSION } from '../../index'
+import { classifyMessages, sortActivitiesByScore, VERSION } from '../../index'
 import { extractUrlsFromCandidates, fetchMetadataForUrls } from '../../scraper/metadata'
 import type { ScrapedMetadata } from '../../scraper/types'
 import type { ClassifiedActivity } from '../../types'
@@ -91,12 +91,8 @@ async function stepClassify(
     throw new Error(`Classification failed: ${classifyResult.error.message}`)
   }
 
-  // Sort by preview score: prioritize interesting over fun
-  const sorted = [...classifyResult.value].sort((a, b) => {
-    const scoreA = a.interestingScore * 2 + a.funScore
-    const scoreB = b.interestingScore * 2 + b.funScore
-    return scoreB - scoreA
-  })
+  // Sort by score (interesting prioritized over fun)
+  const sorted = sortActivitiesByScore(classifyResult.value)
 
   const stats: PreviewStats = {
     candidatesClassified: candidates.length,

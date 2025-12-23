@@ -217,6 +217,20 @@ export function filterActivities(suggestions: readonly ClassifiedActivity[]): Cl
 }
 
 /**
+ * Sort activities by score (interesting prioritized over fun).
+ * Score = interestingScore * 2 + funScore
+ */
+export function sortActivitiesByScore(
+  activities: readonly ClassifiedActivity[]
+): ClassifiedActivity[] {
+  return [...activities].sort((a, b) => {
+    const scoreA = a.interestingScore * 2 + a.funScore
+    const scoreB = b.interestingScore * 2 + b.funScore
+    return scoreB - scoreA
+  })
+}
+
+/**
  * Group suggestions by category.
  */
 export function groupByCategory(
