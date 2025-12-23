@@ -12,7 +12,6 @@
 // Cache module
 export type { CachedResponse, CacheKeyComponents, ResponseCache } from './cache/index'
 export {
-  DEFAULT_CACHE_TTL_SECONDS,
   FilesystemCache,
   generateCacheKey,
   generateClassifierCacheKey,

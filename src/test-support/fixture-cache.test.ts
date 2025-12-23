@@ -57,7 +57,7 @@ describe('FixtureCache', () => {
     it('should only load once', async () => {
       const cache = new FixtureCache(fixturePath)
       await cache.load()
-      await cache.set('key1', { data: 'value1', cachedAt: Date.now() }, 60)
+      await cache.set('key1', { data: 'value1', cachedAt: Date.now() })
       await cache.load() // Should not reset
 
       expect(cache.size).toBe(1)
@@ -70,7 +70,7 @@ describe('FixtureCache', () => {
       await cache.load()
 
       const response = { data: { embedding: [1, 2, 3] }, cachedAt: Date.now() }
-      await cache.set('hash123', response, 3600)
+      await cache.set('hash123', response)
 
       const retrieved = await cache.get<{ embedding: number[] }>('hash123')
       expect(retrieved).toEqual(response)
@@ -97,7 +97,7 @@ describe('FixtureCache', () => {
       const cache = new FixtureCache(fixturePath)
       // Don't call load()
 
-      await cache.set('key1', { data: 'value1', cachedAt: Date.now() }, 60)
+      await cache.set('key1', { data: 'value1', cachedAt: Date.now() })
       expect(cache.size).toBe(1)
     })
 
@@ -107,7 +107,7 @@ describe('FixtureCache', () => {
 
       // Set with very short TTL
       const response = { data: 'test', cachedAt: Date.now() - 100000 }
-      await cache.set('old-entry', response, 1)
+      await cache.set('old-entry', response)
 
       // Should still be retrievable
       const retrieved = await cache.get('old-entry')
@@ -120,8 +120,8 @@ describe('FixtureCache', () => {
       const cache = new FixtureCache(fixturePath)
       await cache.load()
 
-      await cache.set('key1', { data: 'value1', cachedAt: Date.now() }, 60)
-      await cache.set('key2', { data: 'value2', cachedAt: Date.now() }, 60)
+      await cache.set('key1', { data: 'value1', cachedAt: Date.now() })
+      await cache.set('key2', { data: 'value2', cachedAt: Date.now() })
       await cache.save()
 
       // Load in a new instance
@@ -145,13 +145,13 @@ describe('FixtureCache', () => {
       // First run: add some entries
       const cache1 = new FixtureCache(fixturePath)
       await cache1.load()
-      await cache1.set('key1', { data: 'value1', cachedAt: Date.now() }, 60)
+      await cache1.set('key1', { data: 'value1', cachedAt: Date.now() })
       await cache1.save()
 
       // Second run: add more entries
       const cache2 = new FixtureCache(fixturePath)
       await cache2.load()
-      await cache2.set('key2', { data: 'value2', cachedAt: Date.now() }, 60)
+      await cache2.set('key2', { data: 'value2', cachedAt: Date.now() })
       await cache2.save()
 
       // Third run: verify all entries exist
@@ -167,7 +167,7 @@ describe('FixtureCache', () => {
       const nestedPath = join(tempDir, 'nested', 'deep', 'cache.json.gz')
       const cache = new FixtureCache(nestedPath)
       await cache.load()
-      await cache.set('key1', { data: 'value1', cachedAt: Date.now() }, 60)
+      await cache.set('key1', { data: 'value1', cachedAt: Date.now() })
       await cache.save()
 
       expect(existsSync(nestedPath)).toBe(true)
@@ -185,7 +185,7 @@ describe('FixtureCache', () => {
     it('should be true after adding new entry', async () => {
       const cache = new FixtureCache(fixturePath)
       await cache.load()
-      await cache.set('key1', { data: 'value1', cachedAt: Date.now() }, 60)
+      await cache.set('key1', { data: 'value1', cachedAt: Date.now() })
 
       expect(cache.isDirty).toBe(true)
     })
@@ -193,7 +193,7 @@ describe('FixtureCache', () => {
     it('should be false after save', async () => {
       const cache = new FixtureCache(fixturePath)
       await cache.load()
-      await cache.set('key1', { data: 'value1', cachedAt: Date.now() }, 60)
+      await cache.set('key1', { data: 'value1', cachedAt: Date.now() })
       await cache.save()
 
       expect(cache.isDirty).toBe(false)
@@ -215,7 +215,7 @@ describe('FixtureCache', () => {
       await cache.load()
 
       // Set the same key (update)
-      await cache.set('key1', { data: 'new-value', cachedAt: Date.now() }, 60)
+      await cache.set('key1', { data: 'new-value', cachedAt: Date.now() })
 
       // Should not be dirty since key already existed
       expect(cache.isDirty).toBe(false)
@@ -227,9 +227,9 @@ describe('FixtureCache', () => {
       const cache = new FixtureCache(fixturePath)
       await cache.load()
 
-      await cache.set('key1', { data: 'v1', cachedAt: Date.now() }, 60)
-      await cache.set('key2', { data: 'v2', cachedAt: Date.now() }, 60)
-      await cache.set('key3', { data: 'v3', cachedAt: Date.now() }, 60)
+      await cache.set('key1', { data: 'v1', cachedAt: Date.now() })
+      await cache.set('key2', { data: 'v2', cachedAt: Date.now() })
+      await cache.set('key3', { data: 'v3', cachedAt: Date.now() })
 
       const keys = cache.keys()
       expect(keys).toHaveLength(3)
@@ -244,8 +244,8 @@ describe('FixtureCache', () => {
       const cache = new FixtureCache(fixturePath)
       await cache.load()
 
-      await cache.set('key1', { data: 'v1', cachedAt: Date.now() }, 60)
-      await cache.set('key2', { data: 'v2', cachedAt: Date.now() }, 60)
+      await cache.set('key1', { data: 'v1', cachedAt: Date.now() })
+      await cache.set('key2', { data: 'v2', cachedAt: Date.now() })
 
       cache.clear()
 
@@ -269,7 +269,7 @@ describe('FixtureCache', () => {
         cachedAt: Date.now()
       }
 
-      await cache.set('embedding-hash-123', response, 900) // 15 min TTL
+      await cache.set('embedding-hash-123', response)
 
       const retrieved = await cache.get<number[][]>('embedding-hash-123')
       expect(retrieved?.data).toEqual(embeddings)
@@ -290,7 +290,7 @@ describe('FixtureCache', () => {
         cachedAt: Date.now()
       }
 
-      await cache.set('classifier-hash-456', response, 900)
+      await cache.set('classifier-hash-456', response)
 
       const retrieved = await cache.get<typeof classifierResult>('classifier-hash-456')
       expect(retrieved?.data.activity).toBe('hiking')

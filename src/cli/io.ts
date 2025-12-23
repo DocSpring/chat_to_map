@@ -92,5 +92,8 @@ export async function readInputFile(path: string): Promise<string> {
  * Ensure a directory exists.
  */
 export async function ensureDir(dir: string): Promise<void> {
+  if (dir.startsWith('--')) {
+    throw new Error(`ensureDir called with flag-like path: "${dir}"`)
+  }
   await mkdir(dir, { recursive: true })
 }

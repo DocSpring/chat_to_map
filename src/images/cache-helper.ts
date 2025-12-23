@@ -10,14 +10,14 @@ import type { ResponseCache } from '../cache/types'
  * Cache a successful result.
  */
 export async function cacheResult<T>(cache: ResponseCache, key: string, data: T): Promise<void> {
-  await cache.set(key, { data, cachedAt: Date.now() }, 0)
+  await cache.set(key, { data, cachedAt: Date.now() })
 }
 
 /**
  * Cache a null/failed result.
  */
 export async function cacheNull(cache: ResponseCache, key: string): Promise<void> {
-  await cache.set(key, { data: null, cachedAt: Date.now() }, 0)
+  await cache.set(key, { data: null, cachedAt: Date.now() })
 }
 
 /**

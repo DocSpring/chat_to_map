@@ -2,18 +2,12 @@
  * Filesystem-based Response Cache for CLI
  *
  * Stores cached API responses as JSON files organized by hash prefix.
- * TTL is checked on read - expired entries are deleted automatically.
+ * Cache entries never expire - they're kept forever.
  */
 
-import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import type { CachedResponse, ResponseCache } from './types'
-
-interface CacheEntry<T> {
-  response: CachedResponse<T>
-  ttlMs: number
-  cachedAt: number
-}
 
 /**
  * Filesystem-based cache implementation for CLI usage.
@@ -41,51 +35,26 @@ export class FilesystemCache implements ResponseCache {
 
     try {
       const raw = readFileSync(path, 'utf-8')
-      const entry = JSON.parse(raw) as CacheEntry<T>
-
-      // Check if expired
-      const age = Date.now() - entry.cachedAt
-      if (age > entry.ttlMs) {
-        // Clean up expired entry
-        try {
-          unlinkSync(path)
-        } catch {
-          // Ignore deletion errors
-        }
-        return null
-      }
-
+      const entry = JSON.parse(raw) as { response: CachedResponse<T> }
       return entry.response
     } catch {
-      // Invalid cache file - delete it
-      try {
-        unlinkSync(path)
-      } catch {
-        // Ignore deletion errors
-      }
       return null
     }
   }
 
-  async set<T = unknown>(
-    hash: string,
-    response: CachedResponse<T>,
-    ttlSeconds: number
-  ): Promise<void> {
+  async set<T = unknown>(hash: string, response: CachedResponse<T>): Promise<void> {
     const path = this.getCachePath(hash)
 
     // Ensure directory exists
     const dir = dirname(path)
+    if (dir.startsWith('--')) {
+      throw new Error(`FilesystemCache.set called with flag-like dir: "${dir}"`)
+    }
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true })
     }
 
-    const entry: CacheEntry<T> = {
-      response,
-      ttlMs: ttlSeconds * 1000,
-      cachedAt: Date.now()
-    }
-
+    const entry = { response, cachedAt: Date.now() }
     writeFileSync(path, JSON.stringify(entry, null, 2))
   }
 

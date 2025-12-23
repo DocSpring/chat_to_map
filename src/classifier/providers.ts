@@ -6,7 +6,7 @@
  */
 
 import { generateClassifierCacheKey } from '../cache/key'
-import { DEFAULT_CACHE_TTL_SECONDS, type ResponseCache } from '../cache/types'
+import type { ResponseCache } from '../cache/types'
 import { emptyResponseError, handleHttpError, handleNetworkError, httpFetch } from '../http'
 import type { ClassifierConfig, ProviderConfig, Result } from '../types'
 import { DEFAULT_MODELS } from './models'
@@ -151,11 +151,7 @@ async function callProvider(
 
   // Cache successful response + prompt
   if (result.ok && cache && cacheKey) {
-    await cache.set(
-      cacheKey,
-      { data: result.value, cachedAt: Date.now() },
-      DEFAULT_CACHE_TTL_SECONDS
-    )
+    await cache.set(cacheKey, { data: result.value, cachedAt: Date.now() })
     await cache.setPrompt?.(cacheKey, prompt)
   }
 

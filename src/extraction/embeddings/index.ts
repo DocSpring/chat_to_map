@@ -7,7 +7,6 @@
 
 import { generateEmbeddingCacheKey } from '../../cache/key'
 import type { ResponseCache } from '../../cache/types'
-import { DEFAULT_CACHE_TTL_SECONDS } from '../../cache/types'
 import { handleHttpError, handleNetworkError, httpFetch } from '../../http'
 import type {
   CandidateMessage,
@@ -135,11 +134,7 @@ async function embedBatch(
     // Cache the results (convert to number[][] for JSON serialization)
     if (cache) {
       const serializable = embeddings.map((e) => Array.from(e))
-      await cache.set(
-        cacheKey,
-        { data: serializable, cachedAt: Date.now() },
-        DEFAULT_CACHE_TTL_SECONDS
-      )
+      await cache.set(cacheKey, { data: serializable, cachedAt: Date.now() })
     }
 
     return { ok: true, value: { embeddings, cacheHit: false } }

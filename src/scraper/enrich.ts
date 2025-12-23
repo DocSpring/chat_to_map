@@ -129,10 +129,8 @@ interface EnrichOptions extends ScraperConfig {
 }
 
 /** Cache TTL for scraped metadata (24 hours - URLs don't change often) */
-const SCRAPE_CACHE_TTL_SECONDS = 24 * 60 * 60
 
 /** Cache TTL for scrape errors (1 hour - don't hammer failing URLs) */
-const SCRAPE_ERROR_CACHE_TTL_SECONDS = 60 * 60
 
 /** Marker for cached errors */
 interface CachedError {
@@ -168,11 +166,7 @@ async function scrapeWithCache(
     if (result.ok) {
       // Cache successful result
       if (cache) {
-        await cache.set(
-          cacheKey,
-          { data: result.metadata, cachedAt: Date.now() },
-          SCRAPE_CACHE_TTL_SECONDS
-        )
+        await cache.set(cacheKey, { data: result.metadata, cachedAt: Date.now() })
       }
       return { url, metadata: result.metadata }
     }
@@ -180,22 +174,20 @@ async function scrapeWithCache(
     // Scrape returned error
     const errorMsg = result.error?.message ?? 'Unknown error'
     if (cache) {
-      await cache.set(
-        cacheKey,
-        { data: { error: true, message: errorMsg } as CachedError, cachedAt: Date.now() },
-        SCRAPE_ERROR_CACHE_TTL_SECONDS
-      )
+      await cache.set(cacheKey, {
+        data: { error: true, message: errorMsg } as CachedError,
+        cachedAt: Date.now()
+      })
     }
     return { url, metadata: null, error: errorMsg }
   } catch (e) {
     // Timeout or other error
     const errorMsg = e instanceof Error ? e.message : 'Timeout'
     if (cache) {
-      await cache.set(
-        cacheKey,
-        { data: { error: true, message: errorMsg } as CachedError, cachedAt: Date.now() },
-        SCRAPE_ERROR_CACHE_TTL_SECONDS
-      )
+      await cache.set(cacheKey, {
+        data: { error: true, message: errorMsg } as CachedError,
+        cachedAt: Date.now()
+      })
     }
     return { url, metadata: null, error: errorMsg }
   }

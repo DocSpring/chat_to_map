@@ -16,17 +16,17 @@ import {
 
 describe('parse command', () => {
   it('parses on first run, uses cache on second run', () => {
-    // First run: fresh parse
+    // First run: fresh parse (no "📦 cached" on the Parsing line)
     const run1 = runCli(`parse ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir}`)
     expect(run1.exitCode).toBe(0)
     expect(run1.stdout).toMatch(/\d+ messages/)
-    expect(run1.stdout).toContain('Parsing messages...')
-    expect(run1.stdout).not.toContain('cached')
+    expect(run1.stdout).toContain('📝 Parsing messages...')
+    expect(run1.stdout).not.toMatch(/📝 Parsing messages\.\.\..*cached/)
 
     // Second run: should use cache
     const run2 = runCli(`parse ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir}`)
     expect(run2.exitCode).toBe(0)
-    expect(run2.stdout).toContain('Parsing messages... 📦 cached')
+    expect(run2.stdout).toContain('📝 Parsing messages... 📦 cached')
   })
 
   it('writes parse_stats.json to cache', () => {

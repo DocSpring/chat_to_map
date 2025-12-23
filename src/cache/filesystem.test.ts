@@ -34,49 +34,11 @@ describe('FilesystemCache', () => {
         cachedAt: Date.now()
       }
 
-      await cache.set(hash, response, 300)
+      await cache.set(hash, response)
       const result = await cache.get<string>(hash)
 
       expect(result).not.toBeNull()
       expect(result?.data).toBe('test data')
-    })
-
-    it('should return null for expired entry', async () => {
-      const hash = 'expired123'
-      const response: CachedResponse<string> = {
-        data: 'test data',
-        cachedAt: Date.now()
-      }
-
-      // Set with 0 second TTL - immediately expired
-      await cache.set(hash, response, 0)
-
-      // Wait a bit to ensure expiration check
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      const result = await cache.get<string>(hash)
-      expect(result).toBeNull()
-    })
-
-    it('should delete expired entry on read', async () => {
-      const hash = 'todelete123'
-      const response: CachedResponse<string> = {
-        data: 'test data',
-        cachedAt: Date.now()
-      }
-
-      // Set with 0 second TTL - immediately expired
-      await cache.set(hash, response, 0)
-
-      // Wait a bit to ensure expiration
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      // First read should return null and delete
-      await cache.get<string>(hash)
-
-      // Verify file is deleted by checking path
-      const path = join(testDir, 'requests', hash.slice(0, 2), `${hash}.json`)
-      expect(existsSync(path)).toBe(false)
     })
   })
 
@@ -88,7 +50,7 @@ describe('FilesystemCache', () => {
         cachedAt: Date.now()
       }
 
-      await cache.set(hash, response, 300)
+      await cache.set(hash, response)
 
       const expectedDir = join(testDir, 'requests', hash.slice(0, 2))
       expect(existsSync(expectedDir)).toBe(true)
@@ -108,7 +70,7 @@ describe('FilesystemCache', () => {
         cachedAt: Date.now()
       }
 
-      await cache.set(hash, response, 300)
+      await cache.set(hash, response)
       const result = await cache.get<typeof complexData>(hash)
 
       expect(result?.data).toEqual(complexData)
@@ -125,8 +87,8 @@ describe('FilesystemCache', () => {
         cachedAt: Date.now()
       }
 
-      await cache.set(hash, response1, 300)
-      await cache.set(hash, response2, 300)
+      await cache.set(hash, response1)
+      await cache.set(hash, response2)
 
       const result = await cache.get<string>(hash)
       expect(result?.data).toBe('second')
@@ -140,7 +102,7 @@ describe('FilesystemCache', () => {
         cachedAt: Date.now()
       }
 
-      await cache.set(hash, response, 300)
+      await cache.set(hash, response)
       const result = await cache.get<string[]>(hash)
 
       expect(result?.data).toEqual(data)
@@ -150,8 +112,8 @@ describe('FilesystemCache', () => {
   describe('clear', () => {
     it('should remove all cached entries', async () => {
       // Add some entries
-      await cache.set('key1', { data: 'val1', cachedAt: Date.now() }, 300)
-      await cache.set('key2', { data: 'val2', cachedAt: Date.now() }, 300)
+      await cache.set('key1', { data: 'val1', cachedAt: Date.now() })
+      await cache.set('key2', { data: 'val2', cachedAt: Date.now() })
 
       await cache.clear()
 
@@ -172,9 +134,9 @@ describe('FilesystemCache', () => {
       const hash2 = 'aabbdd1234567890'
       const hash3 = 'ccddee1234567890'
 
-      await cache.set(hash1, { data: 'v1', cachedAt: Date.now() }, 300)
-      await cache.set(hash2, { data: 'v2', cachedAt: Date.now() }, 300)
-      await cache.set(hash3, { data: 'v3', cachedAt: Date.now() }, 300)
+      await cache.set(hash1, { data: 'v1', cachedAt: Date.now() })
+      await cache.set(hash2, { data: 'v2', cachedAt: Date.now() })
+      await cache.set(hash3, { data: 'v3', cachedAt: Date.now() })
 
       // hash1 and hash2 should be in same directory (prefix 'aa')
       expect(existsSync(join(testDir, 'requests', 'aa', `${hash1}.json`))).toBe(true)

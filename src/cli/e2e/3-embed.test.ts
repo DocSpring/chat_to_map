@@ -11,17 +11,18 @@ interface EmbedStats {
 
 describe('embed command', () => {
   it('embeds on first run, uses cache on second run', () => {
-    // First run: fresh embed
+    // First run: fresh embed (parse may be cached, but embed itself is fresh)
     const run1 = runCli(`embed ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir}`)
     expect(run1.exitCode).toBe(0)
-    expect(run1.stdout).toContain('Embedding messages...')
+    expect(run1.stdout).toContain('🔮 Embedding messages...')
     expect(run1.stdout).toContain('Embedded')
-    expect(run1.stdout).not.toContain('📦 cached')
+    // Embed step itself should NOT show cached on first run
+    expect(run1.stdout).not.toMatch(/🔮 Embedding messages\.\.\..*cached/)
 
     // Second run: should use cache
     const run2 = runCli(`embed ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir}`)
     expect(run2.exitCode).toBe(0)
-    expect(run2.stdout).toContain('Embedding messages... 📦 cached')
+    expect(run2.stdout).toContain('🔮 Embedding messages... 📦 cached')
   })
 
   it('shows embedding stats', () => {

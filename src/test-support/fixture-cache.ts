@@ -130,13 +130,8 @@ export class FixtureCache implements ResponseCache {
 
   /**
    * Store response in cache.
-   * TTL is ignored - fixtures never expire.
    */
-  async set<T = unknown>(
-    hash: string,
-    response: CachedResponse<T>,
-    _ttlSeconds: number
-  ): Promise<void> {
+  async set<T = unknown>(hash: string, response: CachedResponse<T>): Promise<void> {
     if (!this.loaded) {
       await this.load()
     }

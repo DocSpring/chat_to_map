@@ -17,14 +17,16 @@ export interface CachedResponse<T = unknown> {
  * Pluggable cache interface for API responses.
  *
  * Implementations:
- * - SaaS: CloudflareKVCache (encrypted, 15min TTL)
+ * - SaaS: CloudflareKVCache (Cloudflare KV)
  * - CLI: FilesystemCache (local JSON files)
+ *
+ * Cache entries are kept forever - no TTL.
  */
 export interface ResponseCache {
   /**
    * Get cached response by hash key
    * @param hash - SHA256 hash of the request
-   * @returns Cached response or null if not found/expired
+   * @returns Cached response or null if not found
    */
   get<T = unknown>(hash: string): Promise<CachedResponse<T> | null>
 
@@ -32,9 +34,8 @@ export interface ResponseCache {
    * Store response in cache
    * @param hash - SHA256 hash of the request
    * @param response - Response to cache
-   * @param ttlSeconds - Time-to-live in seconds
    */
-  set<T = unknown>(hash: string, response: CachedResponse<T>, ttlSeconds: number): Promise<void>
+  set<T = unknown>(hash: string, response: CachedResponse<T>): Promise<void>
 
   /**
    * Store prompt text for debugging (optional).
@@ -56,8 +57,3 @@ export interface CacheKeyComponents {
   /** Request payload (will be JSON stringified and sorted) */
   readonly payload: unknown
 }
-
-/**
- * Default TTL for cached responses (15 minutes)
- */
-export const DEFAULT_CACHE_TTL_SECONDS = 15 * 60

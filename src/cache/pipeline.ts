@@ -121,6 +121,9 @@ export class PipelineCache {
     const runDirName = `${datetime}-${fileHash}`
     const runDir = join(this.chatsDir, safeName, runDirName)
 
+    if (runDir.startsWith('--')) {
+      throw new Error(`PipelineCache.initRun called with flag-like runDir: "${runDir}"`)
+    }
     if (!existsSync(runDir)) {
       mkdirSync(runDir, { recursive: true })
     }

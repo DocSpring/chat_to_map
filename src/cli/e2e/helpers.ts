@@ -28,7 +28,7 @@ const API_KEY_ENV_VARS = [
 ]
 
 /** Shared test state */
-interface E2ETestState {
+export interface E2ETestState {
   tempCacheDir: string
   initialCacheHash: string
   /** Whether cache updates are allowed (UPDATE_E2E_CACHE=true) */
@@ -37,11 +37,17 @@ interface E2ETestState {
   hasFixture: boolean
 }
 
-export const testState: E2ETestState = {
+/** Test state - initialized by globalSetup, accessed via inject() in tests */
+export let testState: E2ETestState = {
   tempCacheDir: '',
   initialCacheHash: '',
   allowCacheUpdates: false,
   hasFixture: false
+}
+
+/** Called by tests to set state from inject() */
+export function setTestState(state: E2ETestState): void {
+  testState = state
 }
 
 /**
@@ -82,7 +88,6 @@ function hashDirectory(dir: string): string {
  */
 function extractCacheFixture(targetDir: string): void {
   if (!existsSync(CACHE_FIXTURE)) return
-
   execSync(`tar -xzf ${CACHE_FIXTURE} -C ${targetDir}`, { encoding: 'utf-8' })
 }
 
@@ -233,39 +238,42 @@ export interface Candidate {
 }
 
 /**
- * Setup test environment - call in beforeAll
+ * Setup test environment - called by globalSetup
+ * Returns state to be passed to tests via provide()
  */
-export function setupE2ETests(): void {
-  testState.hasFixture = existsSync(CACHE_FIXTURE)
-  testState.allowCacheUpdates = process.env.UPDATE_E2E_CACHE === 'true'
-  testState.tempCacheDir = mkdtempSync(join(tmpdir(), 'chat-to-map-e2e-'))
+export function setupE2ETests(): E2ETestState {
+  const hasFixture = existsSync(CACHE_FIXTURE)
+  const allowCacheUpdates = process.env.UPDATE_E2E_CACHE === 'true'
+  const tempCacheDir = mkdtempSync(join(tmpdir(), 'chat-to-map-e2e-'))
 
-  if (testState.allowCacheUpdates) {
+  if (allowCacheUpdates) {
     console.log('🔓 E2E tests running in UPDATE mode (API calls allowed)')
-  } else if (!testState.hasFixture) {
+  } else if (!hasFixture) {
     console.log('⚠️  No cache fixture found - API calls will be made')
   }
 
-  extractCacheFixture(testState.tempCacheDir)
-  testState.initialCacheHash = hashDirectory(join(testState.tempCacheDir, 'requests'))
+  extractCacheFixture(tempCacheDir)
+  const initialCacheHash = hashDirectory(join(tempCacheDir, 'requests'))
+
+  return { tempCacheDir, initialCacheHash, allowCacheUpdates, hasFixture }
 }
 
 /**
- * Teardown test environment - call in afterAll
+ * Teardown test environment - called by globalSetup teardown
  */
-export function teardownE2ETests(): void {
-  const finalCacheHash = hashDirectory(join(testState.tempCacheDir, 'requests'))
+export function teardownE2ETests(state: E2ETestState): void {
+  const finalCacheHash = hashDirectory(join(state.tempCacheDir, 'requests'))
 
   // Only update fixture if allowed AND hash changed
-  if (testState.allowCacheUpdates && finalCacheHash !== testState.initialCacheHash) {
-    compressCacheFixture(testState.tempCacheDir)
+  if (state.allowCacheUpdates && finalCacheHash !== state.initialCacheHash) {
+    compressCacheFixture(state.tempCacheDir)
     console.log('📦 Cache fixture updated: tests/fixtures/cli/cache-fixture.tar.gz')
-  } else if (!testState.allowCacheUpdates && finalCacheHash !== testState.initialCacheHash) {
+  } else if (!state.allowCacheUpdates && finalCacheHash !== state.initialCacheHash) {
     // This should NOT happen in locked mode - it means HTTP guard failed
     console.error('❌ ERROR: Cache was modified in LOCKED mode!')
     console.error('   This indicates uncached HTTP requests were made.')
     console.error('   Check E2E_CACHE_LOCKED handling in src/http.ts')
   }
 
-  rmSync(testState.tempCacheDir, { recursive: true, force: true })
+  rmSync(state.tempCacheDir, { recursive: true, force: true })
 }

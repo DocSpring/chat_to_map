@@ -13,4 +13,3 @@ export {
 } from './key'
 export { hashFileBytes, PipelineCache, type PipelineStage } from './pipeline'
 export type { CachedResponse, CacheKeyComponents, ResponseCache } from './types'
-export { DEFAULT_CACHE_TTL_SECONDS } from './types'

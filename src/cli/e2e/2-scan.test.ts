@@ -14,18 +14,18 @@ import {
 
 describe('scan command', () => {
   it('scans on first run, uses cache on second run', () => {
-    // First run: fresh scan (parse is already cached from above)
+    // First run: fresh scan (parse may be cached, but scan itself is fresh)
     const run1 = runCli(`scan ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir}`)
     expect(run1.exitCode).toBe(0)
-    expect(run1.stdout).toContain('Heuristic scan found')
+    expect(run1.stdout).toContain('🔍 Heuristic scan found')
     expect(run1.stdout).toContain('potential activities')
-    // First scan run should NOT show cached (even though parse is cached)
-    expect(run1.stdout).not.toMatch(/Heuristic scan found.*cached/)
+    // Scan step itself should NOT show cached on first run
+    expect(run1.stdout).not.toMatch(/🔍 Heuristic scan found.*cached/)
 
     // Second run: should use cached heuristics
     const run2 = runCli(`scan ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir}`)
     expect(run2.exitCode).toBe(0)
-    expect(run2.stdout).toMatch(/Heuristic scan found.*📦 cached/)
+    expect(run2.stdout).toMatch(/🔍 Heuristic scan found.*📦 cached/)
   })
 
   it('writes scan_stats.json to cache', () => {

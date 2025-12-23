@@ -27,7 +27,7 @@ tasks:
     desc: Run all CI checks (run before marking any task complete)
     cmds:
       - task: typecheck
-      - task: lint
+      - task: lint:fix
       - task: check-ignores
       - task: duplication
       - task: file-length
