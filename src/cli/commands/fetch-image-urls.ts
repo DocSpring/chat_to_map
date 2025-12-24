@@ -22,10 +22,10 @@ interface FetchImagesOutput {
   activitiesProcessed: number
   imagesFound: number
   fromCdn: number
-  fromScraped: number
   fromWikipedia: number
   fromPixabay: number
   fromGooglePlaces: number
+  fromUserUpload: number
   failed: number
   activities: Array<{
     activityId: string
@@ -80,8 +80,8 @@ export async function cmdFetchImageUrls(args: CLIArgs, logger: Logger): Promise<
   logger.log(`   Processed: ${fetchResult.stats.activitiesProcessed}`)
   logger.log(`   Found: ${fetchResult.stats.imagesFound}`)
   if (fetchResult.stats.fromCdn > 0) logger.log(`   From CDN: ${fetchResult.stats.fromCdn}`)
-  if (fetchResult.stats.fromScraped > 0)
-    logger.log(`   From scraped: ${fetchResult.stats.fromScraped}`)
+  if (fetchResult.stats.fromUserUpload > 0)
+    logger.log(`   From user uploads: ${fetchResult.stats.fromUserUpload}`)
   if (fetchResult.stats.fromWikipedia > 0)
     logger.log(`   From Wikipedia: ${fetchResult.stats.fromWikipedia}`)
   if (fetchResult.stats.fromPixabay > 0)

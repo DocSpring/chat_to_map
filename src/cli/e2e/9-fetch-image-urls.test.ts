@@ -1,5 +1,9 @@
 /**
  * Fetch Image URLs Command E2E Tests
+ *
+ * ⚠️ NOTE: Scraped/OG images are NOT used for activity images.
+ * OG images can only be used for inline link previews.
+ * See project_docs/IMAGES.md for licensing rules.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -10,10 +14,10 @@ interface FetchImagesStats {
   activitiesProcessed: number
   imagesFound: number
   fromCdn: number
-  fromScraped: number
   fromGooglePlaces: number
   fromWikipedia: number
   fromPixabay: number
+  fromUserUpload: number
   failed: number
 }
 
@@ -44,8 +48,8 @@ describe('fetch-image-urls command', () => {
     const stats = readCacheJson<FetchImagesStats>(testState.tempCacheDir, 'fetch_images_stats.json')
     expect(stats.activitiesProcessed).toBeGreaterThanOrEqual(10)
     expect(stats.imagesFound).toBeGreaterThanOrEqual(10)
-    // With --no-image-cdn, images come from scraped, Google Places, or Pixabay
-    expect(stats.fromScraped).toBeGreaterThanOrEqual(1)
+    // With --no-image-cdn, images come from Google Places or Pixabay
+    // NOTE: Scraped/OG images are NOT used (licensing restrictions)
     expect(stats.fromGooglePlaces).toBeGreaterThanOrEqual(4)
     expect(stats.fromPixabay).toBeGreaterThanOrEqual(5)
   })
@@ -64,10 +68,10 @@ describe('fetch-image-urls command', () => {
     expect(withImages.length).toBeGreaterThanOrEqual(10)
 
     // Check image sources are correct
+    // NOTE: 'scraped' is NOT a valid source - OG images can only be link previews
     const sources = withImages.map(([, img]) => img?.source)
     expect(sources).toContain('google_places')
     expect(sources).toContain('pixabay')
-    expect(sources).toContain('scraped')
   })
 
   it('shows image results in CLI output', () => {
@@ -119,10 +123,9 @@ describe('fetch-image-urls command', () => {
     // Pixabay results should show the query used
     expect(stdout).toMatch(/pixabay \(query: "[^"]+"\)/i)
 
-    // Kalima Resort should have a scraped OG image
+    // NOTE: Kalima Resort no longer gets scraped OG image (licensing restrictions)
+    // It will get a Pixabay or Google Places image instead
     expect(stdout).toMatch(/kalima/i)
-    expect(stdout).toMatch(/scraped/i)
-    expect(stdout).toMatch(/kalimaresort\.com/i)
 
     // Venues with placeIds should get Google Places photos
     expect(stdout).toMatch(/google_places/i)

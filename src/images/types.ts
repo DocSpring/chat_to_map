@@ -2,17 +2,25 @@
  * Image Types
  *
  * Types for image fetching and results.
+ *
+ * ⚠️ LEGAL NOTICE: 'scraped' is NOT a valid source.
+ * OpenGraph images can ONLY be used for inline link previews.
+ * Using them as activity images = copyright infringement.
+ * See project_docs/IMAGES.md for full licensing rules.
  */
 
 /**
  * Sources for activity images, in priority order.
+ *
+ * NOTE: 'scraped'/'og' is intentionally NOT included.
+ * OG images can only be displayed as link previews within message context.
  */
 export type ImageSource =
   | 'cdn' // ChatToMap CDN default image
-  | 'scraped' // OG image from scraped URL
   | 'google_places' // Google Places Photos API
   | 'wikipedia' // Wikipedia/Wikimedia Commons
   | 'pixabay' // Pixabay stock photos
+  | 'user_upload' // User-provided replacement image
 
 /**
  * Result of fetching an image for an activity.
@@ -43,13 +51,6 @@ export interface ImageResult {
   readonly query?: string | undefined
 }
 
-/** Scraped metadata for a URL (subset of fields needed for images) */
-export interface ScrapedUrlMetadata {
-  readonly imageUrl: string | null
-  readonly title: string | null
-  readonly canonicalUrl: string
-}
-
 /**
  * Configuration for image fetching.
  */
@@ -71,7 +72,4 @@ export interface ImageFetchConfig {
 
   /** Google Places API key */
   readonly googlePlacesApiKey?: string | undefined
-
-  /** Scraped URL metadata (keyed by original URL) */
-  readonly scrapedMetadata?: Map<string, ScrapedUrlMetadata> | undefined
 }

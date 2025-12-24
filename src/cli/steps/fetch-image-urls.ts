@@ -4,19 +4,18 @@
  * Fetches image URLs for geocoded activities from various sources.
  * Uses worker pool for parallel image fetching.
  * Writes fetch_images_stats.json as completion marker.
+ *
+ * ⚠️ LEGAL NOTICE: OpenGraph/scraped images are NOT used here.
+ * OG images can ONLY be used for inline link previews (shown with the URL).
+ * Using them as activity images = republishing = copyright infringement.
+ * See project_docs/IMAGES.md for full licensing rules.
  */
 
 import { fetchImageForActivity } from '../../images/index'
-import type { ImageFetchConfig, ImageResult, ScrapedUrlMetadata } from '../../images/types'
-import type { ScrapedMetadata } from '../../scraper/types'
+import type { ImageFetchConfig, ImageResult } from '../../images/types'
 import type { GeocodedActivity } from '../../types'
 import { runWorkerPool } from '../worker-pool'
 import type { PipelineContext } from './context'
-
-/** Cached scrape metadata structure from pipeline cache */
-interface CachedScrapeMetadata {
-  readonly entries: Array<[string, ScrapedMetadata]>
-}
 
 const DEFAULT_CONCURRENCY = 10
 
@@ -27,10 +26,10 @@ interface FetchImagesStats {
   readonly activitiesProcessed: number
   readonly imagesFound: number
   readonly fromCdn: number
-  readonly fromScraped: number
   readonly fromGooglePlaces: number
   readonly fromWikipedia: number
   readonly fromPixabay: number
+  readonly fromUserUpload: number
   readonly failed: number
 }
 
@@ -80,10 +79,10 @@ function countSource(result: ImageResult): keyof Omit<FetchImagesStats, 'activit
     keyof Omit<FetchImagesStats, 'activitiesProcessed'>
   > = {
     cdn: 'fromCdn',
-    scraped: 'fromScraped',
     google_places: 'fromGooglePlaces',
     wikipedia: 'fromWikipedia',
-    pixabay: 'fromPixabay'
+    pixabay: 'fromPixabay',
+    user_upload: 'fromUserUpload'
   }
   return sourceMap[result.source]
 }
@@ -96,10 +95,10 @@ function calculateStats(images: Map<string, ImageResult | null>): FetchImagesSta
     activitiesProcessed: images.size,
     imagesFound: 0,
     fromCdn: 0,
-    fromScraped: 0,
     fromGooglePlaces: 0,
     fromWikipedia: 0,
     fromPixabay: 0,
+    fromUserUpload: 0,
     failed: 0
   }
 
@@ -121,7 +120,7 @@ function calculateStats(images: Map<string, ImageResult | null>): FetchImagesSta
 function logStats(stats: FetchImagesStats, logger: PipelineContext['logger']): void {
   logger.log(`   ✓ ${stats.imagesFound}/${stats.activitiesProcessed} images found`)
   if (stats.fromCdn > 0) logger.log(`   📦 ${stats.fromCdn} from CDN`)
-  if (stats.fromScraped > 0) logger.log(`   🔗 ${stats.fromScraped} from scraped URLs`)
+  if (stats.fromUserUpload > 0) logger.log(`   📤 ${stats.fromUserUpload} from user uploads`)
   if (stats.fromWikipedia > 0) logger.log(`   📚 ${stats.fromWikipedia} from Wikipedia`)
   if (stats.fromPixabay > 0) logger.log(`   🖼️  ${stats.fromPixabay} from Pixabay`)
   if (stats.fromGooglePlaces > 0) logger.log(`   📍 ${stats.fromGooglePlaces} from Google Places`)
@@ -162,10 +161,10 @@ export async function stepFetchImageUrls(
       activitiesProcessed: 0,
       imagesFound: 0,
       fromCdn: 0,
-      fromScraped: 0,
       fromGooglePlaces: 0,
       fromWikipedia: 0,
       fromPixabay: 0,
+      fromUserUpload: 0,
       failed: 0
     }
     pipelineCache.setStage('fetch_images_stats', stats)
@@ -175,20 +174,8 @@ export async function stepFetchImageUrls(
 
   logger.log(`\n🖼️  Fetching images for ${activities.length} activities...`)
 
-  // Load scraped metadata from pipeline cache
-  const cachedScrapeData = pipelineCache.getStage<CachedScrapeMetadata>('scrape_metadata')
-  const scrapedMetadata = new Map<string, ScrapedUrlMetadata>()
-  if (cachedScrapeData?.entries) {
-    for (const [url, metadata] of cachedScrapeData.entries) {
-      scrapedMetadata.set(url, {
-        imageUrl: metadata.imageUrl,
-        title: metadata.title,
-        canonicalUrl: metadata.canonicalUrl
-      })
-    }
-  }
-
   // Build config from options and environment
+  // NOTE: Scraped OG images are NOT used - they can only be link previews
   const config: ImageFetchConfig = {
     skipCdn: options?.skipCdn ?? false,
     skipPixabay: options?.skipPixabay ?? false,
@@ -198,13 +185,11 @@ export async function stepFetchImageUrls(
     googlePlacesApiKey:
       options?.googlePlacesApiKey ??
       process.env.GOOGLE_MAPS_API_KEY ??
-      process.env.GOOGLE_MAPS_API_KEY,
-    scrapedMetadata: scrapedMetadata.size > 0 ? scrapedMetadata : undefined
+      process.env.GOOGLE_MAPS_API_KEY
   }
 
   // Log what sources are available
   const sources: string[] = []
-  if (scrapedMetadata.size > 0) sources.push('Scraped')
   if (!config.skipCdn) sources.push('CDN')
   if (!config.skipGooglePlaces && config.googlePlacesApiKey) sources.push('Google Places')
   if (!config.skipPixabay && config.pixabayApiKey) sources.push('Pixabay')
