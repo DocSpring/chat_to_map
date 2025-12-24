@@ -156,6 +156,40 @@ function generateMarkersJS(points: readonly MapPoint[]): string {
 }
 
 /**
+ * Generate activity list HTML for modal.
+ */
+function generateActivityListHTML(points: readonly MapPoint[]): string {
+  return points
+    .map((p) => {
+      const senderName = p.sender.split(' ')[0] ?? p.sender
+      const mapsUrl = p.placeId
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.activity)}&query_place_id=${p.placeId}`
+        : null
+      const thumbnail = p.imagePath
+        ? `<img src="${escapeJS(p.imagePath)}" class="activity-thumb" alt="" />`
+        : '<div class="activity-thumb-placeholder"></div>'
+
+      return `
+        <div class="activity-row">
+          ${thumbnail}
+          <div class="activity-content">
+            <div class="activity-title">${escapeJS(p.activity)}</div>
+            <div class="activity-meta">
+              ${p.location ? `<span class="activity-location">${escapeJS(p.location)}</span> · ` : ''}
+              ${escapeJS(senderName)} · ${p.date}
+            </div>
+            <div class="activity-links">
+              ${mapsUrl ? `<a href="${escapeJS(mapsUrl)}" target="_blank">Google Maps</a>` : ''}
+              ${p.url ? `<a href="${escapeJS(p.url)}" target="_blank">Source</a>` : ''}
+            </div>
+          </div>
+        </div>
+      `
+    })
+    .join('')
+}
+
+/**
  * Generate legend HTML.
  */
 function generateLegendHTML(senderColors: Map<string, string>): string {
@@ -330,6 +364,28 @@ export function exportToMapHTML(
       border: 2px solid white;
       box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
+    .view-list-link { display:inline-block; margin-top:10px; color:#2563eb; cursor:pointer; font-weight:500; }
+    .view-list-link:hover { text-decoration:underline; }
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000; justify-content:center; align-items:center; }
+    .modal-overlay.open { display:flex; }
+    .modal { background:#fff; border-radius:12px; width:90%; max-width:700px; max-height:85vh; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3); }
+    .modal-header { padding:20px 24px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; }
+    .modal-header h2 { margin:0; font-size:20px; font-weight:600; }
+    .modal-close { background:none; border:none; font-size:24px; cursor:pointer; color:#6b7280; padding:4px 8px; }
+    .modal-close:hover { color:#111; }
+    .modal-body { padding:16px 24px; overflow-y:auto; flex:1; }
+    .activity-row { display:flex; gap:16px; padding:12px 0; border-bottom:1px solid #f3f4f6; }
+    .activity-row:last-child { border-bottom:none; }
+    .activity-thumb, .activity-thumb-placeholder { width:64px; height:64px; border-radius:8px; flex-shrink:0; }
+    .activity-thumb { object-fit:cover; }
+    .activity-thumb-placeholder { background:#f3f4f6; }
+    .activity-content { flex:1; min-width:0; }
+    .activity-title { font-weight:500; color:#111; margin-bottom:4px; }
+    .activity-meta { font-size:13px; color:#6b7280; margin-bottom:6px; }
+    .activity-location { color:#2563eb; }
+    .activity-links { display:flex; gap:12px; font-size:13px; }
+    .activity-links a { color:#2563eb; text-decoration:none; }
+    .activity-links a:hover { text-decoration:underline; }
   </style>
 </head>
 <body>
@@ -342,10 +398,23 @@ export function exportToMapHTML(
       Click markers to see details.<br>
       Zoom in to see individual pins.
     </p>
+    <a class="view-list-link" onclick="openModal()">View Activity List →</a>
   </div>
 
   <div class="legend">
     ${legendHTML}
+  </div>
+
+  <div class="modal-overlay" id="activityModal" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Activity List</h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        ${generateActivityListHTML(points)}
+      </div>
+    </div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -375,6 +444,21 @@ export function exportToMapHTML(
     if (markersLayer.getLayers().length > 0) {
       map.fitBounds(markersLayer.getBounds(), { padding: [50, 50] });
     }
+
+    // Modal functions
+    function openModal() {
+      document.getElementById('activityModal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal(e) {
+      if (!e || e.target === e.currentTarget) {
+        document.getElementById('activityModal').classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    }
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeModal();
+    });
   </script>
 </body>
 </html>`
