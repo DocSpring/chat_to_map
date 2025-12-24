@@ -8,7 +8,7 @@
 import { writeFile } from 'node:fs/promises'
 import { formatLocation } from '../../types'
 import type { CLIArgs } from '../args'
-import { formatActivityHeader, initCommand } from '../helpers'
+import { formatActivityHeader, initCommandContext } from '../helpers'
 import type { Logger } from '../logger'
 import { stepClassify } from '../steps/classify'
 import { StepRunner } from '../steps/runner'
@@ -31,7 +31,7 @@ interface ClassifyOutput {
 }
 
 export async function cmdClassify(args: CLIArgs, logger: Logger): Promise<void> {
-  const { ctx } = await initCommand('Classify', args, logger)
+  const { ctx } = await initCommandContext('Classify', args, logger)
 
   // Use StepRunner to handle dependencies: filter → scrape → classify
   const runner = new StepRunner(ctx, args, logger)

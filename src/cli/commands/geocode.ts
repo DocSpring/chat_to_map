@@ -9,7 +9,7 @@ import { writeFile } from 'node:fs/promises'
 import { filterGeocoded } from '../../geocoder/index'
 import { formatLocation, type GeocodedActivity } from '../../types'
 import type { CLIArgs } from '../args'
-import { formatActivityHeader, initCommand, truncate } from '../helpers'
+import { formatActivityHeader, initCommandContext, truncate } from '../helpers'
 import type { Logger } from '../logger'
 import { stepGeocode } from '../steps/geocode'
 import { StepRunner } from '../steps/runner'
@@ -37,7 +37,7 @@ interface GeocodeOutput {
 }
 
 export async function cmdGeocode(args: CLIArgs, logger: Logger): Promise<void> {
-  const { ctx } = await initCommand('Geocode', args, logger)
+  const { ctx } = await initCommandContext('Geocode', args, logger)
 
   // Use StepRunner to handle dependencies: classify → geocode
   const runner = new StepRunner(ctx, args, logger)

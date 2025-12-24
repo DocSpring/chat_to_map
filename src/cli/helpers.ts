@@ -43,14 +43,18 @@ interface CommandInitResult {
   parseResult: ParseResult
 }
 
+interface CommandInitContextOnly {
+  ctx: PipelineContext
+}
+
 /**
- * Initialize a command: validate input, log header, create context, parse messages.
+ * Shared init logic: validate input, log header, create context.
  */
-export async function initCommand(
+async function initContextWithHeader(
   commandName: string,
   args: CLIArgs,
   logger: Logger
-): Promise<CommandInitResult> {
+): Promise<PipelineContext> {
   if (!args.input) {
     throw new Error('No input file specified')
   }
@@ -58,14 +62,37 @@ export async function initCommand(
   logger.log(`\nChatToMap ${commandName} v${VERSION}`)
   logger.log(`\n📁 ${basename(args.input)}`)
 
-  const ctx = await initContext(args.input, logger, {
+  return initContext(args.input, logger, {
     cacheDir: args.cacheDir,
     noCache: args.noCache
   })
+}
 
+/**
+ * Initialize a command: validate input, log header, create context, parse messages.
+ * Use this for commands that manually run steps.
+ */
+export async function initCommand(
+  commandName: string,
+  args: CLIArgs,
+  logger: Logger
+): Promise<CommandInitResult> {
+  const ctx = await initContextWithHeader(commandName, args, logger)
   const parseResult = stepParse(ctx, { maxMessages: args.maxMessages })
-
   return { ctx, parseResult }
+}
+
+/**
+ * Initialize a command context only (no parsing).
+ * Use this for commands that use StepRunner for all step execution.
+ */
+export async function initCommandContext(
+  commandName: string,
+  args: CLIArgs,
+  logger: Logger
+): Promise<CommandInitContextOnly> {
+  const ctx = await initContextWithHeader(commandName, args, logger)
+  return { ctx }
 }
 
 // ============================================================================

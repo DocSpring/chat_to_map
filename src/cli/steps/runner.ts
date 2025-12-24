@@ -38,6 +38,7 @@ export class StepRunner {
   private readonly ctx: PipelineContext
   private readonly args: CLIArgs
   private readonly outputs = new Map<StepName, StepOutputs[StepName]>()
+  private readonly pending = new Map<StepName, Promise<StepOutputs[StepName]>>()
 
   constructor(ctx: PipelineContext, args: CLIArgs, _logger: Logger) {
     this.ctx = ctx
@@ -46,18 +47,29 @@ export class StepRunner {
 
   /**
    * Run a step and all its dependencies.
+   * Uses pending promise map to prevent duplicate execution when called concurrently.
    */
   async run<K extends StepName>(step: K): Promise<StepOutputs[K]> {
-    // Return cached output if already run
+    // Return cached output if already completed
     const cached = this.outputs.get(step)
     if (cached) {
       return cached as StepOutputs[K]
     }
 
-    // Run dependencies first, then the step
-    const output = await this.executeStep(step)
-    this.outputs.set(step, output)
-    return output
+    // Return pending promise if step is already running
+    const pendingPromise = this.pending.get(step)
+    if (pendingPromise) {
+      return pendingPromise as Promise<StepOutputs[K]>
+    }
+
+    // Execute step and track the pending promise
+    const promise = this.executeStep(step).then((output) => {
+      this.outputs.set(step, output)
+      this.pending.delete(step)
+      return output
+    })
+    this.pending.set(step, promise as Promise<StepOutputs[StepName]>)
+    return promise
   }
 
   private async executeStep<K extends StepName>(step: K): Promise<StepOutputs[K]> {
