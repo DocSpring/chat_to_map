@@ -210,6 +210,12 @@ export async function geocodeActivity(
     }
   }
 
+  // Skip geocoding for generic activities (e.g., "the mall", "the gym")
+  // They'd just geocode to random places worldwide - useless results
+  if (activity.isGeneric) {
+    return activity
+  }
+
   // If no location text, return as-is
   if (!location) {
     return activity
@@ -221,7 +227,8 @@ export async function geocodeActivity(
   if (result.ok) {
     // isVenuePlaceId is true only if we have a specific venue name
     // (not just city/country which would give us a city placeId)
-    const isVenuePlaceId = Boolean(activity.venue)
+    // Generic venues like "the mall" don't count - they get Pixabay images
+    const isVenuePlaceId = Boolean(activity.venue) && !activity.isGeneric
 
     return {
       ...activity,

@@ -53,7 +53,7 @@ export function createActivity(
     originalMessage: activity,
     sender: 'Test User',
     timestamp: new Date('2025-01-01'),
-    isGeneric: true,
+    isGeneric: false,
     isCompound: false,
     action: null,
     actionOriginal: null,
