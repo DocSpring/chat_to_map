@@ -83,7 +83,19 @@ async function exportFormat(
     }
 
     case 'map': {
-      const html = exportToMapHTML(activities, { title: 'Things To Do' })
+      // Write thumbnails to images/ directory and build path map
+      const imagePaths = new Map<string, string>()
+      if (thumbnails && thumbnails.size > 0) {
+        const imagesDir = join(outputDir, 'images')
+        await ensureDir(imagesDir)
+        for (const [activityId, buffer] of thumbnails) {
+          const filename = `${activityId}.jpg`
+          await writeFile(join(imagesDir, filename), new Uint8Array(buffer))
+          imagePaths.set(activityId, `images/${filename}`)
+        }
+      }
+
+      const html = exportToMapHTML(activities, { title: 'Things To Do', imagePaths })
       const mapPath = join(outputDir, 'map.html')
       await writeFile(mapPath, html)
       return mapPath

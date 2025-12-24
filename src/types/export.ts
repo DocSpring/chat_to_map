@@ -13,6 +13,8 @@ export interface MapConfig {
   readonly zoom?: number
   readonly clusterMarkers?: boolean
   readonly colorBySender?: boolean
+  /** Image paths keyed by activity ID (relative paths like "images/abc123.jpg") */
+  readonly imagePaths?: Map<string, string> | undefined
 }
 
 export interface PDFConfig {

@@ -23,10 +23,13 @@ interface MapPoint {
   lng: number
   sender: string
   activity: string
+  activityId: string
   location: string
   date: string
   url: string | null
   color: string
+  imagePath: string | null
+  placeId: string | null
 }
 
 /**
@@ -99,10 +102,13 @@ function toMapPoints(
       lng: s.longitude,
       sender: s.sender,
       activity: s.activity.slice(0, 100),
+      activityId: s.activityId,
       location: formatLocation(s) ?? '',
       date: s.timestamp.toISOString().split('T')[0] ?? '',
       url: extractUrl(s.originalMessage),
-      color
+      color,
+      imagePath: config.imagePaths?.get(s.activityId) ?? null,
+      placeId: s.placeId ?? null
     })
   }
 
@@ -116,11 +122,19 @@ function generateMarkersJS(points: readonly MapPoint[]): string {
   return points
     .map((p) => {
       const senderName = p.sender.split(' ')[0] ?? p.sender
+      const imageHtml = p.imagePath
+        ? `<img src="${escapeJS(p.imagePath)}" style="width:100%;max-width:200px;border-radius:4px;margin-bottom:8px;" />`
+        : ''
+      const mapsUrl = p.placeId
+        ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.activity)}&query_place_id=${p.placeId}`
+        : null
       const popupContent = `
-        <div style="max-width: 300px;">
+        <div style="max-width: 220px;">
+          ${imageHtml}
           <strong>${escapeJS(p.activity)}</strong><br>
           <small>${p.date} - ${escapeJS(senderName)}</small><br>
           ${p.location ? `<em>${escapeJS(p.location)}</em><br>` : ''}
+          ${mapsUrl ? `<a href="${escapeJS(mapsUrl)}" target="_blank">View on Google Maps</a><br>` : ''}
           ${p.url ? `<a href="${escapeJS(p.url)}" target="_blank">Source Link</a>` : ''}
         </div>
       `
@@ -272,10 +286,14 @@ export function exportToMapHTML(
   <title>${config.title ?? 'Things To Do Map'}</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
   <style>
+    * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     body { margin: 0; padding: 0; }
     #map { width: 100%; height: 100vh; }
     .info-box {
