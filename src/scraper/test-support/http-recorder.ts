@@ -1,12 +1,13 @@
 /**
  * Simple HTTP recorder for integration tests.
  *
- * Records real HTTP responses to fixture files on first run,
+ * Records real HTTP responses to gzipped fixture files on first run,
  * replays from fixtures on subsequent runs.
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { gunzipSync, gzipSync } from 'node:zlib'
 import type { FetchFn } from '../types'
 
 /**
@@ -56,15 +57,22 @@ export class HttpRecorder {
     const method = init?.method ?? 'GET'
     const fixturePath = this.getFixturePath(method, url)
 
+    // Check for gzipped fixture first, then legacy uncompressed
     if (existsSync(fixturePath)) {
-      return this.replay(fixturePath)
+      return this.replay(fixturePath, true)
+    }
+    const legacyPath = fixturePath.replace(/\.gz$/, '')
+    if (existsSync(legacyPath)) {
+      return this.replay(legacyPath, false)
     }
 
     return this.record(url, method, input, init, fixturePath)
   }
 
-  private replay(fixturePath: string): Response {
-    const fixture: RecordedFixture = JSON.parse(readFileSync(fixturePath, 'utf-8'))
+  private replay(fixturePath: string, gzipped: boolean): Response {
+    const raw = readFileSync(fixturePath)
+    const json = gzipped ? gunzipSync(raw).toString('utf-8') : raw.toString('utf-8')
+    const fixture: RecordedFixture = JSON.parse(json)
     const response = new Response(fixture.body, {
       status: fixture.status,
       headers: new Headers(fixture.headers)
@@ -100,7 +108,8 @@ export class HttpRecorder {
       recordedAt: new Date().toISOString()
     }
 
-    writeFileSync(fixturePath, JSON.stringify(fixture, null, 2))
+    const compressed = gzipSync(JSON.stringify(fixture, null, 2))
+    writeFileSync(fixturePath, compressed)
 
     const result = new Response(body, {
       status: response.status,
@@ -115,7 +124,7 @@ export class HttpRecorder {
       .replace(/^https?:\/\//, '')
       .replace(/[^a-zA-Z0-9.-]/g, '_')
       .slice(0, 100)
-    const filename = `${method.toLowerCase()}_${safeUrl}.json`
+    const filename = `${method.toLowerCase()}_${safeUrl}.json.gz`
     return join(this.fixturesDir, filename)
   }
 }
