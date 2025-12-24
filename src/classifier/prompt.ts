@@ -165,6 +165,7 @@ SKIP (don't output):
 - Errands: groceries, vet, mechanic, cleaning
 - Work/appointments/chores
 - Romantic/intimate, adult content
+- Sad or stressful: funerals, hospitals, work deadlines, financial worries
 - Sensitive: potential secrets, embarrassing messages, offensive content, or illegal activities
 - Unclear references: "go there again" (where?), "check it out" (what?)
 

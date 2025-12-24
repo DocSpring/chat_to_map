@@ -34,7 +34,7 @@ describe('filter command', () => {
 
   it('writes filter_stats.json to cache', () => {
     const stats = readCacheJson<FilterStats>(testState.tempCacheDir, 'filter_stats.json')
-    expect(stats.totalCandidates).toBeGreaterThanOrEqual(32)
+    expect(stats.totalCandidates).toBeGreaterThanOrEqual(24)
     expect(stats.heuristicsMatches).toBeGreaterThanOrEqual(10)
     expect(stats.embeddingsMatches).toBeGreaterThanOrEqual(31)
   })
@@ -66,6 +66,18 @@ describe('filter command', () => {
     expect(stdout).toContain('Karangahake Gorge')
     expect(stdout).toContain('Prinzhorn collection')
     expect(stdout).toContain('bay of islands')
+  })
+
+  it('deduplicates agreements near suggestions', () => {
+    const candidates = readCacheJson<Candidate[]>(testState.tempCacheDir, 'candidates.all.json')
+
+    // "Paintball. Saturday?" should be kept (suggestion from embeddings)
+    const paintball = candidates.find((c) => c.content.includes('Paintball'))
+    expect(paintball).toBeDefined()
+
+    // "I'm keen!" should be removed (agreement near paintball suggestion)
+    const keen = candidates.find((c) => c.content.includes("I'm keen!"))
+    expect(keen).toBeUndefined()
   })
 
   it('supports --method heuristics flag', () => {

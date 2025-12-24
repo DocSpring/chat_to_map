@@ -14,7 +14,7 @@ import { formatDate, initCommand, truncate } from '../helpers'
 import type { Logger } from '../logger'
 import type { PipelineContext } from '../steps/context'
 import { stepEmbed } from '../steps/embed'
-import { mergeCandidates } from '../steps/filter'
+import { mergeAndDeduplicateCandidates } from '../steps/filter'
 
 interface FilterOutput {
   method: ExtractionMethod
@@ -234,8 +234,12 @@ export async function cmdFilter(args: CLIArgs, logger: Logger): Promise<void> {
       embeddingsResult = { candidates: [], fromCache: false }
     }
 
-    // Merge and deduplicate
-    const merged = mergeCandidates(heuristicsResult.candidates, embeddingsResult.candidates)
+    // Merge and deduplicate agreements across all sources
+    const { candidates: merged } = mergeAndDeduplicateCandidates(
+      heuristicsResult.candidates,
+      embeddingsResult.candidates,
+      parseResult.messages
+    )
 
     // Cache merged results
     ctx.pipelineCache.setStage('candidates.all', merged)

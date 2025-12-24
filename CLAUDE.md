@@ -93,6 +93,37 @@ analyze   → Full pipeline with export (not yet tested)
 - `geocode` builds on classify results
 - Each step uses pipeline cache if already run
 
+## CLI Command Reference
+
+Run with `bun run cli <command>` or after build `chat-to-map <command>`.
+
+**⚠️ Default output is limited to 10 results.** Use `-a`/`--all` or `-n`/`--max-results` to see more.
+
+| Command | Purpose | Key Options |
+|---------|---------|-------------|
+| `parse <input>` | Parse chat, show stats | `--json [file]`, `-m <num>` |
+| `scan <input>` | Heuristic extraction (free) | `-n <num>` (default: 10) |
+| `embed <input>` | Embed for semantic search | `--dry-run` |
+| `filter <input>` | Heuristics + embeddings | `--method`, `--json [file]`, `-a` |
+| `classify <input>` | AI classification | `-c <country>`, `--json [file]`, `-a` |
+| `geocode <input>` | Google Maps geocoding | `-c <country>`, `--json [file]`, `-a` |
+
+**Common options (all commands):**
+- `--no-cache` - Skip cache, regenerate results
+- `--cache-dir <dir>` - Custom cache directory
+- `-m, --max-messages <num>` - Limit messages processed
+- `--dry-run` - Show cost estimate without API calls
+
+**JSON output:** Most commands support `--json [file]` to output JSON to stdout or a file.
+
+**Examples:**
+```bash
+bun run cli scan ./chat.txt -n 50           # Show 50 heuristic candidates
+bun run cli filter ./chat.txt --all         # Show ALL candidates
+bun run cli classify ./chat.txt --json out.json -c "New Zealand"
+bun run cli geocode ./chat.txt -a           # Show all geocoded activities
+```
+
 ## Commands
 
 ```bash
@@ -288,6 +319,8 @@ rm -rf ~/.cache/chat-to-map/requests  # Clear API cache only
 - ❌ Skip `task ci` before completing work
 - ❌ Forget to update project/TODO.md
 - ❌ Use inline imports like `import('../../types').SomeType` - add proper imports at the top of the file
+- ❌ Investigate bugs by reading code first - always write a failing test FIRST to reproduce the issue
+- ❌ Assume CLI stdout shows all results - commands default to 10 results max, use `--max-results` or `--all` to see more
 
 ## Dependencies
 

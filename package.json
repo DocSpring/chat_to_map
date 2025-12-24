@@ -45,6 +45,7 @@
     "LICENSE"
   ],
   "scripts": {
+    "cli": "bun run src/cli.ts",
     "dev": "bun run --watch src/cli.ts",
     "build": "bun build src/index.ts --outdir dist --target node && bun build src/cli.ts --outdir dist --target node && tsc -p tsconfig.types.json",
     "build:types": "tsc -p tsconfig.types.json",

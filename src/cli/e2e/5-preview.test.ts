@@ -89,7 +89,7 @@ describe('preview command', () => {
       `preview ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir} -c "New Zealand"`
     )
 
-    expect(stdout).toContain('hot air balloon')
+    expect(stdout).toMatch(/hot air balloon/i)
     expect(stdout).toContain('Bay of Islands')
   })
 

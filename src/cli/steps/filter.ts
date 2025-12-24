@@ -5,6 +5,7 @@
  * Runs scan + embed + semantic search + merge → candidates.all
  */
 
+import { deduplicateAgreements } from '../../extraction/context-window'
 import { extractCandidatesByEmbeddings } from '../../extraction/index'
 import type { CandidateMessage, ParsedMessage } from '../../types'
 import type { PipelineContext } from './context'
@@ -35,13 +36,20 @@ interface FilterResult {
   }
 }
 
+interface MergeResult {
+  candidates: CandidateMessage[]
+  agreementsRemoved: number
+}
+
 /**
- * Merge heuristics and embeddings candidates, deduplicating by messageId.
+ * Merge heuristics and embeddings candidates, deduplicating by messageId
+ * and removing agreements that fall within a suggestion's context window.
  */
-export function mergeCandidates(
+export function mergeAndDeduplicateCandidates(
   heuristics: readonly CandidateMessage[],
-  embeddings: readonly CandidateMessage[]
-): CandidateMessage[] {
+  embeddings: readonly CandidateMessage[],
+  messages: readonly ParsedMessage[]
+): MergeResult {
   const seen = new Set<number>()
   const merged: CandidateMessage[] = []
 
@@ -61,7 +69,13 @@ export function mergeCandidates(
     }
   }
 
-  return merged
+  // Deduplicate agreements across all sources
+  const result = deduplicateAgreements(merged, messages)
+
+  return {
+    candidates: result.candidates,
+    agreementsRemoved: result.removedCount
+  }
 }
 
 /**
@@ -116,8 +130,11 @@ export async function stepFilter(
     }
   }
 
-  // Merge and deduplicate
-  const merged = mergeCandidates(heuristics, embeddings)
+  // Get messages for deduplication
+  const messages = pipelineCache.getStage<ParsedMessage[]>('messages') ?? []
+
+  // Merge and deduplicate agreements across all sources
+  const { candidates: merged } = mergeAndDeduplicateCandidates(heuristics, embeddings, messages)
 
   // Cache merged results
   pipelineCache.setStage('candidates.all', merged)

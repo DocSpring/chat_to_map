@@ -257,8 +257,9 @@ export interface Candidate {
  * Returns state to be passed to tests via provide()
  */
 export function setupE2ETests(): E2ETestState {
-  const replaceCache = process.env.REPLACE_E2E_CACHE === 'true'
-  const allowCacheUpdates = process.env.UPDATE_E2E_CACHE === 'true' || replaceCache
+  const replaceCache = ['true', '1'].includes(process.env.REPLACE_E2E_CACHE ?? '')
+  const allowCacheUpdates =
+    ['true', '1'].includes(process.env.UPDATE_E2E_CACHE ?? '') || replaceCache
 
   // REPLACE_E2E_CACHE deletes existing fixture first
   if (replaceCache && existsSync(CACHE_FIXTURE)) {
