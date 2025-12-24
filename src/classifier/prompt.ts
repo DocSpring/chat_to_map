@@ -202,7 +202,7 @@ Return JSON array with ONLY activities worth saving. Skip non-activities entirel
     "act_orig": "<original action word>",
     "obj": "<normalized object: movie, restaurant>",
     "obj_orig": "<original object word>",
-    "venue": "<place/business name - extract from URL_META title if available>",
+    "venue": "<name of place/restaurant/business/tour operator/etc. - extract from URL_META title if available>",
     "city": "<city>",
     "region": "<state/province>",
     "country": "<country>",

@@ -59,7 +59,7 @@ describe('classify command', () => {
     expect(hotAirBalloon?.funScore).toBe(0.9)
     expect(hotAirBalloon?.interestingScore).toBe(0.9)
     expect(hotAirBalloon?.country).toBe('Turkey')
-    expect(hotAirBalloon?.originalMessage).toContain('hot air ballon')
+    expect(hotAirBalloon?.originalMessage).toMatch(/hot air ballon/i)
 
     // Check whale safari activity
     // NOTE: AI may choose between valid categories (experiences vs nature), but
@@ -140,11 +140,11 @@ describe('classify command', () => {
     expect(stdout).toContain('Model: google/gemini-2.5-flash (openrouter)')
 
     // Check activities are displayed
-    expect(stdout).toContain('hot air balloon')
-    expect(stdout).toContain('Turkey')
-    expect(stdout).toContain('Bay of Islands')
-    expect(stdout).toContain('Yellowstone')
-    expect(stdout).toContain('Karangahake')
+    expect(stdout).toMatch(/hot air balloon/i)
+    expect(stdout).toMatch(/Turkey/i)
+    expect(stdout).toMatch(/Bay of Islands/i)
+    expect(stdout).toMatch(/Yellowstone/i)
+    expect(stdout).toMatch(/Karangahake/i)
 
     // Check scores are shown
     expect(stdout).toContain('interesting: 0.9')

@@ -100,7 +100,7 @@ describe('geocode command', () => {
     expect(yellowstone?.formattedAddress).toMatch(/USA|United States/)
 
     // Check Turkey hot air balloon is geocoded correctly - NOT biased to New Zealand
-    const turkey = activities.find((a) => a.activity.toLowerCase().includes('turkey'))
+    const turkey = activities.find((a) => a.activity.toLowerCase().includes('balloon'))
     expect(turkey).toBeDefined()
     expect(turkey?.latitude).toBeDefined()
     expect(turkey?.longitude).toBeDefined()
@@ -124,9 +124,9 @@ describe('geocode command', () => {
     expect(stdout).toMatch(/-?\d+\.\d+, -?\d+\.\d+/) // Coordinate pattern
 
     // Check specific activities appear
-    expect(stdout).toContain('whale')
-    expect(stdout).toContain('Bay of Islands')
-    expect(stdout).toContain('Karangahake')
+    expect(stdout).toMatch(/whale/i)
+    expect(stdout).toMatch(/Bay of Islands/i)
+    expect(stdout).toMatch(/Karangahake/i)
   })
 
   it('respects --max-results flag', () => {

@@ -95,13 +95,21 @@ function extractCacheFixture(targetDir: string): void {
 }
 
 /**
- * Compress cache directory to fixture
+ * Compress cache directory to fixture.
+ * Includes both requests/ (API responses) and images/ (thumbnails).
  */
 function compressCacheFixture(sourceDir: string): void {
   const requestsDir = join(sourceDir, 'requests')
-  if (!existsSync(requestsDir)) return
+  const imagesDir = join(sourceDir, 'images')
 
-  execSync(`tar -czf ${CACHE_FIXTURE} -C ${sourceDir} requests`, { encoding: 'utf-8' })
+  // Build list of directories to include
+  const dirs: string[] = []
+  if (existsSync(requestsDir)) dirs.push('requests')
+  if (existsSync(imagesDir)) dirs.push('images')
+
+  if (dirs.length === 0) return
+
+  execSync(`tar -czf ${CACHE_FIXTURE} -C ${sourceDir} ${dirs.join(' ')}`, { encoding: 'utf-8' })
 }
 
 /**
@@ -283,16 +291,25 @@ export function setupE2ETests(): E2ETestState {
   }
 
   extractCacheFixture(tempCacheDir)
-  const initialCacheHash = hashDirectory(join(tempCacheDir, 'requests'))
+  const initialCacheHash = hashCacheDirectories(tempCacheDir)
 
   return { tempCacheDir, initialCacheHash, allowCacheUpdates, hasFixture }
+}
+
+/**
+ * Hash both requests/ and images/ directories for cache change detection.
+ */
+function hashCacheDirectories(cacheDir: string): string {
+  const requestsHash = hashDirectory(join(cacheDir, 'requests'))
+  const imagesHash = hashDirectory(join(cacheDir, 'images'))
+  return `${requestsHash}:${imagesHash}`
 }
 
 /**
  * Teardown test environment - called by globalSetup teardown
  */
 export function teardownE2ETests(state: E2ETestState): void {
-  const finalCacheHash = hashDirectory(join(state.tempCacheDir, 'requests'))
+  const finalCacheHash = hashCacheDirectories(state.tempCacheDir)
 
   // Update fixture if:
   // 1. UPDATE_E2E_CACHE=true AND hash changed, OR

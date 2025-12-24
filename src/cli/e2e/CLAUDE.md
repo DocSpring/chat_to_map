@@ -12,10 +12,11 @@ E2E tests use `tests/fixtures/cli/cache-fixture.tar.gz` to cache external API/HT
 - `requests/ai/openai/` - OpenAI embeddings API responses
 - `requests/ai/openrouter/` - OpenRouter (Gemini) classifier responses
 - `requests/web/` - Scraped web page responses
+- `images/originals/` - Downloaded original images
+- `images/thumbnails/` - Resized thumbnail images
 
 **What's NOT cached:**
 - `chats/` - Pipeline cache (parse results, candidates, etc.) - regenerated each run
-- The fixture only contains `requests/` directory
 
 **How it works:**
 1. `setupE2ETests()` extracts `cache-fixture.tar.gz` to a temp directory (e.g., `/tmp/chat-to-map-e2e-XXXXX/`)
