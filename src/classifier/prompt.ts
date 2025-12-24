@@ -178,7 +178,7 @@ Return JSON array with ONLY activities worth saving. Skip non-activities entirel
 [
   {
     "msg": <message_id>,
-    "title": "<activity description, under 100 chars>",
+    "title": "<activity description, under 100 chars, fix any typos (e.g., 'ballon'→'balloon')>",
     "fun": <0.0-1.0 how fun/enjoyable>,
     "int": <0.0-1.0 how interesting/unique>,
     "cat": "<category>",
@@ -189,7 +189,7 @@ Return JSON array with ONLY activities worth saving. Skip non-activities entirel
     "act_orig": "<original action word>",
     "obj": "<normalized object: movie, restaurant>",
     "obj_orig": "<original object word>",
-    "venue": "<place name if specific>",
+    "venue": "<place/business name - extract from URL_META title if available>",
     "city": "<city if mentioned>",
     "region": "<state/province if mentioned>",
     "country": "<country if mentioned>"

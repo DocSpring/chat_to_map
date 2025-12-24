@@ -2,17 +2,16 @@
  * Classify Command
  *
  * AI-powered classification of candidates into activities.
- * Caches results to pipeline cache for subsequent steps.
+ * Runs: parse → scan → embed → filter → scrape → classify
  */
 
 import { writeFile } from 'node:fs/promises'
 import { formatLocation } from '../../types'
 import type { CLIArgs } from '../args'
-import { formatDate, getCategoryEmoji, initCommand, truncate } from '../helpers'
+import { formatActivityHeader, initCommand } from '../helpers'
 import type { Logger } from '../logger'
 import { stepClassify } from '../steps/classify'
-import { stepScan } from '../steps/scan'
-import { stepScrape } from '../steps/scrape'
+import { StepRunner } from '../steps/runner'
 
 interface ClassifyOutput {
   candidatesClassified: number
@@ -34,40 +33,35 @@ interface ClassifyOutput {
 export async function cmdClassify(args: CLIArgs, logger: Logger): Promise<void> {
   const { ctx } = await initCommand('Classify', args, logger)
 
-  // Get candidates from scan step
-  const scanResult = stepScan(ctx, {
-    minConfidence: args.minConfidence,
-    maxMessages: args.maxMessages,
-    quiet: true
-  })
+  // Use StepRunner to handle dependencies: filter → scrape → classify
+  const runner = new StepRunner(ctx, args, logger)
 
-  logger.log(`   Found ${scanResult.candidates.length} candidates`)
+  // Run filter step (which runs parse → scan → embed → filter)
+  const { candidates } = await runner.run('filter')
 
-  if (scanResult.candidates.length === 0) {
+  logger.log(`   Found ${candidates.length} candidates`)
+
+  if (candidates.length === 0) {
     logger.log('\n⚠️  No candidates found. Nothing to classify.')
     return
   }
 
-  // Scrape URLs for metadata (used to enrich classifier prompts)
-  const scrapeResult = await stepScrape(ctx, scanResult.candidates, {
-    timeout: args.scrapeTimeout,
-    quiet: true
-  })
+  // Run scrape step
+  const { metadataMap } = await runner.run('scrape')
 
   // Dry run: show stats and exit
   if (args.dryRun) {
     logger.log('\n📊 Classification Estimate (dry run)')
-    logger.log(`   Candidates to classify: ${scanResult.candidates.length}`)
-    logger.log(`   URLs scraped: ${scrapeResult.urls.length}`)
-    logger.log(`   Estimated batches: ${Math.ceil(scanResult.candidates.length / 30)}`)
+    logger.log(`   Candidates to classify: ${candidates.length}`)
+    logger.log(`   Estimated batches: ${Math.ceil(candidates.length / 30)}`)
     return
   }
 
   // Run classify step
-  const classifyResult = await stepClassify(ctx, scanResult.candidates, {
+  const classifyResult = await stepClassify(ctx, candidates, {
     homeCountry: args.homeCountry,
     timezone: args.timezone,
-    urlMetadata: scrapeResult.metadataMap,
+    urlMetadata: metadataMap,
     batchSize: 30
   })
 
@@ -132,12 +126,9 @@ function displayActivities(
     const a = activities[i]
     if (!a) continue
 
-    const emoji = getCategoryEmoji(a.category)
-    const activity = truncate(a.activity, 60)
-    const category = a.category.charAt(0).toUpperCase() + a.category.slice(1)
-
-    logger.log(`${i + 1}. ${emoji}  "${activity}"`)
-    logger.log(`   → ${category} • ${a.sender} • ${formatDate(a.timestamp)}`)
+    const { line1, line2 } = formatActivityHeader(i, a)
+    logger.log(line1)
+    logger.log(line2)
 
     const location = formatLocation(a)
     if (location) {

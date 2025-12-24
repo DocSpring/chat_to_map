@@ -4,8 +4,11 @@
  * Shared utilities for CLI E2E tests.
  *
  * CRITICAL: When cache-fixture.tar.gz exists, ALL API keys are stripped
- * and real HTTP requests are forbidden. Set UPDATE_E2E_CACHE=true to
- * allow updating the cache with new API responses.
+ * and real HTTP requests are forbidden.
+ *
+ * Environment variables:
+ * - UPDATE_E2E_CACHE=true - Allow API calls for cache misses (adds to existing cache)
+ * - REPLACE_E2E_CACHE=true - Delete existing cache and rebuild from scratch
  */
 
 import { execSync, spawnSync } from 'node:child_process'
@@ -254,12 +257,22 @@ export interface Candidate {
  * Returns state to be passed to tests via provide()
  */
 export function setupE2ETests(): E2ETestState {
+  const replaceCache = process.env.REPLACE_E2E_CACHE === 'true'
+  const allowCacheUpdates = process.env.UPDATE_E2E_CACHE === 'true' || replaceCache
+
+  // REPLACE_E2E_CACHE deletes existing fixture first
+  if (replaceCache && existsSync(CACHE_FIXTURE)) {
+    rmSync(CACHE_FIXTURE)
+    console.log('🗑️  Deleted existing cache fixture (REPLACE_E2E_CACHE=true)')
+  }
+
   const hasFixture = existsSync(CACHE_FIXTURE)
-  const allowCacheUpdates = process.env.UPDATE_E2E_CACHE === 'true'
   const tempCacheDir = mkdtempSync(join(tmpdir(), 'chat-to-map-e2e-'))
 
-  if (allowCacheUpdates) {
-    console.log('🔓 E2E tests running in UPDATE mode (API calls allowed)')
+  if (replaceCache) {
+    console.log('🔄 E2E tests running in REPLACE mode (rebuilding cache from scratch)')
+  } else if (allowCacheUpdates) {
+    console.log('🔓 E2E tests running in UPDATE mode (API calls allowed for cache misses)')
   } else if (!hasFixture) {
     console.log('⚠️  No cache fixture found - API calls will be made')
   }

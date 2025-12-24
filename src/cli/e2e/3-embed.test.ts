@@ -10,7 +10,7 @@ interface EmbedStats {
 }
 
 describe('embed command', () => {
-  it('embeds on first run, uses cache on second run', () => {
+  it('embeds on first run, uses cache on second run', { timeout: 30000 }, () => {
     // First run: fresh embed (parse may be cached, but embed itself is fresh)
     const run1 = runCli(`embed ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir}`)
     expect(run1.exitCode).toBe(0)

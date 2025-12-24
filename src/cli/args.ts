@@ -163,10 +163,15 @@ function createProgram(): Command {
   // ============ GEOCODE ============
   program
     .command('geocode')
-    .description('Geocode classified activities')
-    .argument('<input>', 'Classified activities JSON file')
-    .option('-c, --home-country <name>', 'Your home country for location disambiguation')
-    .option('-o, --output <file>', 'Save geocoded activities to JSON file')
+    .description('Geocode classified activities using Google Maps API')
+    .argument('<input>', 'Chat export (.zip, directory, or .txt file)')
+    .option('-c, --home-country <name>', 'Your home country (auto-detected from IP if not set)')
+    .option('--timezone <tz>', 'Your timezone (auto-detected from system if not set)')
+    .option('--json [file]', 'Output as JSON (to file if specified, otherwise stdout)')
+    .option('-n, --max-results <num>', 'Max results to display', '10')
+    .option('-m, --max-messages <num>', 'Max messages to process (for testing)')
+    .option('-a, --all', 'Show all geocoded activities (default: top 10)')
+    .option('--dry-run', 'Show stats without API calls')
 
   // ============ FETCH-IMAGES ============
   program

@@ -137,7 +137,7 @@ describe('Geocoder Module', () => {
       }
     })
 
-    it('adds default country to query', async () => {
+    it('adds region bias for default country (soft bias)', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
         json: async () => createGeocodingResponse(41.9, 12.5)
@@ -145,10 +145,12 @@ describe('Geocoder Module', () => {
 
       await geocodeLocation('Rome', { apiKey: 'test-key', defaultCountry: 'Italy' })
 
-      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('Rome%2C+Italy'))
+      // Should use region param for soft bias, not append to query
+      expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('region=it'))
+      expect(mockFetch).not.toHaveBeenCalledWith(expect.stringContaining('Rome%2C+Italy'))
     })
 
-    it('skips country suffix if already present', async () => {
+    it('still adds region bias even when country is in query', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
         json: async () => createGeocodingResponse(41.9, 12.5)
@@ -156,11 +158,11 @@ describe('Geocoder Module', () => {
 
       await geocodeLocation('Rome, Italy', { apiKey: 'test-key', defaultCountry: 'Italy' })
 
-      // Should not add Italy twice
+      // Region bias is always added for soft preference - helps Google prioritize
       const call = mockFetch.mock.calls[0] as [string]
       const url = call[0]
-      const matches = url.match(/Italy/gi)
-      expect(matches?.length).toBe(1)
+      expect(url).toContain('address=Rome%2C+Italy')
+      expect(url).toContain('region=it')
     })
 
     it('adds region bias when specified', async () => {

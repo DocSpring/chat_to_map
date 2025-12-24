@@ -85,3 +85,32 @@ export function createEmbeddingProgressLogger(logger: Logger, verb: string) {
     }
   }
 }
+
+// ============================================================================
+// Activity Display
+// ============================================================================
+
+interface ActivityLike {
+  readonly activity: string
+  readonly category: ActivityCategory
+  readonly sender: string
+  readonly timestamp: Date | string
+}
+
+/**
+ * Format activity header lines (emoji, activity text, category/sender/date).
+ * Returns the formatted lines for logging.
+ */
+export function formatActivityHeader(
+  index: number,
+  activity: ActivityLike
+): { line1: string; line2: string } {
+  const emoji = getCategoryEmoji(activity.category)
+  const activityText = truncate(activity.activity, 60)
+  const category = activity.category.charAt(0).toUpperCase() + activity.category.slice(1)
+
+  return {
+    line1: `${index + 1}. ${emoji}  "${activityText}"`,
+    line2: `   → ${category} • ${activity.sender} • ${formatDate(activity.timestamp)}`
+  }
+}

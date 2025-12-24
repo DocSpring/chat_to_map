@@ -70,6 +70,29 @@ task ci
 This runs: typecheck, lint, check-ignores, duplication, file-length, test.
 **Must pass completely.**
 
+## CLI Pipeline
+
+Commands build on each other. Each command runs earlier steps if not cached.
+
+```
+parse     → Parse messages from chat export
+scan      → Heuristic candidate extraction (quick, free)
+embed     → Embed messages for semantic search (~$0.001/1000 msgs)
+filter    → scan + embed + semantic search + merge → candidates.all
+scrape    → Get URL metadata for candidates
+preview   → Quick AI classification on scan results only (~$0.01)
+classify  → filter → scrape → AI classify (full pipeline)
+geocode   → classify → geocode
+analyze   → Full pipeline with export (not yet tested)
+```
+
+**Key points:**
+- `scan` is the quick/free heuristic preview
+- `filter` combines heuristics + embeddings into `candidates.all`
+- `classify` runs the FULL pipeline (filter → scrape → classify)
+- `geocode` builds on classify results
+- Each step uses pipeline cache if already run
+
 ## Commands
 
 ```bash

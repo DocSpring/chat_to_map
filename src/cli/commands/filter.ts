@@ -14,6 +14,7 @@ import { formatDate, initCommand, truncate } from '../helpers'
 import type { Logger } from '../logger'
 import type { PipelineContext } from '../steps/context'
 import { stepEmbed } from '../steps/embed'
+import { mergeCandidates } from '../steps/filter'
 
 interface FilterOutput {
   method: ExtractionMethod
@@ -183,35 +184,6 @@ async function runEmbeddings(
   pipelineCache.setStage('candidates.embeddings', [...result.value])
 
   return { candidates: result.value, fromCache: false }
-}
-
-/**
- * Merge heuristics and embeddings candidates, deduplicating by messageId.
- */
-function mergeCandidates(
-  heuristics: readonly CandidateMessage[],
-  embeddings: readonly CandidateMessage[]
-): CandidateMessage[] {
-  const seen = new Set<number>()
-  const merged: CandidateMessage[] = []
-
-  // Heuristics first (higher priority)
-  for (const c of heuristics) {
-    if (!seen.has(c.messageId)) {
-      seen.add(c.messageId)
-      merged.push(c)
-    }
-  }
-
-  // Then embeddings
-  for (const c of embeddings) {
-    if (!seen.has(c.messageId)) {
-      seen.add(c.messageId)
-      merged.push(c)
-    }
-  }
-
-  return merged
 }
 
 export async function cmdFilter(args: CLIArgs, logger: Logger): Promise<void> {

@@ -4,6 +4,7 @@
  * Convert location text to coordinates using Google Maps APIs.
  */
 
+import countries from 'i18n-iso-countries'
 import { generateGeocodeCacheKey } from '../cache/key'
 import type { ResponseCache } from '../cache/types'
 import { extractGoogleMapsCoords } from '../extraction/heuristics/url-classifier'
@@ -16,6 +17,15 @@ import {
   type GeocoderConfig,
   type Result
 } from '../types'
+
+/**
+ * Convert country name to 2-letter region code (ISO 3166-1 alpha-2).
+ */
+function countryToRegionCode(country: string): string | null {
+  // Try to get alpha-2 code from country name
+  const code = countries.getAlpha2Code(country, 'en')
+  return code?.toLowerCase() ?? null
+}
 
 interface GoogleGeocodingResponse {
   status: string
@@ -49,22 +59,22 @@ async function geocodeText(
     }
   }
 
-  // Build the query, optionally adding region bias
-  let query = location
-  if (
-    config.defaultCountry &&
-    !location.toLowerCase().includes(config.defaultCountry.toLowerCase())
-  ) {
-    query = `${location}, ${config.defaultCountry}`
-  }
-
+  // Build the query with region bias (soft preference, not forced)
   const params = new URLSearchParams({
-    address: query,
+    address: location,
     key: config.apiKey
   })
 
+  // Use region bias for soft preference toward a country
+  // This helps disambiguate but doesn't force results to that country
   if (config.regionBias) {
     params.set('region', config.regionBias.toLowerCase())
+  } else if (config.defaultCountry) {
+    // Convert country name to 2-letter code for region bias
+    const regionCode = countryToRegionCode(config.defaultCountry)
+    if (regionCode) {
+      params.set('region', regionCode)
+    }
   }
 
   try {

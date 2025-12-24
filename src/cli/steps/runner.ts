@@ -1,0 +1,169 @@
+/**
+ * Step Runner
+ *
+ * Manages pipeline step execution with automatic dependency resolution.
+ * Each step declares its dependencies and the runner ensures they run first.
+ */
+
+import type { ScrapedMetadata } from '../../scraper/types'
+import type {
+  CandidateMessage,
+  ClassifiedActivity,
+  GeocodedActivity,
+  ParsedMessage
+} from '../../types'
+import type { CLIArgs } from '../args'
+import type { Logger } from '../logger'
+import type { PipelineContext } from './context'
+
+/**
+ * All pipeline step outputs, keyed by step name.
+ */
+interface StepOutputs {
+  parse: { messages: readonly ParsedMessage[] }
+  scan: { candidates: readonly CandidateMessage[] }
+  embed: { embedded: boolean }
+  filter: { candidates: readonly CandidateMessage[] }
+  scrape: { metadataMap: Map<string, ScrapedMetadata> }
+  classify: { activities: readonly ClassifiedActivity[] }
+  geocode: { activities: readonly GeocodedActivity[] }
+}
+
+type StepName = keyof StepOutputs
+
+/**
+ * Step runner that manages dependencies and caching.
+ */
+export class StepRunner {
+  private readonly ctx: PipelineContext
+  private readonly args: CLIArgs
+  private readonly outputs = new Map<StepName, StepOutputs[StepName]>()
+
+  constructor(ctx: PipelineContext, args: CLIArgs, _logger: Logger) {
+    this.ctx = ctx
+    this.args = args
+  }
+
+  /**
+   * Run a step and all its dependencies.
+   */
+  async run<K extends StepName>(step: K): Promise<StepOutputs[K]> {
+    // Return cached output if already run
+    const cached = this.outputs.get(step)
+    if (cached) {
+      return cached as StepOutputs[K]
+    }
+
+    // Run dependencies first, then the step
+    const output = await this.executeStep(step)
+    this.outputs.set(step, output)
+    return output
+  }
+
+  private async executeStep<K extends StepName>(step: K): Promise<StepOutputs[K]> {
+    switch (step) {
+      case 'parse':
+        return this.runParse() as Promise<StepOutputs[K]>
+      case 'scan':
+        return this.runScan() as Promise<StepOutputs[K]>
+      case 'embed':
+        return this.runEmbed() as Promise<StepOutputs[K]>
+      case 'filter':
+        return this.runFilter() as Promise<StepOutputs[K]>
+      case 'scrape':
+        return this.runScrape() as Promise<StepOutputs[K]>
+      case 'classify':
+        return this.runClassify() as Promise<StepOutputs[K]>
+      case 'geocode':
+        return this.runGeocode() as Promise<StepOutputs[K]>
+      default:
+        throw new Error(`Unknown step: ${step}`)
+    }
+  }
+
+  // ============================================================================
+  // Step implementations with dependencies
+  // ============================================================================
+
+  private async runParse(): Promise<StepOutputs['parse']> {
+    const { stepParse } = await import('./parse')
+    const result = stepParse(this.ctx, { maxMessages: this.args.maxMessages })
+    return { messages: result.messages }
+  }
+
+  private async runScan(): Promise<StepOutputs['scan']> {
+    // Dependency: parse
+    await this.run('parse')
+
+    const { stepScan } = await import('./scan')
+    const result = stepScan(this.ctx, {
+      minConfidence: this.args.minConfidence,
+      maxMessages: this.args.maxMessages,
+      quiet: true
+    })
+    return { candidates: result.candidates }
+  }
+
+  private async runEmbed(): Promise<StepOutputs['embed']> {
+    // Dependency: parse
+    const { messages } = await this.run('parse')
+
+    const { stepEmbed } = await import('./embed')
+    await stepEmbed(this.ctx, messages)
+    return { embedded: true }
+  }
+
+  private async runFilter(): Promise<StepOutputs['filter']> {
+    // Dependencies: scan, embed
+    await Promise.all([this.run('scan'), this.run('embed')])
+
+    const { stepFilter } = await import('./filter')
+    const result = await stepFilter(this.ctx, {
+      minConfidence: this.args.minConfidence,
+      quiet: true
+    })
+    return { candidates: result.candidates }
+  }
+
+  private async runScrape(): Promise<StepOutputs['scrape']> {
+    // Dependency: filter
+    const { candidates } = await this.run('filter')
+
+    const { stepScrape } = await import('./scrape')
+    const result = await stepScrape(this.ctx, candidates, {
+      timeout: this.args.scrapeTimeout,
+      quiet: true
+    })
+    return { metadataMap: result.metadataMap }
+  }
+
+  private async runClassify(): Promise<StepOutputs['classify']> {
+    // Dependencies: filter, scrape
+    const [{ candidates }, { metadataMap }] = await Promise.all([
+      this.run('filter'),
+      this.run('scrape')
+    ])
+
+    const { stepClassify } = await import('./classify')
+    const result = await stepClassify(this.ctx, candidates, {
+      homeCountry: this.args.homeCountry,
+      timezone: this.args.timezone,
+      urlMetadata: metadataMap,
+      batchSize: 30,
+      quiet: true
+    })
+    return { activities: result.activities }
+  }
+
+  private async runGeocode(): Promise<StepOutputs['geocode']> {
+    // Dependency: classify
+    const { activities } = await this.run('classify')
+
+    const { stepGeocode } = await import('./geocode')
+    const result = await stepGeocode(this.ctx, activities, {
+      homeCountry: this.args.homeCountry,
+      quiet: true
+    })
+    return { activities: result.activities }
+  }
+}

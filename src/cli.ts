@@ -14,6 +14,7 @@ import { cmdClassify } from './cli/commands/classify'
 import { cmdEmbed } from './cli/commands/embed'
 import { cmdFetchImages } from './cli/commands/fetch-images'
 import { cmdFilter } from './cli/commands/filter'
+import { cmdGeocode } from './cli/commands/geocode'
 import { cmdList } from './cli/commands/list'
 import { cmdParse } from './cli/commands/parse'
 import { cmdPreview } from './cli/commands/preview'
@@ -57,6 +58,10 @@ async function main(): Promise<void> {
 
       case 'classify':
         await cmdClassify(args, logger)
+        break
+
+      case 'geocode':
+        await cmdGeocode(args, logger)
         break
 
       case 'fetch-images':

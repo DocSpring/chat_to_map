@@ -36,6 +36,7 @@ export type PipelineStage =
   | 'scrape_stats'
   | 'scrape_metadata'
   | 'classify_stats'
+  | 'geocode_stats'
   | 'candidates.heuristics'
   | 'candidates.embeddings'
   | 'candidates.all'

@@ -4,6 +4,10 @@
 
 E2E tests use `tests/fixtures/cli/cache-fixture.tar.gz` to cache external API/HTTP responses.
 
+**🚨 IMPORTANT:** The E2E cache (`tests/fixtures/cli/cache-fixture.tar.gz`) is COMPLETELY SEPARATE from `~/.cache/chat-to-map/`. Never confuse these:
+- `~/.cache/chat-to-map/` - User's local CLI cache (NOT used by tests)
+- `tests/fixtures/cli/cache-fixture.tar.gz` - E2E test fixture (extracted to temp dir)
+
 **What's cached:**
 - `requests/ai/openai/` - OpenAI embeddings API responses
 - `requests/ai/openrouter/` - OpenRouter (Gemini) classifier responses
@@ -14,7 +18,7 @@ E2E tests use `tests/fixtures/cli/cache-fixture.tar.gz` to cache external API/HT
 - The fixture only contains `requests/` directory
 
 **How it works:**
-1. `setupE2ETests()` extracts `cache-fixture.tar.gz` to a temp directory
+1. `setupE2ETests()` extracts `cache-fixture.tar.gz` to a temp directory (e.g., `/tmp/chat-to-map-e2e-XXXXX/`)
 2. CLI subprocess gets `--cache-dir <tempDir>` pointing to extracted cache
 3. `FilesystemCache` looks up requests in `<tempDir>/requests/`
 4. If cache hit → use cached response. If miss → make real API call (or fail if locked)
@@ -27,9 +31,15 @@ When `cache-fixture.tar.gz` exists and `UPDATE_E2E_CACHE` is not set:
 
 **Updating the cache:**
 ```bash
+# Add new responses to existing cache (for cache misses only)
 UPDATE_E2E_CACHE=true task test:e2e
+
+# Delete existing cache and rebuild from scratch
+REPLACE_E2E_CACHE=true task test:e2e
 ```
-This allows real API calls and updates the fixture with new responses.
+
+- `UPDATE_E2E_CACHE` - ALLOWS real API calls for cache misses. Existing cached responses are reused.
+- `REPLACE_E2E_CACHE` - Deletes the existing cache fixture first, then rebuilds everything from scratch.
 
 ## Writing a New E2E Test
 
