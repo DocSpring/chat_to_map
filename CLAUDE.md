@@ -373,15 +373,16 @@ Model ID determines provider. Set via `CLASSIFIER_MODEL` env var.
 
 | Model ID | Provider | API Model ID | Required Env Var |
 |----------|----------|--------------|------------------|
-| `gemini-2.5-flash` | openrouter | `google/gemini-2.5-flash` | `OPENROUTER_API_KEY` |
+| `gemini-3-flash` | google | `gemini-3-flash-preview` | `GOOGLE_AI_API_KEY` |
+| `gemini-3-flash-or` | openrouter | `google/gemini-3-flash-preview` | `OPENROUTER_API_KEY` |
 | `haiku-4.5` | anthropic | `claude-haiku-4-5` | `ANTHROPIC_API_KEY` |
 | `haiku-4.5-or` | openrouter | `anthropic/claude-3-5-haiku-latest` | `OPENROUTER_API_KEY` |
 | `gpt-5-mini` | openai | `gpt-5-mini` | `OPENAI_API_KEY` |
 
-**Default:** `gemini-2.5-flash` (falls back to `haiku-4.5` if no OpenRouter key)
+**Default:** `gemini-3-flash` (falls back to `haiku-4.5` if no Google AI key)
 
-**Keep these updated!** Check provider docs when models feel outdated.
+**Keep these updated!** Model constants are in `src/classifier/models.ts` - update `LATEST_*` when new models are released.
 
 ---
 
-*Last updated: 2025-12-23*
+*Last updated: 2025-12-25*

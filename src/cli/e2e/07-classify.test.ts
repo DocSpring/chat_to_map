@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { LATEST_GOOGLE_SMALL } from '../../classifier/models'
 import type { ClassifiedActivity } from '../../types'
 import { FIXTURE_INPUT, readCacheJson, readClassifierPrompts, runCli, testState } from './helpers'
 
@@ -37,8 +38,8 @@ describe('classify command', () => {
     const stats = readCacheJson<ClassifyStats>(testState.tempCacheDir, 'classify_stats.json')
     expect(stats.candidatesClassified).toBeGreaterThanOrEqual(10)
     expect(stats.activitiesFound).toBeGreaterThanOrEqual(10)
-    expect(stats.model).toBe('google/gemini-2.5-flash')
-    expect(stats.provider).toBe('openrouter')
+    expect(stats.model).toBe(LATEST_GOOGLE_SMALL)
+    expect(stats.provider).toBe('google')
     expect(stats.batchCount).toBeGreaterThanOrEqual(1)
   })
 
@@ -210,7 +211,7 @@ describe('classify command', () => {
     expect(stdout).toContain('Classification Results')
     expect(stdout).toMatch(/Candidates: \d+/)
     expect(stdout).toMatch(/Activities: \d+/)
-    expect(stdout).toContain('Model: google/gemini-2.5-flash (openrouter)')
+    expect(stdout).toContain(`Model: ${LATEST_GOOGLE_SMALL} (google)`)
 
     // Check activities are displayed
     expect(stdout).toMatch(/hot air balloon/i)

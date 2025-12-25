@@ -9,7 +9,7 @@ import { buildClassificationPrompt } from '../../classifier/prompt'
 import { classifyMessages, sortActivitiesByScore, VERSION } from '../../index'
 import { extractUrlsFromCandidates, fetchMetadataForUrls } from '../../scraper/metadata'
 import type { ScrapedMetadata } from '../../scraper/types'
-import type { ClassifiedActivity } from '../../types'
+import type { ClassifiedActivity, ClassifierProvider } from '../../types'
 import { formatLocation } from '../../types'
 import type { CLIArgs } from '../args'
 import { formatDate, getCategoryEmoji, truncate } from '../helpers'
@@ -33,7 +33,7 @@ async function stepClassify(
   ctx: PipelineContext,
   candidates: Parameters<typeof classifyMessages>[0],
   config: {
-    provider: 'anthropic' | 'openai' | 'openrouter'
+    provider: ClassifierProvider
     apiKey: string
     model: string
     homeCountry: string

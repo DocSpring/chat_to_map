@@ -27,7 +27,7 @@ import { countTokens, MAX_BATCH_TOKENS } from './tokenizer'
 
 export { createSmartBatches, groupCandidatesByProximity } from './batching'
 export type { ResolvedModel } from './models'
-export { getRequiredApiKeyEnvVar, getValidModelIds, resolveModel } from './models'
+export { DEFAULT_MODEL_ID, getRequiredApiKeyEnvVar, getValidModelIds, resolveModel } from './models'
 export {
   buildClassificationPrompt,
   type ClassificationContext,

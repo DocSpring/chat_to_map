@@ -6,6 +6,7 @@
  */
 
 import {
+  DEFAULT_MODEL_ID,
   getRequiredApiKeyEnvVar,
   getValidModelIds,
   type ResolvedModel,
@@ -24,10 +25,10 @@ export { resolveUserContext } from './user-settings'
 
 /**
  * Resolve model configuration from environment.
- * Default: gemini-2.5-flash, falls back to haiku-4.5 if no OpenRouter key.
+ * Default: gemini flash (Google AI), falls back to haiku-4.5 if no Google AI key.
  */
 export function resolveModelConfig(): ResolvedModelConfig {
-  const requestedModel = process.env.CLASSIFIER_MODEL ?? 'gemini-2.5-flash'
+  const requestedModel = process.env.CLASSIFIER_MODEL ?? DEFAULT_MODEL_ID
   let modelId = requestedModel
   let resolved: ResolvedModel | null = resolveModel(modelId)
 
@@ -39,8 +40,8 @@ export function resolveModelConfig(): ResolvedModelConfig {
   const requiredEnvVar = getRequiredApiKeyEnvVar(modelId)
   let apiKey = requiredEnvVar ? process.env[requiredEnvVar] : undefined
 
-  if (!apiKey && modelId === 'gemini-2.5-flash' && process.env.ANTHROPIC_API_KEY) {
-    // Fallback to haiku-4.5 if no OpenRouter key but have Anthropic key
+  if (!apiKey && modelId === DEFAULT_MODEL_ID && process.env.ANTHROPIC_API_KEY) {
+    // Fallback to haiku-4.5 if no Google AI key but have Anthropic key
     modelId = 'haiku-4.5'
     const fallbackResolved = resolveModel(modelId)
     if (!fallbackResolved) {

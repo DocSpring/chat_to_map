@@ -5,6 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { LATEST_GOOGLE_SMALL } from '../../classifier/models'
 import { createActivity } from '../../test-support'
 import type { ClassifiedActivity } from '../../types'
 import {
@@ -132,8 +133,8 @@ describe('buildClassifyOutput', () => {
     const stats = {
       candidatesClassified: 10,
       activitiesFound: 5,
-      model: 'gemini-2.5-flash',
-      provider: 'openrouter'
+      model: LATEST_GOOGLE_SMALL,
+      provider: 'google'
     }
 
     const activities: ClassifiedActivity[] = [
@@ -163,8 +164,8 @@ describe('buildClassifyOutput', () => {
 
     expect(output.candidatesClassified).toBe(10)
     expect(output.activitiesFound).toBe(5)
-    expect(output.model).toBe('gemini-2.5-flash')
-    expect(output.provider).toBe('openrouter')
+    expect(output.model).toBe(LATEST_GOOGLE_SMALL)
+    expect(output.provider).toBe('google')
     expect(output.activities).toHaveLength(1)
     expect(output.activities[0]?.action).toBe('hike')
     expect(output.activities[0]?.actionOriginal).toBe('hiking')

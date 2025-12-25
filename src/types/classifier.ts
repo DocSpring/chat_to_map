@@ -87,7 +87,7 @@ export function formatLocation(a: ClassifiedActivity): string | null {
 }
 
 /** Provider type for AI classification APIs. */
-export type ClassifierProvider = 'anthropic' | 'openai' | 'openrouter'
+export type ClassifierProvider = 'anthropic' | 'openai' | 'openrouter' | 'google'
 
 /** Configuration for a single provider (used for fallbacks). */
 export interface ProviderConfig {

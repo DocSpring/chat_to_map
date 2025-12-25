@@ -28,6 +28,7 @@ export {
   classifyBatch,
   classifyMessages,
   createSmartBatches,
+  DEFAULT_MODEL_ID,
   filterActivities,
   getRequiredApiKeyEnvVar,
   getValidModelIds,

@@ -3,6 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
+import { LATEST_GOOGLE_SMALL } from '../../classifier/models'
 import { FIXTURE_INPUT, readCacheJson, readClassifierPrompts, runCli, testState } from './helpers'
 
 interface PreviewStats {
@@ -53,7 +54,7 @@ describe('preview command', () => {
     const stats = readCacheJson<PreviewStats>(testState.tempCacheDir, 'preview_stats.json')
     expect(stats.candidatesClassified).toBeGreaterThanOrEqual(9)
     expect(stats.activitiesFound).toBeGreaterThanOrEqual(9)
-    expect(stats.model).toBe('google/gemini-2.5-flash')
+    expect(stats.model).toBe(LATEST_GOOGLE_SMALL)
   })
 
   it('writes preview_activities.json to cache', () => {

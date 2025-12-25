@@ -29,6 +29,41 @@ interface OpenAIResponse {
   usage: { prompt_tokens: number; completion_tokens: number }
 }
 
+interface GoogleAIResponse {
+  candidates: Array<{ content: { parts: Array<{ text: string }>; role: string } }>
+  usageMetadata: { promptTokenCount: number; candidatesTokenCount: number; totalTokenCount: number }
+}
+
+/**
+ * Call Google AI (Gemini) API for classification.
+ */
+async function callGoogleAI(prompt: string, config: ProviderConfig): Promise<Result<string>> {
+  const model = config.model ?? DEFAULT_MODELS.google
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.apiKey}`
+
+  try {
+    const response = await httpFetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 16384,
+          thinkingConfig: { thinkingLevel: 'minimal' }
+        }
+      })
+    })
+
+    if (!response.ok) return handleHttpError(response)
+
+    const data = (await response.json()) as GoogleAIResponse
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+    return text ? { ok: true, value: text } : emptyResponseError()
+  } catch (error) {
+    return handleNetworkError(error)
+  }
+}
+
 /**
  * Call Anthropic Claude API for classification.
  */
@@ -67,19 +102,34 @@ async function callOpenAICompatible(
   url: string,
   prompt: string,
   config: ProviderConfig,
-  defaultModel: string
+  defaultModel: string,
+  isOpenRouter = false
 ): Promise<Result<string>> {
   const model = config.model ?? defaultModel
+
+  // Build request body
+  const body: Record<string, unknown> = {
+    model,
+    messages: [{ role: 'user', content: prompt }],
+    max_completion_tokens: 16384
+  }
+
+  // For OpenRouter with Gemini models, disable thinking for faster responses
+  if (isOpenRouter && model.includes('gemini')) {
+    body.provider = {
+      google: {
+        generationConfig: {
+          thinkingConfig: { thinkingLevel: 'minimal' }
+        }
+      }
+    }
+  }
 
   try {
     const response = await httpFetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey}` },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        max_completion_tokens: 16384
-      })
+      body: JSON.stringify(body)
     })
 
     if (!response.ok) return handleHttpError(response)
@@ -123,6 +173,9 @@ async function callProvider(
   // Make the actual API call
   let result: Result<string>
   switch (providerConfig.provider) {
+    case 'google':
+      result = await callGoogleAI(prompt, providerConfig)
+      break
     case 'anthropic':
       result = await callAnthropic(prompt, providerConfig)
       break
@@ -139,7 +192,8 @@ async function callProvider(
         'https://openrouter.ai/api/v1/chat/completions',
         prompt,
         providerConfig,
-        DEFAULT_MODELS.openrouter
+        DEFAULT_MODELS.openrouter,
+        true // isOpenRouter - enables provider-specific config
       )
       break
     default:

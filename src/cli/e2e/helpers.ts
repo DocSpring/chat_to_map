@@ -254,13 +254,29 @@ export function readCacheJson<T>(cacheDir: string, filename: string): T {
 /**
  * Read classifier prompt files from the API cache.
  * Returns all prompt.txt file contents as an array.
+ * Searches all provider/model directories for prompt files.
  */
 export function readClassifierPrompts(cacheDir: string): string[] {
-  const promptDir = join(cacheDir, 'requests', 'ai', 'openrouter', 'google', 'gemini-2.5-flash')
-  if (!existsSync(promptDir)) return []
+  const aiDir = join(cacheDir, 'requests', 'ai')
+  if (!existsSync(aiDir)) return []
 
-  const files = readdirSync(promptDir).filter((f) => f.endsWith('.prompt.txt'))
-  return files.map((f) => readFileSync(join(promptDir, f), 'utf-8'))
+  const prompts: string[] = []
+
+  // Search all provider directories recursively for .prompt.txt files
+  const searchDir = (dir: string) => {
+    if (!existsSync(dir)) return
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = join(dir, entry.name)
+      if (entry.isDirectory()) {
+        searchDir(fullPath)
+      } else if (entry.name.endsWith('.prompt.txt')) {
+        prompts.push(readFileSync(fullPath, 'utf-8'))
+      }
+    }
+  }
+
+  searchDir(aiDir)
+  return prompts
 }
 
 /** Shared type definitions */
