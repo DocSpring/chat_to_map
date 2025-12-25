@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Things To Do Map</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <style>
+{{STYLES}}
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="floatingTooltip"></div>
+
+  <div class="info-box">
+    <h3 id="infoTitle" style="margin-top: 0;">Things To Do</h3>
+    <p><strong id="infoCount">0</strong> suggestions with locations</p>
+    <p style="font-size: 12px; color: #666;">
+      Click markers to see details.<br>
+      Zoom in to see individual pins.
+    </p>
+    <a class="view-list-link" onclick="openModal()">View Activity List →</a>
+  </div>
+
+  <div id="legend" class="legend"></div>
+
+  <div class="modal-overlay" id="activityModal" onclick="closeModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Activity List</h2>
+        <div class="sort-control">
+          <label for="sortSelect">Sort by:</label>
+          <select id="sortSelect" onchange="sortActivities(this.value)">
+            <option value="score">Most Interesting</option>
+            <option value="oldest">Oldest</option>
+            <option value="newest">Newest</option>
+          </select>
+        </div>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="activityListBody"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  {{DATA_SCRIPT}}
+  {{APP_SCRIPT}}
+</body>
+</html>
