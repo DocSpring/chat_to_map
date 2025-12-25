@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { createActivity as createTestActivity } from '../test-support'
 import type { ClassifiedActivity } from '../types'
 import {
-  deduplicateActivities,
+  aggregateActivities,
   filterByMentionCount,
   getFirstMentionedAt,
   getLastMentionedAt,
@@ -29,9 +29,9 @@ function createActivity(
 }
 
 describe('Aggregation Module', () => {
-  describe('deduplicateActivities', () => {
+  describe('aggregateActivities', () => {
     it('returns empty array for empty input', () => {
-      const result = deduplicateActivities([])
+      const result = aggregateActivities([])
       expect(result).toEqual([])
     })
 
@@ -48,7 +48,7 @@ describe('Aggregation Module', () => {
         })
       ]
 
-      const result = deduplicateActivities(activities)
+      const result = aggregateActivities(activities)
 
       expect(result).toHaveLength(1)
       const first = result[0]
@@ -82,7 +82,7 @@ describe('Aggregation Module', () => {
         })
       ]
 
-      const result = deduplicateActivities(activities)
+      const result = aggregateActivities(activities)
 
       expect(result).toHaveLength(1)
       const first = result[0]
@@ -110,7 +110,7 @@ describe('Aggregation Module', () => {
         })
       ]
 
-      const result = deduplicateActivities(activities)
+      const result = aggregateActivities(activities)
 
       expect(result).toHaveLength(1)
       const first = result[0]
@@ -138,7 +138,7 @@ describe('Aggregation Module', () => {
         })
       ]
 
-      const result = deduplicateActivities(activities)
+      const result = aggregateActivities(activities)
 
       // Compound activities only match on exact title, not fields
       expect(result).toHaveLength(2)
@@ -169,7 +169,7 @@ describe('Aggregation Module', () => {
         })
       ]
 
-      const result = deduplicateActivities(activities)
+      const result = aggregateActivities(activities)
 
       expect(result).toHaveLength(3)
       expect(result.every((r) => getMentionCount(r) === 1)).toBe(true)
@@ -195,7 +195,7 @@ describe('Aggregation Module', () => {
         })
       ]
 
-      const result = deduplicateActivities(activities)
+      const result = aggregateActivities(activities)
 
       // "Kazuya" vs "Kazuya Restaurant" - not 95% similar, should NOT match
       expect(result).toHaveLength(2)
@@ -232,7 +232,7 @@ describe('Aggregation Module', () => {
         })
       ]
 
-      const result = deduplicateActivities(activities)
+      const result = aggregateActivities(activities)
 
       expect(result).toHaveLength(1)
       const first = result[0]
@@ -280,7 +280,7 @@ describe('Aggregation Module', () => {
         })
       ]
 
-      const result = deduplicateActivities(activities)
+      const result = aggregateActivities(activities)
 
       expect(result).toHaveLength(1)
       expect(result[0]?.messages).toHaveLength(3)
@@ -317,7 +317,7 @@ describe('Aggregation Module', () => {
         interestingScore: 0.5
       })
 
-      const result = deduplicateActivities([act1, act2, act3])
+      const result = aggregateActivities([act1, act2, act3])
 
       expect(result).toHaveLength(1)
       expect(result[0]?.funScore).toBe(0.7) // (0.8 + 0.6 + 0.7) / 3 = 0.7
@@ -351,7 +351,7 @@ describe('Aggregation Module', () => {
         })
       ]
 
-      const result = deduplicateActivities(activities)
+      const result = aggregateActivities(activities)
 
       expect(result).toHaveLength(1)
       // First occurrence is the primary
@@ -403,7 +403,7 @@ describe('Aggregation Module', () => {
         createActivity({ id: 6, activity: 'Thrice Mentioned', action: 'explore', object: 'trail' })
       ]
 
-      const deduped = deduplicateActivities(raw)
+      const deduped = aggregateActivities(raw)
       const result = getMostWanted(deduped)
 
       expect(result).toHaveLength(2)
@@ -421,7 +421,7 @@ describe('Aggregation Module', () => {
         createActivity({ id: 6, activity: 'activity c', action: 'try', object: 'thing-c' })
       ]
 
-      const deduped = deduplicateActivities(raw)
+      const deduped = aggregateActivities(raw)
       const result = getMostWanted(deduped, 2)
 
       expect(result).toHaveLength(2)

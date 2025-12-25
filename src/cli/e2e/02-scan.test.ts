@@ -50,7 +50,7 @@ describe('scan command', () => {
   })
 
   it('finds specific suggestions in output', () => {
-    const { stdout } = runCli(`scan ${FIXTURE_INPUT} --cache-dir ${testState.tempCacheDir}`)
+    const { stdout } = runCli(`scan ${FIXTURE_INPUT} -n 20 --cache-dir ${testState.tempCacheDir}`)
 
     expect(stdout).toContain('Karangahake Gorge')
     expect(stdout).toContain('Prinzhorn collection')

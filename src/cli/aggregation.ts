@@ -134,7 +134,7 @@ function round(value: number, decimals: number): number {
  * @param activities Classified activities to deduplicate
  * @returns Deduplicated activities with merged messages
  */
-export function deduplicateActivities(
+export function aggregateActivities(
   activities: readonly ClassifiedActivity[]
 ): ClassifiedActivity[] {
   if (activities.length === 0) return []

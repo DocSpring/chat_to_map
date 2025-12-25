@@ -7,6 +7,7 @@
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { parse } from 'csv-parse/sync'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { FIXTURE_INPUT, runCli, testState } from './helpers'
 
@@ -68,6 +69,7 @@ describe('analyze command', () => {
       expect(header).toContain('location')
       expect(header).toContain('latitude')
       expect(header).toContain('longitude')
+      expect(header).toContain('mention_count')
     })
 
     it('contains activity data rows', () => {
@@ -80,6 +82,21 @@ describe('analyze command', () => {
       // Check for known activities
       expect(csv.toLowerCase()).toContain('hot air balloon')
       expect(csv.toLowerCase()).toContain('whale')
+    })
+
+    it('shows mention count for aggregated activities', () => {
+      const csv = readFileSync(join(outputDir, 'activities.csv'), 'utf-8')
+      const records = parse(csv, { columns: true }) as Array<Record<string, string>>
+
+      // Find Karangahake row - should have mention_count of 2
+      const karangahake = records.find((r) => r.activity?.toLowerCase().includes('karangahake'))
+      expect(karangahake).toBeDefined()
+      expect(karangahake?.mention_count).toBe('2')
+
+      // Find paintball row - should have mention_count of 2
+      const paintball = records.find((r) => r.activity?.toLowerCase().includes('paintball'))
+      expect(paintball).toBeDefined()
+      expect(paintball?.mention_count).toBe('2')
     })
   })
 
@@ -113,6 +130,25 @@ describe('analyze command', () => {
       expect(activity).toHaveProperty('messages')
       expect(activity).toHaveProperty('funScore')
       expect(activity).toHaveProperty('interestingScore')
+    })
+
+    it('aggregated activities have multiple messages', () => {
+      const json = readFileSync(join(outputDir, 'activities.json'), 'utf-8')
+      const data = JSON.parse(json)
+
+      // Find Karangahake Gorge - mentioned twice, should have 2 messages
+      const karangahake = data.activities.find((a: { activity: string }) =>
+        a.activity.toLowerCase().includes('karangahake')
+      )
+      expect(karangahake).toBeDefined()
+      expect(karangahake.messages.length).toBe(2)
+
+      // Find paintball activity - mentioned twice, should have 2 messages
+      const paintball = data.activities.find((a: { activity: string }) =>
+        a.activity.toLowerCase().includes('paintball')
+      )
+      expect(paintball).toBeDefined()
+      expect(paintball.messages.length).toBe(2)
     })
   })
 

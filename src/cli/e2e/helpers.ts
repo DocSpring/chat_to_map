@@ -314,6 +314,10 @@ export function setupE2ETests(): E2ETestState {
     console.log('⚠️  No cache fixture found - API calls will be made')
   }
 
+  if (process.env.DEBUG_E2E) {
+    console.log(`🔍 E2E temp cache dir: ${tempCacheDir}`)
+  }
+
   extractCacheFixture(tempCacheDir)
   const initialCacheHash = hashCacheDirectories(tempCacheDir)
   const initialCacheFiles = listCacheFiles(tempCacheDir)
@@ -384,5 +388,9 @@ export function teardownE2ETests(state: E2ETestState): void {
     console.error('')
   }
 
-  rmSync(state.tempCacheDir, { recursive: true, force: true })
+  if (process.env.DEBUG_E2E) {
+    console.log(`🔍 Preserving temp cache dir for debugging: ${state.tempCacheDir}`)
+  } else {
+    rmSync(state.tempCacheDir, { recursive: true, force: true })
+  }
 }

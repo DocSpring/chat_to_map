@@ -194,7 +194,8 @@ https://maps.app.goo.gl/JHKspRDJ5m6bhzFT9?g_st=iw
 [10/10/24, 12:15:50 PM] Alice Smith: Same here
 [10/10/24, 6:30:18 PM] Alice Smith: Watching anything tonight?
 [10/10/24, 6:30:30 PM] John Smith: Maybe a movie
-[10/10/24, 6:30:42 PM] Alice Smith: Sounds good
+[10/10/24, 6:30:42 PM] Alice Smith: We should go see a movie at the cinema sometime
+[10/10/24, 6:30:55 PM] John Smith: Yeah that would be fun!
 [10/10/24, 9:13:11 PM] John Smith: there are a few sequels to this too
 [10/10/24, 9:13:11 PM] John Smith: https://en.wikipedia.org/wiki/The_Matrix
 [10/10/24, 9:15:22 PM] Alice Smith: Oh wow didn't know that
@@ -220,6 +221,9 @@ https://maps.app.goo.gl/JHKspRDJ5m6bhzFT9?g_st=iw
 [11/15/24, 8:30:25 AM] John Smith: Hey
 [11/15/24, 8:30:38 AM] Alice Smith: How's your week going?
 [11/15/24, 8:30:52 AM] John Smith: Busy but good
+[11/15/24, 2:15:33 PM] Alice Smith: lets go for a hike this weekend in Karangahake Gorge
+[11/15/24, 2:15:50 PM] John Smith: Yes! I've been wanting to go back there
+[11/15/24, 2:16:02 PM] Alice Smith: The tunnel walk was so cool last time
 [12/18/24, 8:30:11 AM] John Smith: Cold out there
 [12/18/24, 8:30:25 AM] Alice Smith: I know right
 [12/18/24, 8:30:38 AM] John Smith: Need to get a warmer jacket
@@ -250,6 +254,20 @@ https://maps.app.goo.gl/JHKspRDJ5m6bhzFT9?g_st=iw
 [3/22/25, 10:22:30 AM] Alice Smith: I hear you
 [3/22/25, 10:22:45 AM] John Smith: Looking forward to the weekend
 [3/22/25, 10:23:01 AM] Alice Smith: Me too
+[3/22/25, 2:15:11 PM] John Smith: Just had lunch
+[3/22/25, 2:15:25 PM] Alice Smith: What did you have?
+[3/22/25, 2:15:38 PM] John Smith: Leftover pasta from last night
+[3/22/25, 2:15:52 PM] Alice Smith: Nice, I had a salad
+[3/22/25, 2:16:05 PM] John Smith: Healthy!
+[3/22/25, 2:16:18 PM] Alice Smith: Do you want to play paintball next weekend?
+[3/22/25, 2:16:32 PM] John Smith: Yes! That would be so fun
+[3/22/25, 2:16:45 PM] Alice Smith: Cool I'll look up places
+[3/22/25, 2:16:58 PM] John Smith: Sounds good
+[3/22/25, 2:17:11 PM] Alice Smith: How's your afternoon going?
+[3/22/25, 2:17:25 PM] John Smith: Pretty quiet actually
+[3/22/25, 2:17:38 PM] Alice Smith: Same here
+[3/22/25, 2:17:52 PM] John Smith: Want to watch something tonight?
+[3/22/25, 2:18:05 PM] Alice Smith: Sure, you pick
 [5/18/25, 7:15:33 AM] John Smith: Good morning
 [5/18/25, 7:15:50 AM] Alice Smith: Morning!
 [5/18/25, 7:16:02 AM] John Smith: Morning! I just saw this blog post, we should totally do this: https://tinyurl.com/a6vzxrj4
@@ -283,3 +301,10 @@ https://maps.app.goo.gl/JHKspRDJ5m6bhzFT9?g_st=iw
 [10/8/25, 8:15:35 AM] John Smith: Good morning
 [10/8/25, 8:15:42 AM] Alice Smith: Have a good day
 [10/8/25, 8:15:55 PM] John Smith: You too!
+[10/9/25, 7:30:11 PM] Alice Smith: We should go to a play
+[10/9/25, 7:30:25 PM] John Smith: Yeah that would be fun!
+[10/11/25, 8:22:30 AM] John Smith: Ready for the week?
+[10/11/25, 8:22:45 AM] Alice Smith: As ready as I'll ever be
+[10/11/25, 5:45:22 PM] Alice Smith: Heading home
+[10/11/25, 5:45:35 PM] John Smith: Ok see you soon
+[10/11/25, 9:15:33 AM] John Smith: Busy morning

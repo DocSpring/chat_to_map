@@ -9,6 +9,7 @@
 import { classifyBatch, filterActivities, sortActivitiesByScore } from '../../index'
 import type { ScrapedMetadata } from '../../scraper/types'
 import type { CandidateMessage, ClassifiedActivity, ClassifierConfig } from '../../types'
+import { aggregateActivities } from '../aggregation'
 import { resolveModelConfig, resolveUserContext } from '../model'
 import { runWorkerPool } from '../worker-pool'
 import type { PipelineContext } from './context'
@@ -173,8 +174,9 @@ export async function stepClassify(
     allActivities.push(...batchResult)
   }
 
-  // Filter and sort activities by score (interesting prioritized over fun)
-  const activities = sortActivitiesByScore(filterActivities(allActivities))
+  // Deduplicate, filter, and sort activities by score (interesting prioritized over fun)
+  const deduplicated = aggregateActivities(allActivities)
+  const activities = sortActivitiesByScore(filterActivities(deduplicated))
 
   const stats: ClassifyStats = {
     candidatesClassified: candidates.length,
