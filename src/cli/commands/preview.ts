@@ -214,9 +214,13 @@ export async function cmdPreview(args: CLIArgs, logger: Logger): Promise<void> {
     const emoji = getCategoryEmoji(s.category)
     const activity = truncate(s.activity, 200)
     const category = s.category.charAt(0).toUpperCase() + s.category.slice(1)
+    const firstMessage = s.messages[0]
+    const mentionSuffix = s.messages.length > 1 ? ` (x${s.messages.length})` : ''
 
-    logger.log(`${i + 1}. ${emoji}  "${activity}"`)
-    logger.log(`   → ${category} • ${s.sender} • ${formatDate(s.timestamp)}`)
+    logger.log(`${i + 1}. ${emoji}  "${activity}"${mentionSuffix}`)
+    logger.log(
+      `   → ${category} • ${firstMessage?.sender ?? 'Unknown'} • ${formatDate(firstMessage?.timestamp ?? new Date())}`
+    )
     const location = formatLocation(s)
     if (location) {
       logger.log(`   📍 ${location}`)

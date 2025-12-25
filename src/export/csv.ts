@@ -20,6 +20,7 @@ const CSV_COLUMNS = [
   'confidence',
   'category',
   'google_maps_link',
+  'mention_count',
   'status'
 ] as const
 
@@ -59,12 +60,13 @@ export function exportToCSV(suggestions: readonly GeocodedActivity[]): string {
     const s = suggestions[i]
     if (!s) continue
 
+    const firstMessage = s.messages[0]
     const row = [
       i + 1, // id (1-indexed)
-      formatDate(s.timestamp),
-      formatTime(s.timestamp),
-      s.sender,
-      s.originalMessage.replace(/\n/g, ' ').slice(0, 500),
+      formatDate(firstMessage?.timestamp),
+      formatTime(firstMessage?.timestamp),
+      firstMessage?.sender ?? '',
+      firstMessage?.message.replace(/\n/g, ' ').slice(0, 500) ?? '',
       s.activity,
       formatLocation(s) ?? '',
       s.latitude ?? '',
@@ -72,6 +74,7 @@ export function exportToCSV(suggestions: readonly GeocodedActivity[]): string {
       s.confidence.toFixed(2),
       s.category,
       googleMapsLink(s.latitude, s.longitude),
+      s.messages.length,
       'pending' // status
     ]
 

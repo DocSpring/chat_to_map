@@ -52,6 +52,7 @@ export async function exportToExcel(activities: readonly GeocodedActivity[]): Pr
     { header: 'Confidence', key: 'confidence', width: 12 },
     { header: 'Category', key: 'category', width: 15 },
     { header: 'Map Link', key: 'map_link', width: 45 },
+    { header: 'Mentions', key: 'mentions', width: 10 },
     { header: 'Status', key: 'status', width: 10 }
   ]
 
@@ -70,19 +71,21 @@ export async function exportToExcel(activities: readonly GeocodedActivity[]): Pr
     if (!a) continue
 
     const mapLink = googleMapsLink(a.latitude, a.longitude)
+    const firstMessage = a.messages[0]
 
     const row = worksheet.addRow({
       id: i + 1,
-      date: formatDate(a.timestamp),
-      sender: a.sender,
+      date: formatDate(firstMessage?.timestamp),
+      sender: firstMessage?.sender ?? '',
       activity: a.activity,
       location: formatLocation(a) ?? '',
-      message: a.originalMessage.replace(/\n/g, ' ').slice(0, 300),
+      message: firstMessage?.message.replace(/\n/g, ' ').slice(0, 300) ?? '',
       latitude: a.latitude ?? '',
       longitude: a.longitude ?? '',
       confidence: a.confidence,
       category: a.category,
       map_link: mapLink,
+      mentions: a.messages.length,
       status: 'pending'
     })
 

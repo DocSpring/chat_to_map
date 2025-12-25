@@ -602,9 +602,9 @@ describe('Classifier Module', () => {
 
     it('returns all activities (no filtering)', () => {
       const suggestions = [
-        createTestActivity({ messageId: 1, activity: 'Test 1' }),
-        createTestActivity({ messageId: 2, activity: 'Test 2' }),
-        createTestActivity({ messageId: 3, activity: 'Test 3' })
+        createTestActivity({ activity: 'Test 1', funScore: 0.9 }),
+        createTestActivity({ activity: 'Test 2', funScore: 0.5 }),
+        createTestActivity({ activity: 'Test 3', funScore: 0.2 })
       ]
 
       const filtered = filterActivities(suggestions)
@@ -618,10 +618,10 @@ describe('Classifier Module', () => {
 
     it('groups suggestions by category', () => {
       const suggestions = [
-        createTestActivity({ messageId: 1, activity: 'Food 1', category: 'food' }),
-        createTestActivity({ messageId: 2, activity: 'Nature 1', category: 'nature' }),
-        createTestActivity({ messageId: 3, activity: 'Food 2', category: 'food' }),
-        createTestActivity({ messageId: 4, activity: 'Entertainment 1', category: 'entertainment' })
+        createTestActivity({ activity: 'Restaurant 1', category: 'food' }),
+        createTestActivity({ activity: 'Restaurant 2', category: 'food' }),
+        createTestActivity({ activity: 'Hiking', category: 'nature' }),
+        createTestActivity({ activity: 'Movie', category: 'entertainment' })
       ]
 
       const groups = groupByCategory(suggestions)

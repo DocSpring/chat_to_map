@@ -47,11 +47,13 @@ export function exportToJSON(
 export function parseJSON(json: string): JsonExport {
   const data = JSON.parse(json) as JsonExport
 
-  // Convert date strings back to Date objects
+  // Convert date strings back to Date objects in messages array
   for (const activity of data.activities) {
-    if (typeof activity.timestamp === 'string') {
-      // Use Object.assign to work around readonly
-      Object.assign(activity, { timestamp: new Date(activity.timestamp) })
+    for (const msg of activity.messages) {
+      if (typeof msg.timestamp === 'string') {
+        // Use Object.assign to work around readonly
+        Object.assign(msg, { timestamp: new Date(msg.timestamp) })
+      }
     }
   }
 

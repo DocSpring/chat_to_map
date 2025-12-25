@@ -24,11 +24,7 @@ function createMockCache(): ResponseCache {
 
 function createMockActivity(overrides: Partial<GeocodedActivity> = {}): GeocodedActivity {
   return createGeocodedActivity({
-    messageId: 1,
     activity: 'Visit the coffee shop',
-    timestamp: new Date('2024-01-15T10:30:00Z'),
-    sender: 'Alice',
-    originalMessage: 'We should check out this restaurant!',
     confidence: 0.8,
     category: 'food',
     ...overrides
@@ -127,9 +123,9 @@ describe('Images Module', () => {
   describe('fetchImagesForActivities', () => {
     it('returns a map with null values when no sources available', async () => {
       const cache = createMockCache()
-      const activity1 = createMockActivity({ messageId: 1, category: 'food' })
-      const activity2 = createMockActivity({ messageId: 2, category: 'nature' })
-      const activity3 = createMockActivity({ messageId: 3, category: 'food' })
+      const activity1 = createMockActivity({ activity: 'Activity 1' })
+      const activity2 = createMockActivity({ activity: 'Activity 2' })
+      const activity3 = createMockActivity({ activity: 'Activity 3' })
       const activities = [activity1, activity2, activity3]
       const config: ImageFetchConfig = {
         skipGooglePlaces: true,
@@ -148,8 +144,8 @@ describe('Images Module', () => {
     it('calls onProgress callback', async () => {
       const cache = createMockCache()
       const activities = [
-        createMockActivity({ messageId: 1 }),
-        createMockActivity({ messageId: 2 })
+        createMockActivity({ activity: 'Test 1' }),
+        createMockActivity({ activity: 'Test 2' })
       ]
       const config: ImageFetchConfig = {
         skipGooglePlaces: true,

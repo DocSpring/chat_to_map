@@ -12,6 +12,7 @@ import {
   type PDFConfig,
   VALID_CATEGORIES
 } from '../types'
+import { formatDate } from './utils'
 
 // PDFKit uses CommonJS exports, so we need to handle it carefully
 // eslint-disable-next-line @typescript-eslint/consistent-type-imports
@@ -25,13 +26,6 @@ async function loadPDFKit(): Promise<PDFDocumentClass> {
   } catch {
     throw new Error('pdfkit is required for PDF export. Install it with: bun add pdfkit')
   }
-}
-
-/**
- * Format a date as YYYY-MM-DD.
- */
-function formatDate(date: Date): string {
-  return date.toISOString().split('T')[0] ?? ''
 }
 
 /**
@@ -102,7 +96,10 @@ function renderActivityItem(
   if (location) {
     details.push(`Location: ${location}`)
   }
-  details.push(`From: ${item.sender.split(' ')[0]} on ${formatDate(item.timestamp)}`)
+  const firstMessage = item.messages[0]
+  const senderName = firstMessage?.sender.split(' ')[0] ?? 'Unknown'
+  const dateStr = firstMessage ? formatDate(firstMessage.timestamp) : ''
+  details.push(`From: ${senderName} on ${dateStr}`)
   const detailsText = details.join(' | ')
 
   // Calculate text height for vertical centering
@@ -206,7 +203,7 @@ export async function exportToPDF(
   const stats = {
     total: filtered.length,
     geocoded: filtered.filter((a) => a.latitude !== undefined && a.longitude !== undefined).length,
-    senders: new Set(filtered.map((a) => a.sender)).size
+    senders: new Set(filtered.flatMap((a) => a.messages.map((m) => m.sender))).size
   }
 
   // Create PDF document

@@ -158,26 +158,28 @@ async function geocodeText(
 }
 
 /**
- * Try to extract coordinates from a Google Maps URL.
+ * Try to extract coordinates from a Google Maps URL in any message.
  */
 function tryExtractFromUrl(activity: ClassifiedActivity): GeocodeResult | null {
-  // Check if the original message contains a Google Maps URL
-  const urls = activity.originalMessage.match(/https?:\/\/[^\s]+/gi)
-  if (!urls) return null
+  // Check all messages for Google Maps URLs
+  for (const msg of activity.messages) {
+    const urls = msg.message.match(/https?:\/\/[^\s]+/gi)
+    if (!urls) continue
 
-  for (const url of urls) {
-    if (
-      url.includes('maps.google') ||
-      url.includes('goo.gl/maps') ||
-      url.includes('maps.app.goo.gl') ||
-      url.includes('google.com/maps')
-    ) {
-      const coords = extractGoogleMapsCoords(url)
-      if (coords) {
-        return {
-          latitude: coords.lat,
-          longitude: coords.lng,
-          formattedAddress: formatLocation(activity) ?? ''
+    for (const url of urls) {
+      if (
+        url.includes('maps.google') ||
+        url.includes('goo.gl/maps') ||
+        url.includes('maps.app.goo.gl') ||
+        url.includes('google.com/maps')
+      ) {
+        const coords = extractGoogleMapsCoords(url)
+        if (coords) {
+          return {
+            latitude: coords.lat,
+            longitude: coords.lng,
+            formattedAddress: formatLocation(activity) ?? ''
+          }
         }
       }
     }

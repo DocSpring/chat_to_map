@@ -9,7 +9,13 @@ import { writeFile } from 'node:fs/promises'
 import { filterGeocoded } from '../../geocoder/index'
 import { formatLocation, type GeocodedActivity } from '../../types'
 import type { CLIArgs } from '../args'
-import { formatActivityHeader, initCommandContext, truncate } from '../helpers'
+import {
+  formatActivityHeader,
+  initCommandContext,
+  type OutputMessage,
+  toOutputMessages,
+  truncate
+} from '../helpers'
 import type { Logger } from '../logger'
 import { stepGeocode } from '../steps/geocode'
 import { StepRunner } from '../steps/runner'
@@ -24,8 +30,8 @@ interface GeocodeOutput {
   activities: Array<{
     activity: string
     category: string
-    sender: string
-    timestamp: string
+    messages: OutputMessage[]
+    mentionCount: number
     venue: string | null
     city: string | null
     country: string | null
@@ -96,8 +102,8 @@ export async function cmdGeocode(args: CLIArgs, logger: Logger): Promise<void> {
     activities: geocodeResult.activities.map((a) => ({
       activity: a.activity,
       category: a.category,
-      sender: a.sender,
-      timestamp: a.timestamp instanceof Date ? a.timestamp.toISOString() : String(a.timestamp),
+      messages: toOutputMessages(a.messages),
+      mentionCount: a.messages.length,
       venue: a.venue,
       city: a.city,
       country: a.country,

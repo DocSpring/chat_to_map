@@ -11,13 +11,17 @@ function createActivity(
   lng?: number
 ): GeocodedActivity {
   return createTestGeo({
-    messageId: id,
     activity,
     category: category as GeocodedActivity['category'],
     confidence: 0.9,
-    originalMessage: 'Original message',
-    sender: 'Test User',
-    timestamp: new Date('2025-01-15T10:30:00Z'),
+    messages: [
+      {
+        id,
+        sender: 'Test User',
+        timestamp: new Date('2025-01-15T10:30:00Z'),
+        message: 'Original message'
+      }
+    ],
     latitude: lat,
     longitude: lng,
     city: lat ? 'Test Location' : null

@@ -55,11 +55,11 @@ describe('classify command', () => {
     )
     expect(hotAirBalloon).toBeDefined()
     expect(hotAirBalloon?.category).toBeOneOf(['experiences', 'travel'])
-    expect(hotAirBalloon?.sender).toBe('Alice Smith')
+    expect(hotAirBalloon?.messages[0]?.sender).toBe('Alice Smith')
     expect(hotAirBalloon?.funScore).toBe(0.9)
     expect(hotAirBalloon?.interestingScore).toBe(0.9)
     expect(hotAirBalloon?.country).toBe('Turkey')
-    expect(hotAirBalloon?.originalMessage).toMatch(/hot air ballon/i)
+    expect(hotAirBalloon?.messages[0]?.message).toMatch(/hot air ballon/i)
 
     // Check whale safari activity
     // NOTE: AI may choose between valid categories (experiences vs nature), but
@@ -67,7 +67,7 @@ describe('classify command', () => {
     const whaleSafari = activities.find((a) => a.activity.toLowerCase().includes('whale'))
     expect(whaleSafari).toBeDefined()
     expect(whaleSafari?.category).toBeOneOf(['experiences', 'nature'])
-    expect(whaleSafari?.sender).toBe('John Smith')
+    expect(whaleSafari?.messages[0]?.sender).toBe('John Smith')
     expect(whaleSafari?.venue).toBe('Auckland Whale & Dolphin Safari')
     expect(whaleSafari?.city).toBe('Auckland')
     expect(whaleSafari?.country).toBe('New Zealand')
@@ -76,28 +76,28 @@ describe('classify command', () => {
     const prinzhorn = activities.find((a) => a.activity.includes('Prinzhorn'))
     expect(prinzhorn).toBeDefined()
     expect(prinzhorn?.category).toBeOneOf(['culture', 'arts'])
-    expect(prinzhorn?.sender).toBe('Alice Smith')
+    expect(prinzhorn?.messages[0]?.sender).toBe('Alice Smith')
     expect(prinzhorn?.country).toBe('Germany')
 
     // Check Bay of Islands
     const bayOfIslands = activities.find((a) => a.activity.includes('Bay of Islands'))
     expect(bayOfIslands).toBeDefined()
     expect(bayOfIslands?.category).toBe('travel')
-    expect(bayOfIslands?.sender).toBe('Alice Smith')
+    expect(bayOfIslands?.messages[0]?.sender).toBe('Alice Smith')
     expect(bayOfIslands?.country).toBe('New Zealand')
 
     // Check Yellowstone hiking
     const yellowstone = activities.find((a) => a.activity.includes('Yellowstone'))
     expect(yellowstone).toBeDefined()
     expect(yellowstone?.category).toBe('nature')
-    expect(yellowstone?.sender).toBe('John Smith')
+    expect(yellowstone?.messages[0]?.sender).toBe('John Smith')
     expect(yellowstone?.venue).toMatch(/Yellowstone/i)
 
     // Check Karangahake Gorge
     const karangahake = activities.find((a) => a.activity.includes('Karangahake'))
     expect(karangahake).toBeDefined()
     expect(karangahake?.category).toBe('nature')
-    expect(karangahake?.sender).toBe('John Smith')
+    expect(karangahake?.messages[0]?.sender).toBe('John Smith')
     expect(karangahake?.country).toBe('New Zealand')
   })
 
@@ -218,8 +218,8 @@ describe('classify command', () => {
     expect(yellowstone).toBeDefined()
     expect(yellowstone?.category).toBe('nature')
     // The original message only had the tinyurl - no mention of Yellowstone
-    expect(yellowstone?.originalMessage).toContain('tinyurl.com')
-    expect(yellowstone?.originalMessage).not.toContain('Yellowstone')
+    expect(yellowstone?.messages[0]?.message).toContain('tinyurl.com')
+    expect(yellowstone?.messages[0]?.message).not.toContain('Yellowstone')
   })
 
   it('classifies activities with correct categories', () => {

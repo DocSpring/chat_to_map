@@ -41,13 +41,17 @@ function createActivity(
   lng?: number
 ): GeocodedActivity {
   return createTestGeo({
-    messageId: id,
     activity,
     category: 'food',
     confidence: 0.9,
-    originalMessage: 'Original message',
-    sender: 'Test User',
-    timestamp: new Date('2025-01-15T10:30:00Z'),
+    messages: [
+      {
+        id,
+        sender: 'Test User',
+        timestamp: new Date('2025-01-15T10:30:00Z'),
+        message: 'Original message'
+      }
+    ],
     latitude: lat,
     longitude: lng,
     city: lat ? 'Test Location' : null
@@ -177,10 +181,20 @@ describe('Excel Export', () => {
 
     it('truncates long messages', async () => {
       const longMessage = 'A'.repeat(600)
-      const activity: GeocodedActivity = {
-        ...createActivity(1, 'Test', 41.9, 12.5),
-        originalMessage: longMessage
-      }
+      const activity: GeocodedActivity = createTestGeo({
+        activity: 'Test',
+        latitude: 41.9,
+        longitude: 12.5,
+        messages: [
+          {
+            id: 1,
+            sender: 'Test User',
+            timestamp: new Date('2025-01-15T10:30:00Z'),
+            message: longMessage
+          }
+        ],
+        city: 'Test Location'
+      })
 
       await exportToExcel([activity])
 
@@ -189,10 +203,20 @@ describe('Excel Export', () => {
     })
 
     it('replaces newlines in messages', async () => {
-      const activity: GeocodedActivity = {
-        ...createActivity(1, 'Test', 41.9, 12.5),
-        originalMessage: 'Line 1\nLine 2'
-      }
+      const activity: GeocodedActivity = createTestGeo({
+        activity: 'Test',
+        latitude: 41.9,
+        longitude: 12.5,
+        messages: [
+          {
+            id: 1,
+            sender: 'Test User',
+            timestamp: new Date('2025-01-15T10:30:00Z'),
+            message: 'Line 1\nLine 2'
+          }
+        ],
+        city: 'Test Location'
+      })
 
       await exportToExcel([activity])
 

@@ -8,7 +8,12 @@
 import { writeFile } from 'node:fs/promises'
 import { type ClassifiedActivity, formatLocation } from '../../types'
 import type { CLIArgs } from '../args'
-import { formatActivityHeader, initCommandContext } from '../helpers'
+import {
+  formatActivityHeader,
+  initCommandContext,
+  type OutputMessage,
+  toOutputMessages
+} from '../helpers'
 import type { Logger } from '../logger'
 import { stepClassify } from '../steps/classify'
 import { StepRunner } from '../steps/runner'
@@ -16,8 +21,8 @@ import { StepRunner } from '../steps/runner'
 export interface ClassifyOutputActivity {
   activity: string
   category: string
-  sender: string
-  timestamp: string
+  messages: OutputMessage[]
+  mentionCount: number
   action: string | null
   actionOriginal: string | null
   object: string | null
@@ -47,8 +52,8 @@ export function toOutputActivity(a: ClassifiedActivity): ClassifyOutputActivity 
   return {
     activity: a.activity,
     category: a.category,
-    sender: a.sender,
-    timestamp: a.timestamp instanceof Date ? a.timestamp.toISOString() : String(a.timestamp),
+    messages: toOutputMessages(a.messages),
+    mentionCount: a.messages.length,
     action: a.action,
     actionOriginal: a.actionOriginal,
     object: a.object,

@@ -82,12 +82,12 @@ describe('Classifier Pronoun Resolution', () => {
 
     expect(activity.action).toBe('visit')
     expect(activity.object).toBeOneOf(['person', 'friend'])
-    expect(activity.messageId).toBe(5)
-    expect(activity.sender).toBe('Bob Jones')
-    expect(activity.originalMessage).toBe('Can we visit her on Wednesday, please?')
+    expect(activity.messages[0]?.id).toBe(5)
+    expect(activity.messages[0]?.sender).toBe('Bob Jones')
+    expect(activity.messages[0]?.message).toBe('Can we visit her on Wednesday, please?')
     // AI may resolve "her" to "Sarah" or keep it as "her" depending on prompt
     expect(activity.activity.toLowerCase()).toContain('visit')
     // Timestamp is timezone-dependent, just verify it's a valid date
-    expect(activity.timestamp).toBeInstanceOf(Date)
+    expect(activity.messages[0]?.timestamp).toBeInstanceOf(Date)
   })
 })

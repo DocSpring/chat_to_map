@@ -65,16 +65,20 @@ function toClassifiedActivity(
   const score = interestingScore * 2 + funScore
 
   const activity = {
-    messageId: candidate.messageId,
     activity: capitalizedTitle,
     funScore,
     interestingScore,
     score,
     category: normalizeCategory(response.cat),
     confidence: response.conf,
-    originalMessage: candidate.content,
-    sender: candidate.sender,
-    timestamp: candidate.timestamp,
+    messages: [
+      {
+        id: candidate.messageId,
+        timestamp: candidate.timestamp,
+        sender: candidate.sender,
+        message: candidate.content
+      }
+    ],
     isGeneric: response.gen,
     isCompound: response.com,
     action: response.act,

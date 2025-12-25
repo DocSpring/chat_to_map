@@ -188,7 +188,7 @@ describe('geocode command', () => {
 
     // Original classification fields should be preserved (AI may classify as experiences or nature)
     expect(whaleSafari?.category).toBeOneOf(['experiences', 'nature'])
-    expect(whaleSafari?.sender).toBe('John Smith')
+    expect(whaleSafari?.messages[0]?.sender).toBe('John Smith')
     expect(whaleSafari?.venue).toBe('Auckland Whale & Dolphin Safari')
     expect(whaleSafari?.city).toBe('Auckland')
     expect(whaleSafari?.country).toBe('New Zealand')
@@ -207,7 +207,7 @@ describe('geocode command', () => {
     for (const a of noCoords) {
       expect(a.activity).toBeTruthy()
       expect(a.category).toBeTruthy()
-      expect(a.sender).toBeTruthy()
+      expect(a.messages[0]?.sender).toBeTruthy()
     }
   })
 })

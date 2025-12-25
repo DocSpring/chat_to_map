@@ -142,7 +142,7 @@ export type {
   ActivityLinkMetadata,
   ActivityLinkResult,
   ActivityLinkType,
-  AggregatedActivity,
+  ActivityMessage,
   ApiError,
   ApiErrorType,
   CandidateMessage,
@@ -173,7 +173,6 @@ export type {
   Result,
   SemanticSearchConfig,
   SocialPlatform,
-  SourceMessage,
   UrlType,
   WhatsAppFormat
 } from './types'

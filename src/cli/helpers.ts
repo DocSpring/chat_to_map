@@ -6,7 +6,7 @@
 
 import { basename } from 'node:path'
 import { VERSION } from '../index'
-import { type ActivityCategory, CATEGORY_EMOJI } from '../types'
+import { type ActivityCategory, type ActivityMessage, CATEGORY_EMOJI } from '../types'
 import type { CLIArgs } from './args'
 import type { Logger } from './logger'
 import { initContext, type PipelineContext } from './steps/context'
@@ -27,6 +27,29 @@ export function getCategoryEmoji(category: ActivityCategory): string {
 export function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+/**
+ * Output format for messages in JSON exports.
+ */
+export interface OutputMessage {
+  id: number
+  sender: string
+  timestamp: string
+  message: string
+}
+
+/**
+ * Convert ActivityMessage array to JSON output format.
+ * Shared between classify and geocode commands.
+ */
+export function toOutputMessages(messages: readonly ActivityMessage[]): OutputMessage[] {
+  return messages.map((m) => ({
+    id: m.id,
+    sender: m.sender,
+    timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : String(m.timestamp),
+    message: m.message
+  }))
 }
 
 export function truncate(text: string, maxLength: number): string {
@@ -120,8 +143,7 @@ export function createEmbeddingProgressLogger(logger: Logger, verb: string) {
 interface ActivityLike {
   readonly activity: string
   readonly category: ActivityCategory
-  readonly sender: string
-  readonly timestamp: Date | string
+  readonly messages: readonly { sender: string; timestamp: Date }[]
 }
 
 /**
@@ -135,9 +157,13 @@ export function formatActivityHeader(
   const emoji = getCategoryEmoji(activity.category)
   const activityText = truncate(activity.activity, 60)
   const category = activity.category.charAt(0).toUpperCase() + activity.category.slice(1)
+  const firstMessage = activity.messages[0]
+  const mentionCount = activity.messages.length
+
+  const mentionSuffix = mentionCount > 1 ? ` (x${mentionCount})` : ''
 
   return {
-    line1: `${index + 1}. ${emoji}  "${activityText}"`,
-    line2: `   → ${category} • ${activity.sender} • ${formatDate(activity.timestamp)}`
+    line1: `${index + 1}. ${emoji}  "${activityText}"${mentionSuffix}`,
+    line2: `   → ${category} • ${firstMessage?.sender ?? 'Unknown'} • ${formatDate(firstMessage?.timestamp ?? new Date())}`
   }
 }

@@ -96,8 +96,10 @@ function buildCluster(
   clusterKey: string
 ): ActivityCluster {
   const representative = selectRepresentative(activities)
-  const timestamps = activities.map((a) => a.timestamp)
-  const senders = [...new Set(activities.map((a) => a.sender))]
+  // Collect all timestamps from all messages across all activities
+  const timestamps = activities.flatMap((a) => a.messages.map((m) => m.timestamp))
+  // Collect all unique senders from all messages across all activities
+  const senders = [...new Set(activities.flatMap((a) => a.messages.map((m) => m.sender)))]
 
   return {
     representative,

@@ -17,15 +17,19 @@ import {
 describe('toOutputActivity', () => {
   it('maps all ClassifiedActivity fields to output format', () => {
     const activity: ClassifiedActivity = createActivity({
-      messageId: 123,
       activity: 'hike in Karangahake Gorge',
       funScore: 0.9,
       interestingScore: 0.8,
       category: 'nature',
       confidence: 0.95,
-      originalMessage: 'We should do the Karangahake Gorge hike!',
-      sender: 'John Smith',
-      timestamp: new Date('2024-10-11T01:34:03.000Z'),
+      messages: [
+        {
+          id: 123,
+          sender: 'John Smith',
+          timestamp: new Date('2024-10-11T01:34:03.000Z'),
+          message: 'We should do the Karangahake Gorge hike!'
+        }
+      ],
       isGeneric: false,
       isCompound: false,
       action: 'hike',
@@ -42,8 +46,11 @@ describe('toOutputActivity', () => {
 
     expect(output.activity).toBe('hike in Karangahake Gorge')
     expect(output.category).toBe('nature')
-    expect(output.sender).toBe('John Smith')
-    expect(output.timestamp).toBe('2024-10-11T01:34:03.000Z')
+    expect(output.messages).toHaveLength(1)
+    expect(output.messages[0]?.sender).toBe('John Smith')
+    expect(output.messages[0]?.timestamp).toBe('2024-10-11T01:34:03.000Z')
+    expect(output.messages[0]?.message).toBe('We should do the Karangahake Gorge hike!')
+    expect(output.mentionCount).toBe(1)
     expect(output.action).toBe('hike')
     expect(output.actionOriginal).toBe('hike')
     expect(output.object).toBeNull()
@@ -60,22 +67,34 @@ describe('toOutputActivity', () => {
 
   it('converts Date timestamp to ISO string', () => {
     const activity: ClassifiedActivity = createActivity({
-      messageId: 1,
       activity: 'test',
-      timestamp: new Date('2025-01-15T10:30:00.000Z')
+      messages: [
+        {
+          id: 1,
+          sender: 'Test User',
+          timestamp: new Date('2025-01-15T10:30:00.000Z'),
+          message: 'test'
+        }
+      ]
     })
 
     const output = toOutputActivity(activity)
 
-    expect(output.timestamp).toBe('2025-01-15T10:30:00.000Z')
+    expect(output.messages[0]?.timestamp).toBe('2025-01-15T10:30:00.000Z')
   })
 
   it('includes action and object when present', () => {
     const activity: ClassifiedActivity = createActivity({
-      messageId: 2,
       activity: 'watch a movie',
       category: 'entertainment',
-      originalMessage: "Let's watch a movie",
+      messages: [
+        {
+          id: 2,
+          sender: 'User',
+          timestamp: new Date(),
+          message: "Let's watch a movie"
+        }
+      ],
       action: 'watch',
       actionOriginal: 'watch',
       object: 'movie',
@@ -86,6 +105,25 @@ describe('toOutputActivity', () => {
 
     expect(output.action).toBe('watch')
     expect(output.object).toBe('movie')
+  })
+
+  it('handles multiple messages (merged duplicates)', () => {
+    const activity: ClassifiedActivity = createActivity({
+      activity: 'go hiking',
+      messages: [
+        { id: 1, sender: 'Alice', timestamp: new Date('2024-01-01'), message: 'lets hike' },
+        { id: 2, sender: 'Bob', timestamp: new Date('2024-06-01'), message: 'hiking?' },
+        { id: 3, sender: 'Charlie', timestamp: new Date('2024-12-01'), message: 'hike time' }
+      ]
+    })
+
+    const output = toOutputActivity(activity)
+
+    expect(output.messages).toHaveLength(3)
+    expect(output.mentionCount).toBe(3)
+    expect(output.messages[0]?.sender).toBe('Alice')
+    expect(output.messages[1]?.sender).toBe('Bob')
+    expect(output.messages[2]?.sender).toBe('Charlie')
   })
 })
 
@@ -100,15 +138,19 @@ describe('buildClassifyOutput', () => {
 
     const activities: ClassifiedActivity[] = [
       createActivity({
-        messageId: 1,
         activity: 'hike in the mountains',
         funScore: 0.9,
         interestingScore: 0.8,
         category: 'nature',
         confidence: 0.95,
-        originalMessage: "Let's go hiking",
-        sender: 'Bob',
-        timestamp: new Date('2025-01-10T09:00:00.000Z'),
+        messages: [
+          {
+            id: 1,
+            sender: 'Bob',
+            timestamp: new Date('2025-01-10T09:00:00.000Z'),
+            message: "Let's go hiking"
+          }
+        ],
         isGeneric: false,
         action: 'hike',
         actionOriginal: 'hiking',
@@ -138,17 +180,13 @@ describe('buildClassifyOutput', () => {
 
     const activities: ClassifiedActivity[] = [
       createActivity({
-        messageId: 1,
         activity: 'activity one',
-        originalMessage: 'msg 1',
-        sender: 'A'
+        messages: [{ id: 1, sender: 'A', timestamp: new Date(), message: 'msg 1' }]
       }),
       createActivity({
-        messageId: 2,
         activity: 'activity two',
         category: 'food',
-        originalMessage: 'msg 2',
-        sender: 'B',
+        messages: [{ id: 2, sender: 'B', timestamp: new Date(), message: 'msg 2' }],
         isGeneric: false,
         action: 'eat',
         actionOriginal: 'eat',

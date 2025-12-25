@@ -56,11 +56,16 @@ function createCandidate(id: number, content: string): CandidateMessage {
 
 function createClassifiedActivity(id: number, activity: string, city: string): ClassifiedActivity {
   return createActivity({
-    messageId: id,
     activity,
     category: 'food',
-    originalMessage: `Lets go to ${city}`,
-    timestamp: new Date('2025-01-15T10:30:00Z'),
+    messages: [
+      {
+        id,
+        sender: 'Test User',
+        timestamp: new Date('2025-01-15T10:30:00Z'),
+        message: `Lets go to ${city}`
+      }
+    ],
     city
   })
 }

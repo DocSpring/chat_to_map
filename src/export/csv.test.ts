@@ -11,13 +11,17 @@ function createActivity(
   lng?: number
 ): GeocodedActivity {
   return createTestGeo({
-    messageId: id,
     activity,
     category: 'food',
     confidence: 0.9,
-    originalMessage: 'Original message content',
-    sender: 'Test User',
-    timestamp: new Date('2025-01-15T10:30:00Z'),
+    messages: [
+      {
+        id,
+        sender: 'Test User',
+        timestamp: new Date('2025-01-15T10:30:00Z'),
+        message: 'Original message content'
+      }
+    ],
     latitude: lat,
     longitude: lng,
     city: city ?? null
@@ -169,10 +173,17 @@ describe('CSV Export', () => {
 
     it('truncates long messages', () => {
       const longMessage = 'A'.repeat(600)
-      const activity: GeocodedActivity = {
-        ...createActivity(1, 'Test'),
-        originalMessage: longMessage
-      }
+      const activity: GeocodedActivity = createTestGeo({
+        activity: 'Test',
+        messages: [
+          {
+            id: 1,
+            sender: 'Test User',
+            timestamp: new Date('2025-01-15T10:30:00Z'),
+            message: longMessage
+          }
+        ]
+      })
 
       const csv = exportToCSV([activity])
 
@@ -181,10 +192,17 @@ describe('CSV Export', () => {
     })
 
     it('replaces newlines in original message', () => {
-      const activity: GeocodedActivity = {
-        ...createActivity(1, 'Test'),
-        originalMessage: 'Line 1\nLine 2\nLine 3'
-      }
+      const activity: GeocodedActivity = createTestGeo({
+        activity: 'Test',
+        messages: [
+          {
+            id: 1,
+            sender: 'Test User',
+            timestamp: new Date('2025-01-15T10:30:00Z'),
+            message: 'Line 1\nLine 2\nLine 3'
+          }
+        ]
+      })
 
       const csv = exportToCSV([activity])
 

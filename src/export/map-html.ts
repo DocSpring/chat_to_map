@@ -5,6 +5,7 @@
  */
 
 import { CATEGORY_EMOJI, formatLocation, type GeocodedActivity, type MapConfig } from '../types'
+import { formatDate } from './utils'
 
 const DEFAULT_ZOOM = 6
 const MARKER_COLORS = [
@@ -78,7 +79,7 @@ function toMapPoints(
   config: MapConfig
 ): { points: MapPoint[]; senderColors: Map<string, string> } {
   // Get unique senders and assign colors
-  const senders = [...new Set(suggestions.map((s) => s.sender))]
+  const senders = [...new Set(suggestions.flatMap((s) => s.messages.map((m) => m.sender)))]
   const senderColors = new Map<string, string>()
 
   for (let i = 0; i < senders.length; i++) {
@@ -96,18 +97,20 @@ function toMapPoints(
       continue
     }
 
-    const color = config.colorBySender !== false ? (senderColors.get(s.sender) ?? 'blue') : 'blue'
+    const firstMessage = s.messages[0]
+    const sender = firstMessage?.sender ?? 'Unknown'
+    const color = config.colorBySender !== false ? (senderColors.get(sender) ?? 'blue') : 'blue'
 
     points.push({
       lat: s.latitude,
       lng: s.longitude,
-      sender: s.sender,
+      sender,
       activity: s.activity.slice(0, 100),
       activityId: s.activityId,
       location: formatLocation(s) ?? '',
-      date: s.timestamp.toISOString().split('T')[0] ?? '',
+      date: formatDate(firstMessage?.timestamp),
       score: s.score,
-      url: extractUrl(s.originalMessage),
+      url: firstMessage ? extractUrl(firstMessage.message) : null,
       color,
       imagePath: config.imagePaths?.get(s.activityId) ?? null,
       placeId: s.placeId ?? null
@@ -187,7 +190,9 @@ function generateListOnlyHTML(suggestions: readonly GeocodedActivity[], config: 
   const listItems = suggestions
     .map((s) => {
       const emoji = CATEGORY_EMOJI[s.category] ?? '📍'
-      const date = s.timestamp.toISOString().split('T')[0]
+      const firstMessage = s.messages[0]
+      const date = formatDate(firstMessage?.timestamp)
+      const sender = firstMessage?.sender ?? 'Unknown'
       const loc = formatLocation(s)
       const location = loc ? `<span class="location">${escapeJS(loc)}</span>` : ''
       return `
@@ -195,7 +200,7 @@ function generateListOnlyHTML(suggestions: readonly GeocodedActivity[], config: 
           <span class="emoji">${emoji}</span>
           <div class="content">
             <div class="activity">${escapeJS(s.activity)}</div>
-            <div class="meta">${date} • ${escapeJS(s.sender)}${location ? ` • ${location}` : ''}</div>
+            <div class="meta">${date} • ${escapeJS(sender)}${location ? ` • ${location}` : ''}</div>
           </div>
         </div>
       `

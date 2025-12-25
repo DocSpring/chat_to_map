@@ -12,15 +12,19 @@ interface PreviewStats {
   fromCache: boolean
 }
 
+interface PreviewActivityMessage {
+  id: number
+  sender: string
+  timestamp: string
+  message: string
+}
+
 interface PreviewActivity {
-  messageId: number
   activity: string
   category: string
-  sender: string
+  messages: PreviewActivityMessage[]
   funScore: number
   interestingScore: number
-  confidence: number
-  originalMessage: string
   venue: string | null
   city: string | null
 }
@@ -65,23 +69,22 @@ describe('preview command', () => {
     )
     expect(hotAirBalloon).toBeDefined()
     expect(hotAirBalloon?.category).toBeOneOf(['travel', 'experiences'])
-    expect(hotAirBalloon?.sender).toBe('Alice Smith')
+    expect(hotAirBalloon?.messages[0]?.sender).toBe('Alice Smith')
     expect(hotAirBalloon?.funScore).toBeGreaterThanOrEqual(0.8)
     expect(hotAirBalloon?.interestingScore).toBeGreaterThanOrEqual(0.8)
-    expect(hotAirBalloon?.confidence).toBeGreaterThanOrEqual(0.8)
 
     // Check whale safari activity
     const whaleSafari = activities.find((a) => a.activity.toLowerCase().includes('whale'))
     expect(whaleSafari).toBeDefined()
     expect(whaleSafari?.category).toBeOneOf(['nature', 'experiences'])
-    expect(whaleSafari?.sender).toBe('John Smith')
+    expect(whaleSafari?.messages[0]?.sender).toBe('John Smith')
     expect(whaleSafari?.city).toBe('Auckland')
 
     // Check Bay of Islands activity
     const bayOfIslands = activities.find((a) => a.activity.includes('Bay of Islands'))
     expect(bayOfIslands).toBeDefined()
     expect(bayOfIslands?.category).toBe('travel')
-    expect(bayOfIslands?.sender).toBe('Alice Smith')
+    expect(bayOfIslands?.messages[0]?.sender).toBe('Alice Smith')
   })
 
   it('shows classified activities in output', { timeout: 60000 }, () => {

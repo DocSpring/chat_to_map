@@ -4,7 +4,12 @@
  * Utilities for testing that require special handling of external dependencies.
  */
 
-import type { ActivityCategory, CandidateMessage, ClassifiedActivity } from '../types'
+import type {
+  ActivityCategory,
+  ActivityMessage,
+  CandidateMessage,
+  ClassifiedActivity
+} from '../types'
 import { generateActivityId } from '../types/activity-id'
 import type { GeocodedActivity } from '../types/geocoder'
 
@@ -33,31 +38,39 @@ export function createCandidate(
 
 /**
  * Create a ClassifiedActivity with default values for testing.
- * Only requires the fields that vary between tests.
+ *
+ * Either provide `messages` array directly, or the helper will create
+ * a default single-message array using the `activity` text.
  */
 export function createActivity(
   overrides: Partial<ClassifiedActivity> & {
-    messageId: number
     activity: string
   }
 ): ClassifiedActivity {
-  const { messageId, activity, activityId: providedId, ...rest } = overrides
+  const { activity, activityId: providedId, messages: providedMessages, ...rest } = overrides
 
   const funScore = (rest as Partial<ClassifiedActivity>).funScore ?? 0.7
   const interestingScore = (rest as Partial<ClassifiedActivity>).interestingScore ?? 0.5
   const score = (rest as Partial<ClassifiedActivity>).score ?? interestingScore * 2 + funScore
 
+  // Use provided messages or create a default single-message array
+  const messages: readonly ActivityMessage[] = providedMessages ?? [
+    {
+      id: 1,
+      timestamp: new Date('2025-01-01'),
+      sender: 'Test User',
+      message: activity
+    }
+  ]
+
   const base = {
-    messageId,
     activity,
     funScore,
     interestingScore,
     score,
     category: 'other' as ActivityCategory,
     confidence: 0.9,
-    originalMessage: activity,
-    sender: 'Test User',
-    timestamp: new Date('2025-01-01'),
+    messages,
     isGeneric: false,
     isCompound: false,
     action: null,
@@ -83,7 +96,6 @@ export function createActivity(
  */
 export function createGeocodedActivity(
   overrides: Partial<GeocodedActivity> & {
-    messageId: number
     activity: string
   }
 ): GeocodedActivity {

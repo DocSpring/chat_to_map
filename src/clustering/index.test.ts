@@ -23,9 +23,7 @@ function createActivity(
   overrides: Partial<ClassifiedActivity> = {}
 ): ClassifiedActivity {
   return createTestActivity({
-    messageId: Math.floor(Math.random() * 10000),
     activity,
-    originalMessage: `We should ${activity.toLowerCase()}`,
     ...overrides
   })
 }
@@ -198,9 +196,20 @@ describe('clusterActivities', () => {
       const lateDate = new Date('2025-12-31')
 
       const activities = [
-        createActivity('Go biking', { action: 'bike', timestamp: new Date('2025-06-15') }),
-        createActivity('Ride a bike', { action: 'bike', timestamp: earlyDate }),
-        createActivity('Go for a bike ride', { action: 'bike', timestamp: lateDate })
+        createActivity('Go biking', {
+          action: 'bike',
+          messages: [
+            { id: 1, sender: 'User', timestamp: new Date('2025-06-15'), message: 'biking' }
+          ]
+        }),
+        createActivity('Ride a bike', {
+          action: 'bike',
+          messages: [{ id: 2, sender: 'User', timestamp: earlyDate, message: 'ride' }]
+        }),
+        createActivity('Go for a bike ride', {
+          action: 'bike',
+          messages: [{ id: 3, sender: 'User', timestamp: lateDate, message: 'ride' }]
+        })
       ]
 
       const result = clusterActivities(activities)
@@ -211,9 +220,18 @@ describe('clusterActivities', () => {
 
     it('should collect all unique senders', () => {
       const activities = [
-        createActivity('Go biking', { action: 'bike', sender: 'Alice' }),
-        createActivity('Ride a bike', { action: 'bike', sender: 'Bob' }),
-        createActivity('Go for a bike ride', { action: 'bike', sender: 'Alice' })
+        createActivity('Go biking', {
+          action: 'bike',
+          messages: [{ id: 1, sender: 'Alice', timestamp: new Date(), message: 'biking' }]
+        }),
+        createActivity('Ride a bike', {
+          action: 'bike',
+          messages: [{ id: 2, sender: 'Bob', timestamp: new Date(), message: 'ride' }]
+        }),
+        createActivity('Go for a bike ride', {
+          action: 'bike',
+          messages: [{ id: 3, sender: 'Alice', timestamp: new Date(), message: 'ride' }]
+        })
       ]
 
       const result = clusterActivities(activities)
@@ -256,8 +274,14 @@ describe('clusterActivities', () => {
 
     it('should sort by first mentioned when instance counts are equal', () => {
       const activities = [
-        createActivity('Go swimming', { action: 'swim', timestamp: new Date('2025-06-01') }),
-        createActivity('Go biking', { action: 'bike', timestamp: new Date('2025-01-01') })
+        createActivity('Go swimming', {
+          action: 'swim',
+          messages: [{ id: 1, sender: 'User', timestamp: new Date('2025-06-01'), message: 'swim' }]
+        }),
+        createActivity('Go biking', {
+          action: 'bike',
+          messages: [{ id: 2, sender: 'User', timestamp: new Date('2025-01-01'), message: 'bike' }]
+        })
       ]
 
       const result = clusterActivities(activities)
@@ -343,16 +367,28 @@ describe('clusterActivities', () => {
     function createDeterministicSuggestion(
       id: number,
       activity: string,
-      overrides: Partial<ClassifiedActivity> = {}
+      overrides: Partial<ClassifiedActivity> & {
+        sender?: string
+        timestamp?: Date
+      } = {}
     ): ClassifiedActivity {
+      const {
+        sender = 'Test User',
+        timestamp = new Date('2025-01-15T10:00:00Z'),
+        ...rest
+      } = overrides
       return createTestActivity({
-        messageId: id,
         activity,
         category: 'other',
-        originalMessage: `We should ${activity.toLowerCase()}`,
-        sender: 'Test User',
-        timestamp: new Date('2025-01-15T10:00:00Z'),
-        ...overrides
+        messages: [
+          {
+            id,
+            sender,
+            timestamp,
+            message: `We should ${activity.toLowerCase()}`
+          }
+        ],
+        ...rest
       })
     }
 
@@ -390,7 +426,7 @@ describe('clusterActivities', () => {
                   "action": "hike",
                   "actionOriginal": "hiking",
                   "activity": "Go hiking",
-                  "activityId": "c2440db37b9a6de1",
+                  "activityId": "fb2217e38bf85041",
                   "category": "other",
                   "city": null,
                   "confidence": 0.9,
@@ -400,21 +436,25 @@ describe('clusterActivities', () => {
                   "interestingScore": 0.5,
                   "isCompound": false,
                   "isGeneric": false,
-                  "messageId": 1,
+                  "messages": [
+                    {
+                      "id": 1,
+                      "message": "We should go hiking",
+                      "sender": "Alice",
+                      "timestamp": 2025-01-10T10:00:00.000Z,
+                    },
+                  ],
                   "object": null,
                   "objectOriginal": null,
-                  "originalMessage": "We should go hiking",
                   "region": null,
                   "score": 1.7,
-                  "sender": "Alice",
-                  "timestamp": 2025-01-10T10:00:00.000Z,
                   "venue": null,
                 },
                 {
                   "action": "hike",
                   "actionOriginal": "tramping",
                   "activity": "Go tramping",
-                  "activityId": "3c155fce31363843",
+                  "activityId": "96b00e2d19b98213",
                   "category": "other",
                   "city": null,
                   "confidence": 0.9,
@@ -424,14 +464,18 @@ describe('clusterActivities', () => {
                   "interestingScore": 0.5,
                   "isCompound": false,
                   "isGeneric": false,
-                  "messageId": 2,
+                  "messages": [
+                    {
+                      "id": 2,
+                      "message": "We should go tramping",
+                      "sender": "Bob",
+                      "timestamp": 2025-01-20T10:00:00.000Z,
+                    },
+                  ],
                   "object": null,
                   "objectOriginal": null,
-                  "originalMessage": "We should go tramping",
                   "region": null,
                   "score": 1.7,
-                  "sender": "Bob",
-                  "timestamp": 2025-01-20T10:00:00.000Z,
                   "venue": null,
                 },
               ],
@@ -440,7 +484,7 @@ describe('clusterActivities', () => {
                 "action": "hike",
                 "actionOriginal": "hiking",
                 "activity": "Go hiking",
-                "activityId": "c2440db37b9a6de1",
+                "activityId": "fb2217e38bf85041",
                 "category": "other",
                 "city": null,
                 "confidence": 0.9,
@@ -450,14 +494,18 @@ describe('clusterActivities', () => {
                 "interestingScore": 0.5,
                 "isCompound": false,
                 "isGeneric": false,
-                "messageId": 1,
+                "messages": [
+                  {
+                    "id": 1,
+                    "message": "We should go hiking",
+                    "sender": "Alice",
+                    "timestamp": 2025-01-10T10:00:00.000Z,
+                  },
+                ],
                 "object": null,
                 "objectOriginal": null,
-                "originalMessage": "We should go hiking",
                 "region": null,
                 "score": 1.7,
-                "sender": "Alice",
-                "timestamp": 2025-01-10T10:00:00.000Z,
                 "venue": null,
               },
             },
@@ -523,7 +571,7 @@ describe('clusterActivities', () => {
                   "action": "hike",
                   "actionOriginal": null,
                   "activity": "Go hiking",
-                  "activityId": "8f13f566cef66522",
+                  "activityId": "686732c1a4e108a0",
                   "category": "other",
                   "city": "Queenstown",
                   "confidence": 0.95,
@@ -533,21 +581,25 @@ describe('clusterActivities', () => {
                   "interestingScore": 0.5,
                   "isCompound": false,
                   "isGeneric": false,
-                  "messageId": 1,
+                  "messages": [
+                    {
+                      "id": 1,
+                      "message": "We should go hiking",
+                      "sender": "Alice",
+                      "timestamp": 2025-01-01T10:00:00.000Z,
+                    },
+                  ],
                   "object": null,
                   "objectOriginal": null,
-                  "originalMessage": "We should go hiking",
                   "region": null,
                   "score": 1.7,
-                  "sender": "Alice",
-                  "timestamp": 2025-01-01T10:00:00.000Z,
                   "venue": null,
                 },
                 {
                   "action": "hike",
                   "actionOriginal": null,
                   "activity": "Tramping trip",
-                  "activityId": "61aeee17d6dd5d43",
+                  "activityId": "3beb21e036c065e4",
                   "category": "other",
                   "city": "Queenstown",
                   "confidence": 0.85,
@@ -557,21 +609,25 @@ describe('clusterActivities', () => {
                   "interestingScore": 0.5,
                   "isCompound": false,
                   "isGeneric": false,
-                  "messageId": 2,
+                  "messages": [
+                    {
+                      "id": 2,
+                      "message": "We should tramping trip",
+                      "sender": "Bob",
+                      "timestamp": 2025-01-15T10:00:00.000Z,
+                    },
+                  ],
                   "object": null,
                   "objectOriginal": null,
-                  "originalMessage": "We should tramping trip",
                   "region": null,
                   "score": 1.7,
-                  "sender": "Bob",
-                  "timestamp": 2025-01-15T10:00:00.000Z,
                   "venue": null,
                 },
                 {
                   "action": "hike",
                   "actionOriginal": null,
                   "activity": "Hike the mountains",
-                  "activityId": "9fc921f41225bf58",
+                  "activityId": "6f4fc35d579fe935",
                   "category": "other",
                   "city": "Queenstown",
                   "confidence": 0.9,
@@ -581,14 +637,18 @@ describe('clusterActivities', () => {
                   "interestingScore": 0.5,
                   "isCompound": false,
                   "isGeneric": false,
-                  "messageId": 3,
+                  "messages": [
+                    {
+                      "id": 3,
+                      "message": "We should hike the mountains",
+                      "sender": "Alice",
+                      "timestamp": 2025-01-20T10:00:00.000Z,
+                    },
+                  ],
                   "object": null,
                   "objectOriginal": null,
-                  "originalMessage": "We should hike the mountains",
                   "region": null,
                   "score": 1.7,
-                  "sender": "Alice",
-                  "timestamp": 2025-01-20T10:00:00.000Z,
                   "venue": null,
                 },
               ],
@@ -597,7 +657,7 @@ describe('clusterActivities', () => {
                 "action": "hike",
                 "actionOriginal": null,
                 "activity": "Go hiking",
-                "activityId": "8f13f566cef66522",
+                "activityId": "686732c1a4e108a0",
                 "category": "other",
                 "city": "Queenstown",
                 "confidence": 0.95,
@@ -607,14 +667,18 @@ describe('clusterActivities', () => {
                 "interestingScore": 0.5,
                 "isCompound": false,
                 "isGeneric": false,
-                "messageId": 1,
+                "messages": [
+                  {
+                    "id": 1,
+                    "message": "We should go hiking",
+                    "sender": "Alice",
+                    "timestamp": 2025-01-01T10:00:00.000Z,
+                  },
+                ],
                 "object": null,
                 "objectOriginal": null,
-                "originalMessage": "We should go hiking",
                 "region": null,
                 "score": 1.7,
-                "sender": "Alice",
-                "timestamp": 2025-01-01T10:00:00.000Z,
                 "venue": null,
               },
             },
@@ -630,7 +694,7 @@ describe('clusterActivities', () => {
                   "action": "eat",
                   "actionOriginal": null,
                   "activity": "Try Kazuya",
-                  "activityId": "30ead98dbdd26946",
+                  "activityId": "5eae0fbecb2c44a1",
                   "category": "food",
                   "city": "Auckland",
                   "confidence": 0.9,
@@ -640,14 +704,18 @@ describe('clusterActivities', () => {
                   "interestingScore": 0.5,
                   "isCompound": false,
                   "isGeneric": false,
-                  "messageId": 4,
+                  "messages": [
+                    {
+                      "id": 4,
+                      "message": "We should try kazuya",
+                      "sender": "Charlie",
+                      "timestamp": 2025-02-01T10:00:00.000Z,
+                    },
+                  ],
                   "object": null,
                   "objectOriginal": null,
-                  "originalMessage": "We should try kazuya",
                   "region": null,
                   "score": 1.7,
-                  "sender": "Charlie",
-                  "timestamp": 2025-02-01T10:00:00.000Z,
                   "venue": "Kazuya",
                 },
               ],
@@ -656,7 +724,7 @@ describe('clusterActivities', () => {
                 "action": "eat",
                 "actionOriginal": null,
                 "activity": "Try Kazuya",
-                "activityId": "30ead98dbdd26946",
+                "activityId": "5eae0fbecb2c44a1",
                 "category": "food",
                 "city": "Auckland",
                 "confidence": 0.9,
@@ -666,14 +734,18 @@ describe('clusterActivities', () => {
                 "interestingScore": 0.5,
                 "isCompound": false,
                 "isGeneric": false,
-                "messageId": 4,
+                "messages": [
+                  {
+                    "id": 4,
+                    "message": "We should try kazuya",
+                    "sender": "Charlie",
+                    "timestamp": 2025-02-01T10:00:00.000Z,
+                  },
+                ],
                 "object": null,
                 "objectOriginal": null,
-                "originalMessage": "We should try kazuya",
                 "region": null,
                 "score": 1.7,
-                "sender": "Charlie",
-                "timestamp": 2025-02-01T10:00:00.000Z,
                 "venue": "Kazuya",
               },
             },
@@ -732,7 +804,7 @@ describe('clusterActivities', () => {
                   "action": "hike",
                   "actionOriginal": null,
                   "activity": "Go hiking",
-                  "activityId": "c2bf7d2dd29405f6",
+                  "activityId": "3ea680935531bfd0",
                   "category": "other",
                   "city": null,
                   "confidence": 0.9,
@@ -742,21 +814,25 @@ describe('clusterActivities', () => {
                   "interestingScore": 0.5,
                   "isCompound": false,
                   "isGeneric": false,
-                  "messageId": 1,
+                  "messages": [
+                    {
+                      "id": 1,
+                      "message": "We should go hiking",
+                      "sender": "Alice",
+                      "timestamp": 2025-01-01T10:00:00.000Z,
+                    },
+                  ],
                   "object": null,
                   "objectOriginal": null,
-                  "originalMessage": "We should go hiking",
                   "region": null,
                   "score": 1.7,
-                  "sender": "Alice",
-                  "timestamp": 2025-01-01T10:00:00.000Z,
                   "venue": null,
                 },
                 {
                   "action": "hike",
                   "actionOriginal": null,
                   "activity": "Tramping",
-                  "activityId": "13cd1bf29bc35ef7",
+                  "activityId": "68333190e60d1cf7",
                   "category": "other",
                   "city": null,
                   "confidence": 0.9,
@@ -766,14 +842,18 @@ describe('clusterActivities', () => {
                   "interestingScore": 0.5,
                   "isCompound": false,
                   "isGeneric": false,
-                  "messageId": 2,
+                  "messages": [
+                    {
+                      "id": 2,
+                      "message": "We should tramping",
+                      "sender": "Bob",
+                      "timestamp": 2025-01-02T10:00:00.000Z,
+                    },
+                  ],
                   "object": null,
                   "objectOriginal": null,
-                  "originalMessage": "We should tramping",
                   "region": null,
                   "score": 1.7,
-                  "sender": "Bob",
-                  "timestamp": 2025-01-02T10:00:00.000Z,
                   "venue": null,
                 },
               ],
@@ -782,7 +862,7 @@ describe('clusterActivities', () => {
                 "action": "hike",
                 "actionOriginal": null,
                 "activity": "Go hiking",
-                "activityId": "c2bf7d2dd29405f6",
+                "activityId": "3ea680935531bfd0",
                 "category": "other",
                 "city": null,
                 "confidence": 0.9,
@@ -792,14 +872,18 @@ describe('clusterActivities', () => {
                 "interestingScore": 0.5,
                 "isCompound": false,
                 "isGeneric": false,
-                "messageId": 1,
+                "messages": [
+                  {
+                    "id": 1,
+                    "message": "We should go hiking",
+                    "sender": "Alice",
+                    "timestamp": 2025-01-01T10:00:00.000Z,
+                  },
+                ],
                 "object": null,
                 "objectOriginal": null,
-                "originalMessage": "We should go hiking",
                 "region": null,
                 "score": 1.7,
-                "sender": "Alice",
-                "timestamp": 2025-01-01T10:00:00.000Z,
                 "venue": null,
               },
             },
@@ -816,7 +900,7 @@ describe('clusterActivities', () => {
                   "action": "travel",
                   "actionOriginal": null,
                   "activity": "Trip to Iceland and see aurora",
-                  "activityId": "0654b209e04b054e",
+                  "activityId": "8dd64643fe710111",
                   "category": "other",
                   "city": null,
                   "confidence": 0.9,
@@ -826,21 +910,25 @@ describe('clusterActivities', () => {
                   "interestingScore": 0.5,
                   "isCompound": true,
                   "isGeneric": false,
-                  "messageId": 3,
+                  "messages": [
+                    {
+                      "id": 3,
+                      "message": "We should trip to iceland and see aurora",
+                      "sender": "Alice",
+                      "timestamp": 2025-01-03T10:00:00.000Z,
+                    },
+                  ],
                   "object": null,
                   "objectOriginal": null,
-                  "originalMessage": "We should trip to iceland and see aurora",
                   "region": null,
                   "score": 1.7,
-                  "sender": "Alice",
-                  "timestamp": 2025-01-03T10:00:00.000Z,
                   "venue": null,
                 },
                 {
                   "action": "travel",
                   "actionOriginal": null,
                   "activity": "Trip to Iceland and see aurora",
-                  "activityId": "91ccd0e64d1724c2",
+                  "activityId": "8dd64643fe710111",
                   "category": "other",
                   "city": null,
                   "confidence": 0.9,
@@ -850,14 +938,18 @@ describe('clusterActivities', () => {
                   "interestingScore": 0.5,
                   "isCompound": true,
                   "isGeneric": false,
-                  "messageId": 4,
+                  "messages": [
+                    {
+                      "id": 4,
+                      "message": "We should trip to iceland and see aurora",
+                      "sender": "Charlie",
+                      "timestamp": 2025-01-04T10:00:00.000Z,
+                    },
+                  ],
                   "object": null,
                   "objectOriginal": null,
-                  "originalMessage": "We should trip to iceland and see aurora",
                   "region": null,
                   "score": 1.7,
-                  "sender": "Charlie",
-                  "timestamp": 2025-01-04T10:00:00.000Z,
                   "venue": null,
                 },
               ],
@@ -866,7 +958,7 @@ describe('clusterActivities', () => {
                 "action": "travel",
                 "actionOriginal": null,
                 "activity": "Trip to Iceland and see aurora",
-                "activityId": "0654b209e04b054e",
+                "activityId": "8dd64643fe710111",
                 "category": "other",
                 "city": null,
                 "confidence": 0.9,
@@ -876,14 +968,18 @@ describe('clusterActivities', () => {
                 "interestingScore": 0.5,
                 "isCompound": true,
                 "isGeneric": false,
-                "messageId": 3,
+                "messages": [
+                  {
+                    "id": 3,
+                    "message": "We should trip to iceland and see aurora",
+                    "sender": "Alice",
+                    "timestamp": 2025-01-03T10:00:00.000Z,
+                  },
+                ],
                 "object": null,
                 "objectOriginal": null,
-                "originalMessage": "We should trip to iceland and see aurora",
                 "region": null,
                 "score": 1.7,
-                "sender": "Alice",
-                "timestamp": 2025-01-03T10:00:00.000Z,
                 "venue": null,
               },
             },

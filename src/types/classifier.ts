@@ -11,23 +11,29 @@ export { CATEGORY_EMOJI, VALID_CATEGORIES } from '../categories'
 import type { ActivityCategory } from '../categories'
 import type { ScrapedMetadata } from '../scraper/types'
 
+/** A message that mentioned this activity. */
+export interface ActivityMessage {
+  readonly id: number
+  readonly timestamp: Date
+  readonly sender: string
+  readonly message: string
+}
+
 export interface ClassifiedActivity {
   /** Unique activity ID (16-char hash of all fields) */
   readonly activityId: string
-  readonly messageId: number
   /** Human-readable activity title */
   readonly activity: string
-  /** How fun/enjoyable is this activity? 0=boring, 1=exciting */
+  /** How fun/enjoyable is this activity? 0=boring, 1=exciting (averaged across all messages) */
   readonly funScore: number
-  /** How interesting/unique is this activity? 0=common/mundane, 1=rare/novel */
+  /** How interesting/unique is this activity? 0=common/mundane, 1=rare/novel (averaged across all messages) */
   readonly interestingScore: number
   /** Combined score derived from interestingScore and funScore */
   readonly score: number
   readonly category: ActivityCategory
   readonly confidence: number
-  readonly originalMessage: string
-  readonly sender: string
-  readonly timestamp: Date
+  /** All messages that mentioned this activity (1 initially, more after deduplication) */
+  readonly messages: readonly ActivityMessage[]
   /**
    * Whether this is a generic activity (no specific name, URL, or compound structure).
    * Generic activities are more likely to cluster with similar ones.
@@ -127,21 +133,4 @@ export interface ClassifierConfig {
   readonly onBatchComplete?: (info: BatchCompleteInfo) => void
   /** URL metadata to enrich prompts with scraped page info (title, description, redirect URLs) */
   readonly urlMetadata?: Map<string, ScrapedMetadata> | undefined
-}
-
-/** A single message that mentioned an activity/location. */
-export interface SourceMessage {
-  readonly messageId: number
-  readonly content: string
-  readonly sender: string
-  readonly timestamp: Date
-  readonly context?: string | undefined
-}
-
-/** An aggregated activity combining multiple mentions of the same activity/location. */
-export interface AggregatedActivity extends ClassifiedActivity {
-  readonly mentionCount: number
-  readonly firstMentionedAt: Date
-  readonly lastMentionedAt: Date
-  readonly sourceMessages: readonly SourceMessage[]
 }

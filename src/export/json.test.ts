@@ -9,13 +9,17 @@ function createActivity(
   category: string = 'restaurant'
 ): GeocodedActivity {
   return createTestGeo({
-    messageId: id,
     activity,
     category: category as GeocodedActivity['category'],
     confidence: 0.9,
-    originalMessage: 'Original message',
-    sender: 'Test User',
-    timestamp: new Date('2025-01-15T10:30:00Z'),
+    messages: [
+      {
+        id,
+        sender: 'Test User',
+        timestamp: new Date('2025-01-15T10:30:00Z'),
+        message: 'Original message'
+      }
+    ],
     latitude: 41.9,
     longitude: 12.5,
     city: 'Test Location'
@@ -106,8 +110,8 @@ describe('JSON Export', () => {
       const json = exportToJSON(activities)
       const parsed = JSON.parse(json)
 
-      // The timestamp should be serialized to ISO string
-      expect(parsed.activities[0].timestamp).toBe('2025-01-15T10:30:00.000Z')
+      // The timestamp should be serialized to ISO string in messages array
+      expect(parsed.activities[0].messages[0].timestamp).toBe('2025-01-15T10:30:00.000Z')
     })
 
     it('pretty prints JSON with indentation', () => {
@@ -121,12 +125,16 @@ describe('JSON Export', () => {
 
     it('handles activities without coordinates', () => {
       const activity = createTestGeo({
-        messageId: 1,
         activity: 'No location',
         category: 'other',
-        originalMessage: 'Message',
-        sender: 'User',
-        timestamp: new Date()
+        messages: [
+          {
+            id: 1,
+            sender: 'User',
+            timestamp: new Date(),
+            message: 'Message'
+          }
+        ]
       })
 
       const json = exportToJSON([activity])
@@ -139,12 +147,16 @@ describe('JSON Export', () => {
     it('includes geocodedCount in metadata', () => {
       const withCoords = createActivity(1, 'With coords')
       const withoutCoords = createTestGeo({
-        messageId: 2,
         activity: 'Without coords',
         category: 'other',
-        originalMessage: 'Message',
-        sender: 'User',
-        timestamp: new Date()
+        messages: [
+          {
+            id: 2,
+            sender: 'User',
+            timestamp: new Date(),
+            message: 'Message'
+          }
+        ]
       })
 
       const json = exportToJSON([withCoords, withoutCoords])

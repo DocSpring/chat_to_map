@@ -1,13 +1,12 @@
 import { describe, expect, it } from 'vitest'
+import { createActivity as createTestActivity } from '../test-support'
+import type { ClassifiedActivity } from '../types'
 import {
-  createActivity as createTestActivity,
-  createGeocodedActivity as createTestGeo
-} from '../test-support'
-import type { ClassifiedActivity, GeocodedActivity } from '../types'
-import {
-  aggregateActivities,
-  aggregateGeocodedActivities,
+  deduplicateActivities,
   filterByMentionCount,
+  getFirstMentionedAt,
+  getLastMentionedAt,
+  getMentionCount,
   getMostWanted
 } from './aggregation'
 
@@ -19,202 +18,188 @@ function createActivity(
   sender = 'User'
 ): ClassifiedActivity {
   return createTestActivity({
-    messageId: id,
     activity,
     category: 'food',
-    originalMessage: `Let's do ${activity}`,
-    sender,
-    timestamp: timestamp ?? new Date('2025-01-15T10:00:00Z'),
+    messages: [
+      {
+        id,
+        sender,
+        timestamp: timestamp ?? new Date('2025-01-15T10:00:00Z'),
+        message: `Let's do ${activity}`
+      }
+    ],
     city: city ?? null
   })
 }
 
-function createGeocodedActivity(
-  id: number,
-  activity: string,
-  city?: string,
-  lat?: number,
-  lng?: number,
-  timestamp?: Date
-): GeocodedActivity {
-  return createTestGeo({
-    messageId: id,
-    activity,
-    category: 'food',
-    originalMessage: `Let's do ${activity}`,
-    timestamp: timestamp ?? new Date('2025-01-15T10:00:00Z'),
-    city: city ?? null,
-    latitude: lat,
-    longitude: lng
-  })
-}
-
 describe('Aggregation Module', () => {
-  describe('aggregateActivities', () => {
+  describe('deduplicateActivities', () => {
     it('returns empty array for empty input', () => {
-      const result = aggregateActivities([])
+      const result = deduplicateActivities([])
       expect(result).toEqual([])
     })
 
-    it('returns single suggestion unchanged (as aggregated)', () => {
-      const suggestions = [createActivity(1, 'Dinner at Italian Place', 'Rome')]
+    it('returns single activity unchanged', () => {
+      const activities = [createActivity(1, 'Dinner at Italian Place', 'Rome')]
 
-      const result = aggregateActivities(suggestions)
+      const result = deduplicateActivities(activities)
 
       expect(result).toHaveLength(1)
-      expect(result[0]?.mentionCount).toBe(1)
-      expect(result[0]?.sourceMessages).toHaveLength(1)
+      const first = result[0]
+      if (!first) throw new Error('Expected first result')
+      expect(getMentionCount(first)).toBe(1)
+      expect(first.messages).toHaveLength(1)
     })
 
     it('groups by exact location match (case-insensitive)', () => {
-      const suggestions = [
+      const activities = [
         createActivity(1, 'Visit Queenstown', 'Queenstown'),
         createActivity(2, 'Go to queenstown', 'queenstown'),
         createActivity(3, 'QUEENSTOWN trip', 'QUEENSTOWN')
       ]
 
-      const result = aggregateActivities(suggestions)
+      const result = deduplicateActivities(activities)
 
       expect(result).toHaveLength(1)
-      expect(result[0]?.mentionCount).toBe(3)
-      expect(result[0]?.sourceMessages).toHaveLength(3)
+      const first = result[0]
+      if (!first) throw new Error('Expected first result')
+      expect(getMentionCount(first)).toBe(3)
+      expect(first.messages).toHaveLength(3)
     })
 
     it('groups by activity name similarity', () => {
-      const suggestions = [
+      const activities = [
         createActivity(1, 'pottery class'),
         createActivity(2, 'Pottery Class'),
         createActivity(3, 'pottery classes')
       ]
 
-      const result = aggregateActivities(suggestions)
+      const result = deduplicateActivities(activities)
 
       expect(result).toHaveLength(1)
-      expect(result[0]?.mentionCount).toBe(3)
+      const first = result[0]
+      if (!first) throw new Error('Expected first result')
+      expect(getMentionCount(first)).toBe(3)
     })
 
     it('does not group dissimilar activities', () => {
-      const suggestions = [
+      const activities = [
         createActivity(1, 'pottery class'),
         createActivity(2, 'cooking class'),
         createActivity(3, 'yoga class')
       ]
 
-      const result = aggregateActivities(suggestions)
+      const result = deduplicateActivities(activities)
 
       expect(result).toHaveLength(3)
-      expect(result.every((r) => r.mentionCount === 1)).toBe(true)
+      expect(result.every((r) => getMentionCount(r) === 1)).toBe(true)
     })
 
     it('calculates correct date range', () => {
-      const suggestions = [
+      const activities = [
         createActivity(1, 'pottery', undefined, new Date('2022-01-15')),
         createActivity(2, 'pottery', undefined, new Date('2023-06-20')),
         createActivity(3, 'pottery', undefined, new Date('2024-12-01'))
       ]
 
-      const result = aggregateActivities(suggestions)
+      const result = deduplicateActivities(activities)
 
       expect(result).toHaveLength(1)
-      expect(result[0]?.firstMentionedAt).toEqual(new Date('2022-01-15'))
-      expect(result[0]?.lastMentionedAt).toEqual(new Date('2024-12-01'))
+      const first = result[0]
+      if (!first) throw new Error('Expected first result')
+      expect(getFirstMentionedAt(first)).toEqual(new Date('2022-01-15'))
+      expect(getLastMentionedAt(first)).toEqual(new Date('2024-12-01'))
     })
 
     it('preserves all source messages', () => {
-      const suggestions = [
+      const activities = [
         createActivity(1, 'Dinner', 'The Restaurant', new Date('2022-01-01'), 'Alice'),
         createActivity(2, 'dinner', 'the restaurant', new Date('2023-01-01'), 'Bob'),
         createActivity(3, 'Dinner', 'The Restaurant', new Date('2024-01-01'), 'Charlie')
       ]
 
-      const result = aggregateActivities(suggestions)
+      const result = deduplicateActivities(activities)
 
       expect(result).toHaveLength(1)
-      expect(result[0]?.sourceMessages).toHaveLength(3)
+      expect(result[0]?.messages).toHaveLength(3)
 
-      const senders = result[0]?.sourceMessages.map((m) => m.sender)
+      const senders = result[0]?.messages.map((m) => m.sender)
       expect(senders).toContain('Alice')
       expect(senders).toContain('Bob')
       expect(senders).toContain('Charlie')
     })
 
-    it('sorts by mention count (most wanted first)', () => {
-      const suggestions = [
-        createActivity(1, 'mentioned once'),
-        createActivity(2, 'pottery class'),
-        createActivity(3, 'pottery class'),
-        createActivity(4, 'pottery class'),
-        createActivity(5, 'hiking trip'),
-        createActivity(6, 'hiking trip')
-      ]
+    it('averages funScore and interestingScore across merged activities', () => {
+      const act1 = createTestActivity({
+        activity: 'pottery',
+        funScore: 0.8,
+        interestingScore: 0.6
+      })
+      const act2 = createTestActivity({
+        activity: 'pottery',
+        funScore: 0.6,
+        interestingScore: 0.4
+      })
+      const act3 = createTestActivity({
+        activity: 'pottery',
+        funScore: 0.7,
+        interestingScore: 0.5
+      })
 
-      const result = aggregateActivities(suggestions)
+      const result = deduplicateActivities([act1, act2, act3])
 
-      expect(result).toHaveLength(3)
-      expect(result[0]?.mentionCount).toBe(3) // pottery
-      expect(result[1]?.mentionCount).toBe(2) // hiking
-      expect(result[2]?.mentionCount).toBe(1) // once
+      expect(result).toHaveLength(1)
+      expect(result[0]?.funScore).toBe(0.7) // (0.8 + 0.6 + 0.7) / 3 = 0.7
+      expect(result[0]?.interestingScore).toBe(0.5) // (0.6 + 0.4 + 0.5) / 3 = 0.5
+      expect(result[0]?.score).toBe(1.7) // 0.5 * 2 + 0.7 = 1.7
     })
 
-    it('uses most recent mention as base suggestion', () => {
-      const suggestions = [
+    it('keeps first occurrence as primary when merging', () => {
+      const activities = [
         createActivity(1, 'pottery class', 'Old City', new Date('2022-01-01')),
         createActivity(2, 'Pottery Class', 'New City', new Date('2024-01-01'))
       ]
 
-      const result = aggregateActivities(suggestions)
+      const result = deduplicateActivities(activities)
 
       expect(result).toHaveLength(1)
-      // Should use the newer suggestion's details (most recent has best info)
-      expect(result[0]?.activity).toBe('Pottery Class')
-      expect(result[0]?.city).toBe('New City')
-    })
-  })
-
-  describe('aggregateGeocodedActivities', () => {
-    it('preserves geocoding information', () => {
-      const suggestions = [
-        createGeocodedActivity(1, 'Coffee Lab', 'Wellington', -41.29, 174.78),
-        createGeocodedActivity(2, 'coffee lab', 'wellington', -41.29, 174.78)
-      ]
-
-      const result = aggregateGeocodedActivities(suggestions)
-
-      expect(result).toHaveLength(1)
-      expect(result[0]?.latitude).toBe(-41.29)
-      expect(result[0]?.longitude).toBe(174.78)
-    })
-
-    it('handles suggestions without coordinates', () => {
-      const suggestions = [
-        createGeocodedActivity(1, 'See a movie'),
-        createGeocodedActivity(2, 'see a movie')
-      ]
-
-      const result = aggregateGeocodedActivities(suggestions)
-
-      expect(result).toHaveLength(1)
-      expect(result[0]?.latitude).toBeUndefined()
+      // First occurrence is the primary
+      expect(result[0]?.activity).toBe('pottery class')
+      expect(result[0]?.city).toBe('Old City')
     })
   })
 
   describe('filterByMentionCount', () => {
-    it('filters suggestions below minimum count', () => {
-      const suggestions = [
-        { ...createActivity(1, 'A'), mentionCount: 1 },
-        { ...createActivity(2, 'B'), mentionCount: 3 },
-        { ...createActivity(3, 'C'), mentionCount: 5 }
-      ] as unknown as ReturnType<typeof aggregateActivities>
+    it('filters activities below minimum count', () => {
+      const act1 = createActivity(1, 'once')
+      const act2 = createTestActivity({
+        activity: 'thrice',
+        messages: [
+          { id: 2, sender: 'A', timestamp: new Date(), message: 'thrice' },
+          { id: 3, sender: 'B', timestamp: new Date(), message: 'thrice' },
+          { id: 4, sender: 'C', timestamp: new Date(), message: 'thrice' }
+        ]
+      })
+      const act3 = createTestActivity({
+        activity: 'five times',
+        messages: [
+          { id: 5, sender: 'A', timestamp: new Date(), message: 'five' },
+          { id: 6, sender: 'B', timestamp: new Date(), message: 'five' },
+          { id: 7, sender: 'C', timestamp: new Date(), message: 'five' },
+          { id: 8, sender: 'D', timestamp: new Date(), message: 'five' },
+          { id: 9, sender: 'E', timestamp: new Date(), message: 'five' }
+        ]
+      })
 
-      const result = filterByMentionCount(suggestions, 3)
+      const result = filterByMentionCount([act1, act2, act3], 3)
 
       expect(result).toHaveLength(2)
-      expect(result.map((r) => r.mentionCount)).toEqual([3, 5])
+      expect(result.map((r) => getMentionCount(r))).toEqual([3, 5])
     })
   })
 
   describe('getMostWanted', () => {
-    it('returns only suggestions mentioned more than once', () => {
+    it('returns only activities mentioned more than once', () => {
       const raw = [
         createActivity(1, 'once'),
         createActivity(2, 'twice'),
@@ -224,11 +209,11 @@ describe('Aggregation Module', () => {
         createActivity(6, 'thrice')
       ]
 
-      const aggregated = aggregateActivities(raw)
-      const result = getMostWanted(aggregated)
+      const deduped = deduplicateActivities(raw)
+      const result = getMostWanted(deduped)
 
       expect(result).toHaveLength(2)
-      expect(result.every((r) => r.mentionCount > 1)).toBe(true)
+      expect(result.every((r) => getMentionCount(r) > 1)).toBe(true)
     })
 
     it('respects limit parameter', () => {
@@ -241,8 +226,8 @@ describe('Aggregation Module', () => {
         createActivity(6, 'c')
       ]
 
-      const aggregated = aggregateActivities(raw)
-      const result = getMostWanted(aggregated, 2)
+      const deduped = deduplicateActivities(raw)
+      const result = getMostWanted(deduped, 2)
 
       expect(result).toHaveLength(2)
     })
