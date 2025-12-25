@@ -34,6 +34,7 @@ const API_KEY_ENV_VARS = [
 export interface E2ETestState {
   tempCacheDir: string
   initialCacheHash: string
+  initialCacheFiles: Set<string>
   /** Whether cache updates are allowed (UPDATE_E2E_CACHE=true) */
   allowCacheUpdates: boolean
   /** Whether cache fixture exists */
@@ -44,6 +45,7 @@ export interface E2ETestState {
 export let testState: E2ETestState = {
   tempCacheDir: '',
   initialCacheHash: '',
+  initialCacheFiles: new Set(),
   allowCacheUpdates: false,
   hasFixture: false
 }
@@ -54,29 +56,37 @@ export function setTestState(state: E2ETestState): void {
 }
 
 /**
- * Calculate SHA256 hash of all files in a directory (recursively)
+ * Collect all files in a directory recursively.
  */
-function hashDirectory(dir: string): string {
-  if (!existsSync(dir)) return ''
+function collectFilesRecursive(dir: string): string[] {
+  if (!existsSync(dir)) return []
 
-  const hash = createHash('sha256')
   const files: string[] = []
 
-  function collectFiles(currentDir: string): void {
+  function walk(currentDir: string): void {
     const entries = readdirSync(currentDir, { withFileTypes: true })
     for (const entry of entries) {
       const fullPath = join(currentDir, entry.name)
       if (entry.isDirectory()) {
-        collectFiles(fullPath)
+        walk(fullPath)
       } else {
         files.push(fullPath)
       }
     }
   }
 
-  collectFiles(dir)
-  files.sort()
+  walk(dir)
+  return files.sort()
+}
 
+/**
+ * Calculate SHA256 hash of all files in a directory (recursively)
+ */
+function hashDirectory(dir: string): string {
+  const files = collectFilesRecursive(dir)
+  if (files.length === 0) return ''
+
+  const hash = createHash('sha256')
   for (const file of files) {
     const content = readFileSync(file, 'utf-8')
     hash.update(file.replace(dir, ''))
@@ -84,6 +94,20 @@ function hashDirectory(dir: string): string {
   }
 
   return hash.digest('hex')
+}
+
+/**
+ * List files in cache directories (relative paths).
+ */
+function listCacheFiles(cacheDir: string): Set<string> {
+  const files = new Set<string>()
+  for (const subdir of ['requests', 'images']) {
+    const dir = join(cacheDir, subdir)
+    for (const file of collectFilesRecursive(dir)) {
+      files.add(file.replace(`${cacheDir}/`, ''))
+    }
+  }
+  return files
 }
 
 /**
@@ -292,8 +316,9 @@ export function setupE2ETests(): E2ETestState {
 
   extractCacheFixture(tempCacheDir)
   const initialCacheHash = hashCacheDirectories(tempCacheDir)
+  const initialCacheFiles = listCacheFiles(tempCacheDir)
 
-  return { tempCacheDir, initialCacheHash, allowCacheUpdates, hasFixture }
+  return { tempCacheDir, initialCacheHash, initialCacheFiles, allowCacheUpdates, hasFixture }
 }
 
 /**
@@ -327,9 +352,36 @@ export function teardownE2ETests(state: E2ETestState): void {
     finalCacheHash !== state.initialCacheHash
   ) {
     // This should NOT happen in locked mode - it means HTTP guard failed
+    const finalCacheFiles = listCacheFiles(state.tempCacheDir)
+    const added = [...finalCacheFiles].filter((f) => !state.initialCacheFiles.has(f))
+    const removed = [...state.initialCacheFiles].filter((f) => !finalCacheFiles.has(f))
+
+    console.error('')
     console.error('❌ ERROR: Cache was modified in LOCKED mode!')
     console.error('   This indicates uncached HTTP requests were made.')
-    console.error('   Check E2E_CACHE_LOCKED handling in src/http.ts')
+    console.error('')
+    if (added.length > 0) {
+      console.error('   Files added:')
+      for (const f of added.slice(0, 20)) {
+        console.error(`     + ${f}`)
+      }
+      if (added.length > 20) {
+        console.error(`     ... and ${added.length - 20} more`)
+      }
+    }
+    if (removed.length > 0) {
+      console.error('   Files removed:')
+      for (const f of removed.slice(0, 20)) {
+        console.error(`     - ${f}`)
+      }
+      if (removed.length > 20) {
+        console.error(`     ... and ${removed.length - 20} more`)
+      }
+    }
+    console.error('')
+    console.error('   To update the cache fixture, run:')
+    console.error('     UPDATE_E2E_CACHE=true bun run test:e2e')
+    console.error('')
   }
 
   rmSync(state.tempCacheDir, { recursive: true, force: true })
