@@ -9,6 +9,5 @@
     "src/cli/e2e/vitest.config.ts",
     "src/cli/e2e/helpers.ts"
   ],
-  "ignoreDependencies": ["@biomejs/biome"],
   "exclude": ["unresolved"]
 }
