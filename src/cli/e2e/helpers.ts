@@ -27,7 +27,7 @@ const API_KEY_ENV_VARS = [
   'ANTHROPIC_API_KEY',
   'OPENROUTER_API_KEY',
   'GOOGLE_MAPS_API_KEY',
-  'GOOGLE_API_KEY'
+  'GOOGLE_AI_API_KEY'
 ]
 
 /** Shared test state */

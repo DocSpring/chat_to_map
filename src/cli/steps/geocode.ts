@@ -128,9 +128,9 @@ export async function stepGeocode(
   }
 
   // Get API key from environment
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_API_KEY
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY
   if (!apiKey) {
-    throw new Error('GOOGLE_MAPS_API_KEY or GOOGLE_API_KEY environment variable required')
+    throw new Error('GOOGLE_MAPS_API_KEY environment variable required')
   }
 
   logger.log(`\n🌍 Geocoding ${activities.length} activities...`)
