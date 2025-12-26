@@ -24,7 +24,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { basename, join } from 'node:path'
 
-export type PipelineStage =
+type PipelineStage =
   | 'chat'
   | 'messages'
   | 'parse_stats'

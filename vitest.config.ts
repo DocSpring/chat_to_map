@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { loadEnv } from 'vite'
 import { defineConfig } from 'vitest/config'
 
@@ -5,6 +6,17 @@ export default defineConfig(({ mode }) => ({
   esbuild: {
     tsconfigRaw: '{}'
   },
+  plugins: [
+    {
+      name: 'template-loader',
+      transform(_code, id) {
+        if (id.endsWith('.template')) {
+          const content = readFileSync(id, 'utf-8')
+          return `export default ${JSON.stringify(content)}`
+        }
+      }
+    }
+  ],
   test: {
     env: loadEnv(mode, process.cwd(), ''),
     globals: true,
