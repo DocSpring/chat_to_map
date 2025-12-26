@@ -119,7 +119,16 @@ function addPipelineOptions(cmd: Command): Command {
 function addExportCommand(program: Command): void {
   const baseExportCmd = program
     .command('export')
-    .description('Export activities to various formats (or run full pipeline without subcommand)')
+    .description(
+      `Export activities to various formats (or run full pipeline without subcommand)
+
+Examples:
+  $ chat-to-map export pdf chat.zip                    # Export to PDF
+  $ chat-to-map export pdf chat.zip --thumbnails      # PDF with images
+  $ chat-to-map export json chat.zip -o results.json  # Custom output path
+  $ chat-to-map export csv chat.zip --countries "NZ"  # Filter by country
+  $ chat-to-map export map chat.zip --only-locations  # Only mappable activities`
+    )
     .argument('[input]', 'Chat export (.zip, directory, or .txt file)')
 
   // Add pipeline + prefixed export + PDF options
