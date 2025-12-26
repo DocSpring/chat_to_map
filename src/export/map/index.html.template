@@ -20,7 +20,8 @@
 
   <div class="info-box">
     <h3 id="infoTitle" style="margin-top: 0;">Things To Do</h3>
-    <p><strong id="infoCount">0</strong> suggestions with locations</p>
+    <p><strong id="infoCount">0</strong> activity suggestions</p>
+    <p id="infoWithLocations" style="font-size: 12px; color: #666; margin-top: -8px; font-style: italic;"></p>
     <p style="font-size: 12px; color: #666;">
       Click markers to see details.<br>
       Zoom in to see individual pins.
@@ -29,6 +30,8 @@
   </div>
 
   <div id="legend" class="legend"></div>
+
+  <div id="styleControl" class="style-control"></div>
 
   <div class="modal-overlay" id="activityModal" onclick="closeModal(event)">
     <div class="modal" onclick="event.stopPropagation()">

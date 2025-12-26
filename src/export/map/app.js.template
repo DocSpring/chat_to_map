@@ -68,12 +68,91 @@
     floatingTooltip.style.display = 'none'
   }
 
+  // Tile layer styles
+  var tileStyles = {
+    osm: {
+      url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; OpenStreetMap contributors',
+      label: 'Street'
+    },
+    satellite: {
+      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      attribution: '&copy; Esri',
+      label: 'Satellite'
+    },
+    terrain: {
+      url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+      attribution: '&copy; OpenTopoMap',
+      label: 'Terrain'
+    }
+  }
+
+  // Get saved style from localStorage, or use default from mapData
+  var STORAGE_KEY = 'chattomap-style'
+  var savedStyle = null
+  try {
+    savedStyle = localStorage.getItem(STORAGE_KEY)
+  } catch (e) {
+    // localStorage not available
+  }
+  var currentStyle = savedStyle && tileStyles[savedStyle] ? savedStyle : (mapData.defaultStyle || 'osm')
+
   // Initialize map
   var map = L.map('map').setView([mapData.center.lat, mapData.center.lng], mapData.zoom)
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap contributors'
+  var currentTileLayer = L.tileLayer(tileStyles[currentStyle].url, {
+    attribution: tileStyles[currentStyle].attribution
   }).addTo(map)
+
+  // Style toggle control
+  function setMapStyle(style) {
+    if (!tileStyles[style] || style === currentStyle) return
+    map.removeLayer(currentTileLayer)
+    currentTileLayer = L.tileLayer(tileStyles[style].url, {
+      attribution: tileStyles[style].attribution
+    }).addTo(map)
+    currentStyle = style
+    try {
+      localStorage.setItem(STORAGE_KEY, style)
+    } catch (e) {
+      // localStorage not available
+    }
+    updateStyleButtons()
+  }
+
+  function updateStyleButtons() {
+    var buttons = document.querySelectorAll('.style-btn')
+    buttons.forEach(function (btn) {
+      var style = btn.getAttribute('data-style')
+      btn.classList.toggle('active', style === currentStyle)
+    })
+  }
+
+  // Create style toggle control
+  var styleControl = document.getElementById('styleControl')
+  if (styleControl) {
+    var styleHtml = Object.keys(tileStyles)
+      .map(function (style) {
+        var isActive = style === currentStyle ? ' active' : ''
+        return (
+          '<button class="style-btn' +
+          isActive +
+          '" data-style="' +
+          style +
+          '">' +
+          tileStyles[style].label +
+          '</button>'
+        )
+      })
+      .join('')
+    styleControl.innerHTML = styleHtml
+    styleControl.addEventListener('click', function (e) {
+      var btn = e.target.closest('.style-btn')
+      if (btn) {
+        setMapStyle(btn.getAttribute('data-style'))
+      }
+    })
+  }
 
   var markersLayer = mapData.clusterMarkers
     ? L.markerClusterGroup({
@@ -83,8 +162,12 @@
       })
     : L.layerGroup()
 
-  // Add markers
-  mapData.points.forEach(function (p) {
+  // Add markers (only for geocoded activities)
+  var geocodedPoints = mapData.activities.filter(function (p) {
+    return p.lat !== null && p.lng !== null
+  })
+
+  geocodedPoints.forEach(function (p) {
     var messagesEncoded = encodeURIComponent(JSON.stringify(p.messages)).replace(/'/g, '%27')
     var senderDisplay = formatSenders(p.messages)
     var mentionCount = p.messages.length
@@ -190,7 +273,8 @@
 
   // Render info box
   document.getElementById('infoTitle').textContent = mapData.title
-  document.getElementById('infoCount').textContent = mapData.points.length
+  document.getElementById('infoCount').textContent = mapData.activities.length
+  document.getElementById('infoWithLocations').textContent = '(' + geocodedPoints.length + ' with locations)'
 
   // Render legend
   var legendHtml = Object.entries(mapData.senderColors)
@@ -214,10 +298,11 @@
   document.getElementById('legend').innerHTML = legendHtml
 
   // Activity list
-  var activities = mapData.points.map(function (p) {
+  var activities = mapData.activities.map(function (p) {
     return {
       id: p.activityId,
       activity: p.activity,
+      category: p.category,
       sender: p.sender.split(' ')[0],
       location: p.location,
       date: p.date,
@@ -238,9 +323,23 @@
             '&query_place_id=' +
             a.placeId
           : null
-        var thumb = a.imagePath
-          ? '<img src="' + a.imagePath + '" class="activity-thumb" alt="" />'
-          : '<div class="activity-thumb-placeholder"></div>'
+        var mentionCount = a.messages.length
+        var badge = mentionCount > 1 ? '<span class="mention-badge">' + mentionCount + '</span>' : ''
+
+        var thumbContent
+        if (mapData.hasImages && a.imagePath) {
+          thumbContent = '<img src="' + a.imagePath + '" class="activity-thumb" alt="" />'
+        } else {
+          var icon = mapData.categoryIcons[a.category] || mapData.categoryIcons.other
+          var color = mapData.categoryColors[a.category] || mapData.categoryColors.other
+          thumbContent =
+            '<div class="activity-thumb-placeholder" style="background-color:' +
+            color +
+            ';">' +
+            icon +
+            '</div>'
+        }
+        var thumb = '<div class="activity-thumb-wrapper">' + thumbContent + badge + '</div>'
         var links =
           (mapsUrl ? '<a href="' + mapsUrl + '" target="_blank">Google Maps</a>' : '') +
           (a.url ? '<a href="' + a.url + '" target="_blank">Source</a>' : '')

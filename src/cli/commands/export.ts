@@ -16,7 +16,7 @@ import {
   filterActivitiesForExport,
   VERSION
 } from '../../index'
-import type { GeocodedActivity } from '../../types'
+import type { GeocodedActivity, MapStyle } from '../../types'
 import type { CLIArgs } from '../args'
 import { buildFilterOptions } from '../filter-options'
 import { initCommandContext } from '../helpers'
@@ -127,7 +127,11 @@ export async function cmdExport(args: CLIArgs, logger: Logger): Promise<void> {
     }
 
     case 'map': {
-      const html = exportToMapHTML(filtered, { title: 'Things To Do' })
+      const defaultStyle = parseMapStyle(args.mapDefaultStyle ?? config?.mapDefaultStyle)
+      const html = exportToMapHTML(filtered, {
+        title: 'Things To Do',
+        ...(defaultStyle && { defaultStyle })
+      })
       await writeFile(outputPath, html)
       logger.success(`Exported ${filtered.length} activities to ${outputPath}`)
       break
@@ -137,4 +141,12 @@ export async function cmdExport(args: CLIArgs, logger: Logger): Promise<void> {
       logger.error(`Unknown export format: ${format}`)
       process.exit(1)
   }
+}
+
+/** Parse map style string to MapStyle type */
+function parseMapStyle(style: string | undefined): MapStyle | undefined {
+  if (style === 'osm' || style === 'satellite' || style === 'terrain') {
+    return style
+  }
+  return undefined
 }

@@ -15,7 +15,7 @@ import {
   filterActivitiesForExport,
   VERSION
 } from '../../index'
-import type { GeocodedActivity, PDFConfig } from '../../types'
+import type { GeocodedActivity, MapStyle, PDFConfig } from '../../types'
 import type { CLIArgs } from '../args'
 import type { Config } from '../config'
 import { buildFilterOptions } from '../filter-options'
@@ -112,12 +112,23 @@ export async function stepExport(
   // Build PDF config once (only used if PDF format requested)
   const pdfConfig = buildPdfConfig(args, config, inputFile, thumbnails)
 
+  // Get map default style from args → config
+  const mapDefaultStyle = parseMapStyle(args.mapDefaultStyle ?? config?.mapDefaultStyle)
+
   for (const format of formats) {
     // Build filter options for this specific format (PDF can have different filters than others)
     const filter = buildFilterOptions(format, args, config)
     const filtered = filterActivitiesForExport(activities, filter)
 
-    const path = await exportFormat(format, filtered, outputDir, inputFile, thumbnails, pdfConfig)
+    const path = await exportFormat(
+      format,
+      filtered,
+      outputDir,
+      inputFile,
+      thumbnails,
+      pdfConfig,
+      mapDefaultStyle
+    )
     if (path) {
       exportedFiles.set(format, path)
     }
@@ -126,13 +137,22 @@ export async function stepExport(
   return { exportedFiles }
 }
 
+/** Parse map style string to MapStyle type */
+function parseMapStyle(style: string | undefined): MapStyle | undefined {
+  if (style === 'osm' || style === 'satellite' || style === 'terrain') {
+    return style
+  }
+  return undefined
+}
+
 async function exportFormat(
   format: ExportFormat,
   activities: readonly GeocodedActivity[],
   outputDir: string,
   inputFile: string,
   thumbnails: Map<string, Buffer> | undefined,
-  pdfConfig: PDFConfig
+  pdfConfig: PDFConfig,
+  mapDefaultStyle: MapStyle | undefined
 ): Promise<string | null> {
   switch (format) {
     case 'csv': {
@@ -163,7 +183,11 @@ async function exportFormat(
         }
       }
 
-      const html = exportToMapHTML(activities, { title: 'Things To Do', imagePaths })
+      const html = exportToMapHTML(activities, {
+        title: 'Things To Do',
+        imagePaths,
+        ...(mapDefaultStyle && { defaultStyle: mapDefaultStyle })
+      })
       const mapPath = join(outputDir, 'map.html')
       await writeFile(mapPath, html)
       return mapPath

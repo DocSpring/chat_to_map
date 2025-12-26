@@ -4,9 +4,10 @@
  * Converts GeocodedActivity[] to MapData for the map template.
  */
 
+import { CATEGORY_COLORS, CATEGORY_ICONS } from '../../categories'
 import { formatLocation, type GeocodedActivity, type MapConfig } from '../../types'
 import { formatDate } from '../utils'
-import type { MapData, MapPoint } from './types'
+import type { MapActivity, MapData } from './types'
 import { calculateCenter, DEFAULT_ZOOM, extractUrl, MARKER_COLORS } from './utils'
 
 /**
@@ -16,11 +17,16 @@ export function toMapData(
   activities: readonly GeocodedActivity[],
   config: MapConfig = {}
 ): MapData {
-  const { points, senderColors } = toMapPoints(activities, config)
+  const { activities: mapActivities, senderColors } = toMapActivities(activities, config)
 
+  // Calculate center from geocoded activities only
+  const geocoded = mapActivities.filter(
+    (a): a is typeof a & { lat: number; lng: number } => a.lat !== null && a.lng !== null
+  )
+  const calculatedCenter = calculateCenter(geocoded)
   const center = {
-    lat: config.centerLat ?? calculateCenter(points).lat,
-    lng: config.centerLng ?? calculateCenter(points).lng
+    lat: config.centerLat ?? calculatedCenter.lat,
+    lng: config.centerLng ?? calculatedCenter.lng
   }
 
   return {
@@ -28,18 +34,23 @@ export function toMapData(
     center,
     zoom: config.zoom ?? DEFAULT_ZOOM,
     clusterMarkers: config.clusterMarkers !== false,
-    points,
-    senderColors: Object.fromEntries(senderColors)
+    defaultStyle: config.defaultStyle ?? 'osm',
+    hasImages: config.imagePaths !== undefined && config.imagePaths.size > 0,
+    activities: mapActivities,
+    senderColors: Object.fromEntries(senderColors),
+    categoryIcons: CATEGORY_ICONS,
+    categoryColors: CATEGORY_COLORS
   }
 }
 
 /**
- * Convert activities to map points with sender colors.
+ * Convert ALL activities to map activities with sender colors.
+ * Activities without lat/lng have null values (shown in list but not on map).
  */
-function toMapPoints(
+function toMapActivities(
   activities: readonly GeocodedActivity[],
   config: MapConfig
-): { points: MapPoint[]; senderColors: Map<string, string> } {
+): { activities: MapActivity[]; senderColors: Map<string, string> } {
   // Get unique senders and assign colors
   const senders = [...new Set(activities.flatMap((s) => s.messages.map((m) => m.sender)))]
   const senderColors = new Map<string, string>()
@@ -51,24 +62,20 @@ function toMapPoints(
     }
   }
 
-  // Filter to geocoded activities and convert to points
-  const points: MapPoint[] = []
+  const result: MapActivity[] = []
 
   for (const s of activities) {
-    if (s.latitude === undefined || s.longitude === undefined) {
-      continue
-    }
-
     const firstMessage = s.messages[0]
     const sender = firstMessage?.sender ?? 'Unknown'
     const color = config.colorBySender !== false ? (senderColors.get(sender) ?? 'blue') : 'blue'
 
-    points.push({
-      lat: s.latitude,
-      lng: s.longitude,
+    result.push({
+      lat: s.latitude ?? null,
+      lng: s.longitude ?? null,
       sender,
       activity: s.activity.slice(0, 100),
       activityId: s.activityId,
+      category: s.category,
       location: formatLocation(s) ?? '',
       date: formatDate(firstMessage?.timestamp),
       score: s.score,
@@ -84,5 +91,5 @@ function toMapPoints(
     })
   }
 
-  return { points, senderColors }
+  return { activities: result, senderColors }
 }

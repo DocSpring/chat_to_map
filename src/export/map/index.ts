@@ -28,7 +28,9 @@ export function exportToMapHTML(
 ): string {
   const mapData = toMapData(activities, config)
 
-  if (mapData.points.length === 0) {
+  // If no geocoded activities, show list-only view
+  const hasGeocodedActivities = mapData.activities.some((a) => a.lat !== null && a.lng !== null)
+  if (!hasGeocodedActivities) {
     return generateListOnlyHTML(activities, config)
   }
 

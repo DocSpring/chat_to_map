@@ -169,6 +169,7 @@ export type {
   GeocodeSource,
   IntentSignals,
   MapConfig,
+  MapStyle,
   MediaType,
   ParsedMessage,
   ParseResult,

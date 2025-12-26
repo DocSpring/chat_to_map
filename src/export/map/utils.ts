@@ -2,8 +2,6 @@
  * Map Export Utilities
  */
 
-import type { MapPoint } from './types'
-
 export const DEFAULT_ZOOM = 6
 
 export const MARKER_COLORS = [
@@ -20,7 +18,10 @@ export const MARKER_COLORS = [
 /**
  * Calculate the center point from a list of coordinates.
  */
-export function calculateCenter(points: readonly MapPoint[]): { lat: number; lng: number } {
+export function calculateCenter(points: readonly { lat: number; lng: number }[]): {
+  lat: number
+  lng: number
+} {
   if (points.length === 0) {
     return { lat: 0, lng: 0 }
   }

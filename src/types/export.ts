@@ -6,6 +6,9 @@
 
 import type { ActivityCategory } from './classifier'
 
+/** Available map tile styles */
+export type MapStyle = 'osm' | 'satellite' | 'terrain'
+
 export interface MapConfig {
   readonly title?: string
   readonly centerLat?: number
@@ -15,6 +18,8 @@ export interface MapConfig {
   readonly colorBySender?: boolean
   /** Image paths keyed by activity ID (relative paths like "images/abc123.jpg") */
   readonly imagePaths?: Map<string, string> | undefined
+  /** Default map tile style (default: 'osm') */
+  readonly defaultStyle?: MapStyle
 }
 
 /** Sort order for export filtering. */

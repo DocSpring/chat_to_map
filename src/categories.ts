@@ -1,9 +1,35 @@
 /**
  * Activity Categories
  *
- * Source of truth for valid categories and their emoji.
+ * Source of truth for valid categories and their emoji/icons.
  * Used across classifier, images, exports, and UI.
  */
+
+import {
+  Baby,
+  BookOpen,
+  Briefcase,
+  Dumbbell,
+  Film,
+  Gamepad2,
+  Heart,
+  Home,
+  Landmark,
+  MapPin,
+  Music,
+  Palette,
+  PartyPopper,
+  PawPrint,
+  Plane,
+  Puzzle,
+  ShoppingBag,
+  Sparkles,
+  Trees,
+  Trophy,
+  Users,
+  Utensils,
+  Wine
+} from 'lucide-static'
 
 export const VALID_CATEGORIES = [
   'food',
@@ -58,4 +84,58 @@ export const CATEGORY_EMOJI: Record<ActivityCategory, string> = {
   family: '👨‍👩‍👧',
   pets: '🐾',
   other: '📍'
+}
+
+/** Lucide SVG icon for each activity category */
+export const CATEGORY_ICONS: Record<ActivityCategory, string> = {
+  food: Utensils,
+  nightlife: Wine,
+  nature: Trees,
+  arts: Palette,
+  culture: Landmark,
+  music: Music,
+  entertainment: Film,
+  events: PartyPopper,
+  sports: Trophy,
+  fitness: Dumbbell,
+  wellness: Heart,
+  shopping: ShoppingBag,
+  travel: Plane,
+  experiences: Sparkles,
+  hobbies: Puzzle,
+  gaming: Gamepad2,
+  learning: BookOpen,
+  home: Home,
+  work: Briefcase,
+  social: Users,
+  family: Baby,
+  pets: PawPrint,
+  other: MapPin
+}
+
+/** Background color for each activity category (Tailwind CSS 500-600 shades) */
+export const CATEGORY_COLORS: Record<ActivityCategory, string> = {
+  food: '#ef4444', // red-500
+  nightlife: '#8b5cf6', // violet-500
+  nature: '#22c55e', // green-500
+  arts: '#f26b1f', // orange-550 (between 500 and 600)
+  culture: '#6366f1', // indigo-500
+  music: '#ec4899', // pink-500
+  entertainment: '#ca8a04', // yellow-600
+  events: '#14b8a6', // teal-500
+  sports: '#3b82f6', // blue-500
+  fitness: '#f43f5e', // rose-500
+  wellness: '#d946ef', // fuchsia-500
+  shopping: '#a855f7', // purple-500
+  travel: '#0ea5e9', // sky-500
+  experiences: '#d97706', // amber-600
+  hobbies: '#65a30d', // lime-600
+  gaming: '#7c3aed', // violet-600
+  learning: '#0284c7', // sky-600
+  home: '#78716c', // stone-500
+  work: '#64748b', // slate-500
+  social: '#06b6d4', // cyan-500
+  family: '#fb7185', // rose-400
+  pets: '#65a30d', // lime-600
+  other: '#6b7280' // gray-500
 }
