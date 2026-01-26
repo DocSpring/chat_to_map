@@ -282,6 +282,7 @@ async function tryAIClassificationStage(
     apiKey: config.aiClassification.apiKey,
     model: config.aiClassification.model,
     cache: config.cache,
+    costTracker: config.costTracker,
     timeout
   }
 
@@ -319,6 +320,7 @@ async function tryGoogleSearchStages(
     apiKey: config.googleSearch.apiKey,
     cx: config.googleSearch.cx,
     cache: config.cache,
+    costTracker: config.costTracker,
     timeout
   }
 

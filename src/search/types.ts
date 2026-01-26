@@ -6,6 +6,7 @@
  */
 
 import type { ResponseCache } from '../caching/types'
+import type { CostTracker } from '../costs/tracker'
 import type { FetchFn } from '../scraper/types'
 
 /**
@@ -178,6 +179,8 @@ export interface ResolverConfig {
   aiClassification?: AIClassificationConfig | undefined
   /** Response cache for API calls */
   cache?: ResponseCache | undefined
+  /** Cost tracker for API usage billing */
+  costTracker?: CostTracker | undefined
   /** User agent for API requests */
   userAgent?: string | undefined
   /** Request timeout in milliseconds (default: 30000) */

@@ -7,6 +7,7 @@
 
 import {
   GOOGLE_MAPS_PRICING,
+  GOOGLE_SEARCH_PRICING,
   getAIModelPricing,
   getEmbeddingModelPricing,
   IMAGE_SERVICE_PRICING
@@ -211,6 +212,36 @@ export function createGeocodingUsageRecord(
     provider: type === 'places' ? 'google_places' : 'google_geocoding',
     quantity: requestCount,
     costMicros,
+    timestamp: new Date()
+  }
+  if (metadata) record.metadata = metadata
+  return record
+}
+
+// =============================================================================
+// SEARCH COST CALCULATIONS
+// =============================================================================
+
+/**
+ * Calculate cost for Google Programmable Search API.
+ * Pricing: $5.00 per 1,000 queries ($0.005 per query).
+ */
+export function calculateGoogleSearchCost(queryCount: number): MicroDollars {
+  return GOOGLE_SEARCH_PRICING.searchQuery * queryCount
+}
+
+/**
+ * Create a usage record for Google Search.
+ */
+export function createGoogleSearchUsageRecord(
+  queryCount: number,
+  metadata?: Record<string, unknown>
+): UsageRecord {
+  const record: UsageRecord = {
+    resource: 'google_search',
+    provider: 'google_search',
+    quantity: queryCount,
+    costMicros: calculateGoogleSearchCost(queryCount),
     timestamp: new Date()
   }
   if (metadata) record.metadata = metadata

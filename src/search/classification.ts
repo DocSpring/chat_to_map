@@ -7,6 +7,8 @@
 
 import { generateCacheKey } from '../caching/key'
 import type { ResponseCache } from '../caching/types'
+import { createAIUsageRecords } from '../costs/calculator'
+import type { CostTracker } from '../costs/tracker'
 import { type HttpResponse, httpFetch } from '../http'
 import type { AIClassificationConfig, ClassificationResult, DeferredItem } from './types'
 import { DEFAULT_TIMEOUT } from './types'
@@ -21,6 +23,8 @@ const DEFAULT_MODEL = 'gemini-2.5-flash-preview-05-20'
 export interface ClassificationFullConfig extends AIClassificationConfig {
   /** Response cache for API calls */
   cache?: ResponseCache | undefined
+  /** Cost tracker for API usage billing */
+  costTracker?: CostTracker | undefined
   /** Request timeout in milliseconds */
   timeout?: number | undefined
   /** Custom fetch function (for testing) */
@@ -61,13 +65,26 @@ Return JSON with 1-indexed result numbers, best first:
 Empty array if no result matches the entity (a book by the same author is NOT a match).`
 }
 
+/** Token usage from Gemini API response */
+interface GeminiUsageMetadata {
+  promptTokenCount?: number
+  candidatesTokenCount?: number
+  totalTokenCount?: number
+}
+
+/** Result from Gemini API call including usage */
+interface GeminiCallResult {
+  result: { url_indexes: number[]; explanation: string } | null
+  usage: GeminiUsageMetadata | null
+}
+
 /**
  * Call Gemini API and parse JSON response.
  */
 async function callGemini(
   prompt: string,
   config: ClassificationFullConfig
-): Promise<{ url_indexes: number[]; explanation: string } | null> {
+): Promise<GeminiCallResult> {
   const timeout = config.timeout ?? DEFAULT_TIMEOUT
   const model = config.model ?? DEFAULT_MODEL
 
@@ -100,11 +117,11 @@ async function callGemini(
       })
     }
   } catch {
-    return null
+    return { result: null, usage: null }
   }
 
   if (!response.ok) {
-    return null
+    return { result: null, usage: null }
   }
 
   const data = (await response.json()) as {
@@ -113,17 +130,21 @@ async function callGemini(
         parts?: Array<{ text?: string }>
       }
     }>
+    usageMetadata?: GeminiUsageMetadata
   }
 
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text
+  const usage = data.usageMetadata ?? null
+
   if (!text) {
-    return null
+    return { result: null, usage }
   }
 
   try {
-    return JSON.parse(text) as { url_indexes: number[]; explanation: string }
+    const result = JSON.parse(text) as { url_indexes: number[]; explanation: string }
+    return { result, usage }
   } catch {
-    return null
+    return { result: null, usage }
   }
 }
 
@@ -167,9 +188,24 @@ async function executeClassification(
   config: ClassificationFullConfig
 ): Promise<ClassificationResult> {
   const { title, category, searchResults } = item
+  const model = config.model ?? DEFAULT_MODEL
 
   const prompt = buildPrompt(item)
-  const aiResponse = await callGemini(prompt, config)
+  const { result: aiResponse, usage } = await callGemini(prompt, config)
+
+  // Record AI costs if we have usage data and a cost tracker
+  if (usage && config.costTracker) {
+    const inputTokens = usage.promptTokenCount ?? 0
+    const outputTokens = usage.candidatesTokenCount ?? 0
+    if (inputTokens > 0 || outputTokens > 0) {
+      const usageRecords = createAIUsageRecords(model, inputTokens, outputTokens, {
+        operation: 'entity_classification',
+        title,
+        category
+      })
+      config.costTracker.addRecords(usageRecords)
+    }
+  }
 
   if (!aiResponse) {
     return {

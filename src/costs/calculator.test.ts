@@ -9,6 +9,7 @@ import {
   calculateAIOutputCost,
   calculateEmbeddingCost,
   calculateGeocodingCost,
+  calculateGoogleSearchCost,
   calculatePexelsCost,
   calculatePixabayCost,
   calculatePlacesLookupCost,
@@ -17,6 +18,7 @@ import {
   createAIUsageRecords,
   createEmbeddingUsageRecord,
   createGeocodingUsageRecord,
+  createGoogleSearchUsageRecord,
   createImageUsageRecord,
   formatMicrosAsDollars,
   groupByProvider,
@@ -232,6 +234,43 @@ describe('calculatePexelsCost', () => {
   it('should always return 0 (free service)', () => {
     expect(calculatePexelsCost(0)).toBe(0)
     expect(calculatePexelsCost(100)).toBe(0)
+  })
+})
+
+describe('calculateGoogleSearchCost', () => {
+  it('should calculate cost based on query count', () => {
+    // $0.005 per query = 5,000 micro-dollars
+    expect(calculateGoogleSearchCost(1)).toBe(5_000)
+    expect(calculateGoogleSearchCost(10)).toBe(50_000)
+    expect(calculateGoogleSearchCost(1000)).toBe(5_000_000) // $5 for 1000 queries
+  })
+
+  it('should handle zero queries', () => {
+    expect(calculateGoogleSearchCost(0)).toBe(0)
+  })
+})
+
+describe('createGoogleSearchUsageRecord', () => {
+  it('should create record for google search', () => {
+    const record = createGoogleSearchUsageRecord(5)
+    expect(record.resource).toBe('google_search')
+    expect(record.quantity).toBe(5)
+    expect(record.provider).toBe('google_search')
+    expect(record.costMicros).toBe(25_000) // 5 * 5,000
+  })
+
+  it('should include metadata if provided', () => {
+    const record = createGoogleSearchUsageRecord(1, { query: 'test movie' })
+    expect(record.metadata).toEqual({ query: 'test movie' })
+  })
+
+  it('should include timestamp', () => {
+    const before = new Date()
+    const record = createGoogleSearchUsageRecord(1)
+    const after = new Date()
+
+    expect(record.timestamp.getTime()).toBeGreaterThanOrEqual(before.getTime())
+    expect(record.timestamp.getTime()).toBeLessThanOrEqual(after.getTime())
   })
 })
 

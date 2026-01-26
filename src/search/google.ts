@@ -7,6 +7,8 @@
 
 import { generateCacheKey } from '../caching/key'
 import type { ResponseCache } from '../caching/types'
+import { createGoogleSearchUsageRecord } from '../costs/calculator'
+import type { CostTracker } from '../costs/tracker'
 import { type HttpResponse, httpFetch } from '../http'
 import type { EntityType, GoogleSearchConfig, GoogleSearchResult } from './types'
 import { DEFAULT_TIMEOUT } from './types'
@@ -19,6 +21,8 @@ const GOOGLE_SEARCH_API = 'https://www.googleapis.com/customsearch/v1'
 export interface GoogleSearchFullConfig extends GoogleSearchConfig {
   /** Response cache for API calls */
   cache?: ResponseCache | undefined
+  /** Cost tracker for API usage billing */
+  costTracker?: CostTracker | undefined
   /** Request timeout in milliseconds */
   timeout?: number | undefined
   /** Custom fetch function (for testing) */
@@ -98,16 +102,31 @@ export async function searchGoogle(
 
     const cached = await config.cache.get<GoogleSearchResult[]>(cacheKey)
     if (cached) {
+      // Cache hit - no cost incurred
       return cached.data
     }
 
     // Execute search and cache result
     const results = await executeGoogleSearch(query, config, timeout)
     await config.cache.set(cacheKey, { data: results, cachedAt: Date.now() })
+
+    // Record cost for the actual API call
+    if (config.costTracker) {
+      config.costTracker.addRecord(createGoogleSearchUsageRecord(1, { query }))
+    }
+
     return results
   }
 
-  return executeGoogleSearch(query, config, timeout)
+  // No cache - execute search directly
+  const results = await executeGoogleSearch(query, config, timeout)
+
+  // Record cost for the actual API call
+  if (config.costTracker) {
+    config.costTracker.addRecord(createGoogleSearchUsageRecord(1, { query }))
+  }
+
+  return results
 }
 
 async function executeGoogleSearch(

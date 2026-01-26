@@ -42,6 +42,7 @@ export type {
   MicroDollars,
   ModelPricing,
   Provider,
+  SearchProvider,
   // Usage types
   UsageRecord,
   UsageSummary
@@ -60,6 +61,7 @@ export {
   DEFAULT_GEOCODING_PROVIDER,
   EMBEDDING_MODEL_PRICING,
   GOOGLE_MAPS_PRICING,
+  GOOGLE_SEARCH_PRICING,
   // Pricing helpers
   getAIModelPricing,
   getDefaultAIModel,
@@ -82,6 +84,8 @@ export {
   // Embedding costs
   calculateEmbeddingCost,
   calculateGeocodingCost,
+  // Search costs
+  calculateGoogleSearchCost,
   calculatePexelsCost,
   calculatePixabayCost,
   // Geocoding costs
@@ -92,6 +96,7 @@ export {
   createAIUsageRecords,
   createEmbeddingUsageRecord,
   createGeocodingUsageRecord,
+  createGoogleSearchUsageRecord,
   createImageUsageRecord,
   formatMicrosAsDollars,
   groupByProvider,

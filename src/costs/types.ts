@@ -18,11 +18,19 @@ export type EmbeddingProvider = 'openai' | 'google'
 /** Geocoding providers */
 export type GeocodingProvider = 'google_places' | 'google_geocoding'
 
+/** Search providers */
+export type SearchProvider = 'google_search'
+
 /** Image providers */
 export type ImageProvider = 'google_places_photos' | 'pixabay' | 'pexels'
 
 /** All provider types */
-export type Provider = AIProvider | EmbeddingProvider | GeocodingProvider | ImageProvider
+export type Provider =
+  | AIProvider
+  | EmbeddingProvider
+  | GeocodingProvider
+  | ImageProvider
+  | SearchProvider
 
 // =============================================================================
 // RESOURCE TYPES
@@ -38,6 +46,7 @@ export type MeteredResource =
   | 'google_places_lookup'
   | 'google_geocoding_lookup'
   | 'google_places_photo'
+  | 'google_search'
   | 'pixabay_search'
   | 'pexels_search'
   // Compute

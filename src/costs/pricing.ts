@@ -186,6 +186,19 @@ export const GOOGLE_MAPS_PRICING = {
 } as const
 
 /**
+ * Google Search API pricing (Programmable Search Engine).
+ * Prices are per query in micro-dollars.
+ *
+ * Source: https://developers.google.com/custom-search/v1/overview#pricing
+ * Pricing: $5.00 per 1,000 queries
+ */
+export const GOOGLE_SEARCH_PRICING = {
+  /** Cost per search query ($0.005 per query = 5,000 micro-dollars) */
+  searchQuery: 5_000 as MicroDollars,
+  updatedAt: '2026-01-01'
+} as const
+
+/**
  * Image service pricing.
  * Prices are per request in micro-dollars.
  *
