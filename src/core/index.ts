@@ -1,0 +1,250 @@
+/**
+ * ChatToMap Core Library - Worker-Safe Exports
+ *
+ * This module exports only pure JS functionality that can run in
+ * Cloudflare Workers without Node.js dependencies.
+ *
+ * For PDF/Excel exports, use `chat-to-map/exports` instead.
+ *
+ * @license AGPL-3.0
+ */
+
+// Cache module
+export type {
+  CachedResponse,
+  CacheKeyComponents,
+  ResponseCache
+} from '../caching/index'
+export {
+  FilesystemCache,
+  generateCacheKey,
+  generateClassifierCacheKey,
+  generateEmbeddingCacheKey,
+  generateGeocodeCacheKey,
+  generatePlaceLookupCacheKey
+} from '../caching/index'
+
+// Classifier module
+export type {
+  ClassifyBatchResult,
+  ClassifyMessagesResult,
+  ParsedClassification,
+  ParsedImageHints,
+  ParsedLinkHints,
+  ResolvedModel
+} from '../classifier/index'
+export {
+  buildClassificationPrompt,
+  type ClassificationContext,
+  classifyBatch,
+  classifyMessages,
+  createSmartBatches,
+  DEFAULT_MODEL_ID,
+  filterActivities,
+  getRequiredApiKeyEnvVar,
+  getValidModelIds,
+  groupByCategory,
+  groupCandidatesByProximity,
+  parseClassificationResponse,
+  resolveModel,
+  sortActivitiesByScore
+} from '../classifier/index'
+
+// Export module - pure JS parts only (CSV, JSON, Map HTML, filtering)
+export {
+  exportToCSV,
+  exportToJSON,
+  exportToMapHTML,
+  type FilterOptions,
+  filterActivities as filterActivitiesForExport,
+  matchesSender,
+  normalizeCountry,
+  parseJSON,
+  type SortOrder
+} from '../export/index'
+
+// Extraction module (heuristics + embeddings)
+export type {
+  ExtractCandidatesConfig,
+  ExtractCandidatesResult
+} from '../extraction/index'
+export {
+  ACTIVITY_KEYWORDS,
+  ACTIVITY_PATTERNS,
+  ACTIVITY_TYPE_QUERIES,
+  type ActivityLinkOptions,
+  AGREEMENT_QUERIES,
+  classifyUrl,
+  cosineSimilarity,
+  DEFAULT_ACTIVITY_QUERIES,
+  EXCLUSION_PATTERNS,
+  embedQueries,
+  extractActivityLinks,
+  extractCandidates,
+  extractCandidatesByEmbeddings,
+  extractCandidatesByHeuristics,
+  extractGoogleMapsCoords,
+  findSemanticCandidates,
+  findTopK,
+  getAllQueryEmbeddings,
+  getDefaultQueryEmbeddings,
+  getQueryEmbedding,
+  getQueryEmbeddingsDimensions,
+  getQueryEmbeddingsModel,
+  getQueryType,
+  isActivityUrl,
+  isSocialUrl,
+  loadQueryEmbeddings,
+  SUGGESTION_QUERIES
+} from '../extraction/index'
+
+// Fingerprint module (for deduplication)
+export type {
+  DeduplicationPlan,
+  FingerprintConfig,
+  MonthlyChunk
+} from '../fingerprint/index'
+export {
+  createDeduplicationPlan,
+  generateChunkFingerprint,
+  generateMonthlyChunks,
+  getMonthKey,
+  getMonthStart,
+  groupMessagesByMonth
+} from '../fingerprint/index'
+
+// Images module
+export type {
+  ImageFetchConfig,
+  ImageMeta,
+  ImageMetadata,
+  ImageResult,
+  ImageSize,
+  ImageSource,
+  LicenseCheckResult,
+  MediaIndexOptions,
+  PixabayImageCandidate,
+  PixabayImageMatch,
+  WikipediaImageCandidate,
+  WikipediaImageMatch
+} from '../images/index'
+export {
+  buildImageUrl,
+  fetchGooglePlacesPhoto,
+  fetchImageForActivity,
+  fetchImagesForActivities,
+  fetchPexelsImage,
+  fetchPixabayImage,
+  fetchWikipediaImage,
+  filterPixabayImages,
+  filterWikipediaImages,
+  findCategoryFallbackImage,
+  findObjectImage,
+  hasAllowedLicense,
+  IMAGE_SIZES,
+  isLicenseAllowed,
+  loadMediaIndex,
+  shouldShowAttribution
+} from '../images/index'
+
+// Parser module
+export {
+  detectChatSource,
+  detectFormat,
+  parseChat,
+  parseChatStream,
+  parseChatWithStats,
+  parseIMessageChat,
+  parseIMessageChatStream,
+  parseWhatsAppChat,
+  parseWhatsAppChatStream
+} from '../parser/index'
+
+// Place Lookup module
+export type { LookupActivitiesResult, LookupActivityResult } from '../place-lookup/index'
+export {
+  calculateCenter,
+  countWithCoordinates,
+  filterWithCoordinates,
+  lookupActivityPlace,
+  lookupActivityPlaces,
+  lookupPlace
+} from '../place-lookup/index'
+
+// Processor module - interface and real implementation
+export type {
+  ChatProcessor,
+  ProcessingStageResults,
+  ProcessorCandidateResult,
+  ProcessorClassifyResult,
+  ProcessorConfig,
+  ProcessorGeocodeResult,
+  ProcessorParseResult
+} from '../processor'
+export { RealChatProcessor } from '../processor'
+
+// Scanner module (zero API cost heuristic scanning)
+export type { QuickScanOptions, QuickScanResult } from '../scanner/index'
+export { quickScan, quickScanMessages } from '../scanner/index'
+
+// Scraper module (social media metadata extraction)
+export type {
+  ScrapedMetadata,
+  ScrapeOutcome,
+  ScraperConfig
+} from '../scraper/index'
+export {
+  buildYouTubeUrl,
+  detectPlatform,
+  extractRedditPostId,
+  extractTikTokVideoId,
+  extractYouTubeVideoId,
+  isRedditUrl,
+  resolveTikTokUrl,
+  scrapeActivityLinks,
+  scrapeReddit,
+  scrapeTikTok,
+  scrapeUrl,
+  scrapeUrls,
+  scrapeYouTube
+} from '../scraper/index'
+
+// Search/Entity Resolution module
+export type {
+  AIClassificationConfig,
+  ClassificationResult,
+  DeferredItem,
+  EntitySource,
+  EntityType,
+  ExternalIdType,
+  GoogleSearchConfig,
+  GoogleSearchResult,
+  HeuristicMatch,
+  OpenLibraryResult,
+  ResolvedEntity,
+  ResolverConfig,
+  WikidataResult
+} from '../search/index'
+export {
+  applyHeuristics,
+  buildCanonicalUrl,
+  buildSearchQuery,
+  classificationToMatch,
+  classifyItem,
+  classifyItems,
+  extractContentWords,
+  getBestUrl,
+  getCanonicalUrl,
+  getSource,
+  normalizeUnicode,
+  resolveBook,
+  resolveEntity,
+  searchGoogle,
+  searchGoogleForEntity,
+  searchOpenLibrary,
+  searchWikidata,
+  tryHeuristicMatch
+} from '../search/index'
+
+// Shared module re-exports (types + pure functions for lightweight imports)
+export * from '../shared/index'
