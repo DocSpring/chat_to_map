@@ -10,12 +10,14 @@
 import type { MediaType, ParsedMessage, ParserOptions, WhatsAppFormat } from '../types'
 import { chunkMessage, createChunkedMessages, normalizeApostrophes } from './index'
 
-// WhatsApp iOS format: [MM/DD/YY, H:MM:SS AM/PM] Sender: Message
+// WhatsApp iOS format:
+// - [MM/DD/YY, H:MM:SS AM/PM] Sender: Message
+// - [DD/MM/YY, HH:MM:SS] Sender: Message (locale-dependent 24-hour export)
 // Notes:
 // - \u200E is left-to-right mark that WhatsApp iOS exports include at line start
 // - \u202F is narrow no-break space between time and AM/PM
 const IOS_MESSAGE_PATTERN =
-  /^[\u200E]?\[(\d{1,2}\/\d{1,2}\/\d{2,4}),\s*(\d{1,2}:\d{2}:\d{2}[\s\u202F]*[AP]M)\]\s*([^:]+):\s*(.*)$/
+  /^[\u200E]?\[(\d{1,2}\/\d{1,2}\/\d{2,4}),\s*(\d{1,2}:\d{2}(?::\d{2})?[\s\u202F]*(?:[AP]M)?)\]\s*([^:]+):\s*(.*)$/
 
 // WhatsApp Android format: MM/DD/YY, H:MM - Sender: Message
 const ANDROID_MESSAGE_PATTERN =
@@ -53,20 +55,69 @@ const SYSTEM_PATTERNS: readonly RegExp[] = [
 // URL extraction pattern
 const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/gi
 
-/**
- * Parse a WhatsApp timestamp (iOS format: MM/DD/YY H:MM:SS AM/PM)
- */
-function parseIosTimestamp(dateStr: string, timeStr: string): Date {
+type DateOrder = 'month-first' | 'day-first'
+
+function normalizeYear(year: string | undefined): number {
+  if (!year) {
+    return 2025
+  }
+
+  return Number.parseInt(year.length === 2 ? `20${year}` : year, 10)
+}
+
+function resolveDateOrder(dateStr: string, defaultOrder: DateOrder): DateOrder {
   const dateParts = dateStr.split('/')
   if (dateParts.length !== 3) {
     throw new Error(`Invalid date format: ${dateStr}`)
   }
 
-  const [month, day, year] = dateParts
-  const fullYear = year?.length === 2 ? `20${year}` : year
+  const [first, second] = dateParts
+  const firstValue = Number.parseInt(first ?? '0', 10)
+  const secondValue = Number.parseInt(second ?? '0', 10)
+
+  if (firstValue > 12 && secondValue <= 12) {
+    return 'day-first'
+  }
+
+  if (secondValue > 12 && firstValue <= 12) {
+    return 'month-first'
+  }
+
+  return defaultOrder
+}
+
+function parseDateParts(
+  dateStr: string,
+  defaultOrder: DateOrder
+): { year: number; month: number; day: number } {
+  const dateParts = dateStr.split('/')
+  if (dateParts.length !== 3) {
+    throw new Error(`Invalid date format: ${dateStr}`)
+  }
+
+  const [first, second, year] = dateParts
+  const dateOrder = resolveDateOrder(dateStr, defaultOrder)
+  const month = dateOrder === 'month-first' ? first : second
+  const day = dateOrder === 'month-first' ? second : first
+
+  return {
+    year: normalizeYear(year),
+    month: Number.parseInt(month ?? '1', 10),
+    day: Number.parseInt(day ?? '1', 10)
+  }
+}
+
+/**
+ * Parse a WhatsApp timestamp (iOS format: bracketed 12-hour or 24-hour time)
+ */
+function parseIosTimestamp(dateStr: string, timeStr: string): Date {
+  const { year, month, day } = parseDateParts(
+    dateStr,
+    /[AP]M/i.test(timeStr) ? 'month-first' : 'day-first'
+  )
 
   // Parse time with AM/PM
-  const timeMatch = timeStr.match(/(\d{1,2}):(\d{2}):(\d{2})\s*([AP]M)/i)
+  const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?[\s\u202F]*([AP]M)?/i)
   if (!timeMatch) {
     throw new Error(`Invalid time format: ${timeStr}`)
   }
@@ -80,9 +131,9 @@ function parseIosTimestamp(dateStr: string, timeStr: string): Date {
   }
 
   return new Date(
-    Number.parseInt(fullYear ?? '2025', 10),
-    Number.parseInt(month ?? '1', 10) - 1,
-    Number.parseInt(day ?? '1', 10),
+    year,
+    month - 1,
+    day,
     hour,
     Number.parseInt(minute ?? '0', 10),
     Number.parseInt(second ?? '0', 10)
@@ -93,13 +144,7 @@ function parseIosTimestamp(dateStr: string, timeStr: string): Date {
  * Parse a WhatsApp timestamp (Android format: MM/DD/YY H:MM)
  */
 function parseAndroidTimestamp(dateStr: string, timeStr: string): Date {
-  const dateParts = dateStr.split('/')
-  if (dateParts.length !== 3) {
-    throw new Error(`Invalid date format: ${dateStr}`)
-  }
-
-  const [month, day, year] = dateParts
-  const fullYear = year?.length === 2 ? `20${year}` : year
+  const { year, month, day } = parseDateParts(dateStr, 'month-first')
 
   const timeParts = timeStr.split(':')
   if (timeParts.length !== 2) {
@@ -109,9 +154,9 @@ function parseAndroidTimestamp(dateStr: string, timeStr: string): Date {
   const [hour, minute] = timeParts
 
   return new Date(
-    Number.parseInt(fullYear ?? '2025', 10),
-    Number.parseInt(month ?? '1', 10) - 1,
-    Number.parseInt(day ?? '1', 10),
+    year,
+    month - 1,
+    day,
     Number.parseInt(hour ?? '0', 10),
     Number.parseInt(minute ?? '0', 10)
   )

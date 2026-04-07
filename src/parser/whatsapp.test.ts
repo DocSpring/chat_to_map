@@ -19,6 +19,12 @@ describe('WhatsApp Parser', () => {
       const content = 'Random text without patterns'
       expect(detectFormat(content)).toBe('ios')
     })
+
+    it('detects bracketed 24-hour exports as iOS format', () => {
+      const content = `[15/03/24, 10:30:15] Sarah: Good morning! ☀️
+[15/03/24, 10:31:22] Mike: Ready for the weekend?`
+      expect(detectFormat(content)).toBe('ios')
+    })
   })
 
   describe('parseWhatsAppChat - iOS format', () => {
@@ -96,6 +102,26 @@ and line three
 
       expect(messages[0]?.timestamp.getHours()).toBe(0)
       expect(messages[1]?.timestamp.getHours()).toBe(12)
+    })
+
+    it('parses bracketed 24-hour day-first exports', () => {
+      const content = `[15/03/24, 10:30:15] Sarah: Good morning! ☀️
+[15/03/24, 10:32:45] Sarah: We should try that new Italian place on Ponsonby Road
+[15/03/24, 10:36:28] Sarah: Definitely! Let's do the Waitakere Ranges trail`
+
+      const messages = parseWhatsAppChat(content)
+
+      expect(messages).toHaveLength(3)
+      expect(messages[0]?.sender).toBe('Sarah')
+      expect(messages[0]?.content).toBe('Good morning! ☀️')
+      expect(messages[0]?.timestamp.getFullYear()).toBe(2024)
+      expect(messages[0]?.timestamp.getMonth()).toBe(2)
+      expect(messages[0]?.timestamp.getDate()).toBe(15)
+      expect(messages[0]?.timestamp.getHours()).toBe(10)
+      expect(messages[0]?.timestamp.getMinutes()).toBe(30)
+      expect(messages[0]?.timestamp.getSeconds()).toBe(15)
+      expect(messages[1]?.content).toContain('Ponsonby Road')
+      expect(messages[2]?.content).toContain('Waitakere Ranges trail')
     })
   })
 
