@@ -1,11 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   buildImageUrl,
   findActionFallbackImage,
   findCategoryFallbackImage,
   findCountryImage,
   findObjectImage,
+  loadMediaIndex,
   MEDIA_CDN_URL,
+  MEDIA_INDEX_URL,
   type MediaIndex,
   resolveEntry
 } from './media-index'
@@ -55,6 +57,26 @@ const TEST_INDEX: MediaIndex = {
     }
   }
 }
+
+beforeEach(() => {
+  vi.restoreAllMocks()
+})
+
+describe('loadMediaIndex', () => {
+  it('returns null without warning when the CDN index is missing', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 404
+    } as Response)
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    await expect(loadMediaIndex()).resolves.toBeNull()
+
+    expect(fetchSpy).toHaveBeenCalledWith(MEDIA_INDEX_URL, undefined)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+})
 
 describe('resolveEntry', () => {
   it('resolves direct hash', () => {

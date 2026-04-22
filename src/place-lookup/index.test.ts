@@ -317,6 +317,46 @@ describe('Geocoder Module', () => {
 
       expect(results.activities[0]?.latitude).toBeCloseTo(48.8, 1)
       expect(results.activities[0]?.placeLookupSource).toBe('places_api')
+      expect(results.activities[0]?.matchedPlaceName).toBe('Eiffel Tower')
+    })
+
+    it('preserves the matched Google place name for venue lookups', async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () =>
+          createPlacesResponse(
+            -36.8734,
+            174.7606,
+            '193 Symonds Street, Eden Terrace, Auckland 1010, New Zealand',
+            'Kazuya'
+          )
+      })
+
+      const activity = createTestActivity({
+        activity: 'Dinner at Kazuya',
+        category: 'food',
+        score: 0.9,
+        placeQuery: 'Kazuya',
+        city: 'Auckland',
+        messages: [
+          {
+            id: 1,
+            sender: 'Test User',
+            timestamp: new Date('2025-01-15T10:30:00Z'),
+            message: 'Dinner at Kazuya'
+          }
+        ]
+      })
+
+      const results = await lookupActivityPlaces([activity], {
+        apiKey: 'test-key'
+      })
+
+      expect(results.activities[0]?.placeLookupSource).toBe('places_api')
+      expect(results.activities[0]?.matchedPlaceName).toBe('Kazuya')
+      expect(results.activities[0]?.formattedAddress).toBe(
+        '193 Symonds Street, Eden Terrace, Auckland 1010, New Zealand'
+      )
     })
 
     it('returns activity without coordinates when all geocoding fails', async () => {
@@ -335,6 +375,33 @@ describe('Geocoder Module', () => {
       expect(results.activities).toHaveLength(1)
       expect(results.activities[0]?.latitude).toBeUndefined()
       expect(results.activities[0]?.longitude).toBeUndefined()
+    })
+
+    it('logs provider errors when Google denies the lookup', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          status: 'REQUEST_DENIED',
+          results: [],
+          error_message: 'Billing disabled'
+        })
+      })
+
+      const activity = createActivity(1, 'Rotoroa Island', 'Auckland')
+
+      const results = await lookupActivityPlaces([activity], {
+        apiKey: 'test-key'
+      })
+
+      expect(results.activities[0]?.latitude).toBeUndefined()
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[place-lookup] geocoding failed for "Auckland": Billing disabled'
+      )
+      expect(warnSpy).toHaveBeenCalledWith(
+        '[place-lookup] activity fallback search failed for "Rotoroa Island": Billing disabled'
+      )
     })
 
     it('handles activities without location', async () => {

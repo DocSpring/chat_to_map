@@ -359,7 +359,8 @@ The CLI config file is at `~/.config/chat-to-map/config.json`:
 ## Media Library
 
 **Local path:** `/Users/ndbroadbent/code/chat_to_map_worktrees/media-library/media_library/images/`
-**CDN:** `https://media.chattomap.com/images/` (synced via rclone to R2)
+**CDN:** `https://media.chattomap.com/images/` for image assets, with the index at
+`https://media.chattomap.com/index.json.gz` (synced via rclone to R2)
 
 ```
 images/

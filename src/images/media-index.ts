@@ -15,6 +15,8 @@ import { httpFetch } from '../http'
 
 /** CDN base URL for media library */
 export const MEDIA_CDN_URL = 'https://media.chattomap.com/images'
+/** CDN URL for the gzipped media index */
+export const MEDIA_INDEX_URL = 'https://media.chattomap.com/index.json.gz'
 
 /** Available image sizes in the media library */
 export const IMAGE_SIZES = [1400, 700, 400, 128] as const
@@ -115,16 +117,30 @@ export async function loadMediaIndex(options?: MediaIndexOptions): Promise<Media
     }
     return await loadCdnIndex()
   } catch (error) {
+    if (isMissingMediaIndexError(error)) {
+      return null
+    }
     console.warn('Failed to load media index:', error)
     return null
   }
+}
+
+function isMissingMediaIndexError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false
+  }
+
+  return (
+    error.message === 'Failed to fetch media index: 404' ||
+    error.message.startsWith('Media index not found at ')
+  )
 }
 
 /**
  * Load index from CDN (gzipped).
  */
 async function loadCdnIndex(): Promise<MediaIndex> {
-  const response = await httpFetch(`${MEDIA_CDN_URL}/index.json.gz`)
+  const response = await httpFetch(MEDIA_INDEX_URL)
   if (!response.ok) {
     throw new Error(`Failed to fetch media index: ${response.status}`)
   }

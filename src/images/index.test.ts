@@ -2,7 +2,7 @@
  * Images Module Tests
  */
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CachedResponse, ResponseCache } from '../caching/types'
 import { createGeocodedActivity } from '../test-support'
 import type { GeocodedActivity } from '../types/place-lookup'
@@ -33,6 +33,7 @@ function createMockActivity(overrides: Partial<GeocodedActivity> = {}): Geocoded
 
 describe('Images Module', () => {
   beforeEach(() => {
+    vi.restoreAllMocks()
     clearMediaIndexCache()
   })
 
@@ -250,6 +251,34 @@ describe('Images Module', () => {
       const results = await fetchImagesForActivities([], config, cache)
 
       expect(results.size).toBe(0)
+    })
+
+    it('caches a missing media index so preview image fetches do not refetch it per activity', async () => {
+      const cache = createMockCache()
+      const activities = [
+        createMockActivity({ activity: 'Coffee' }),
+        createMockActivity({ activity: 'Dinner' }),
+        createMockActivity({ activity: 'Walk' })
+      ]
+      const config: ImageFetchConfig = {
+        skipGooglePlaces: true,
+        skipPexels: true,
+        skipPixabay: true
+      }
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        ok: false,
+        status: 404
+      } as Response)
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+      const results = await fetchImagesForActivities(activities, config, cache)
+
+      expect(results.size).toBe(3)
+      expect(results.get(activities[0]?.activityId ?? '')).toBeNull()
+      expect(results.get(activities[1]?.activityId ?? '')).toBeNull()
+      expect(results.get(activities[2]?.activityId ?? '')).toBeNull()
+      expect(fetchSpy).toHaveBeenCalledTimes(1)
+      expect(warnSpy).not.toHaveBeenCalled()
     })
   })
 })

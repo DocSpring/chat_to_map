@@ -69,9 +69,10 @@ export {
   type LicenseCheckResult
 } from './wikipedia-license'
 
-/** Cached media index - loaded once per session */
-let cachedMediaIndex: MediaIndex | null = null
+/** Cached media index - `undefined` means not loaded yet, `null` means unavailable. */
+let cachedMediaIndex: MediaIndex | null | undefined
 let mediaIndexPath: string | null = null
+let mediaIndexPromise: Promise<MediaIndex | null> | null = null
 
 /**
  * Fetch an image for a single activity.
@@ -335,26 +336,39 @@ async function tryMediaLibraryCategoryFallback(
 async function getMediaIndex(config: ImageFetchConfig): Promise<MediaIndex | null> {
   const currentPath = config.mediaLibraryPath ?? null
 
-  // Return cached index if path matches
-  if (cachedMediaIndex !== null && mediaIndexPath === currentPath) {
+  if (mediaIndexPath !== currentPath) {
+    cachedMediaIndex = undefined
+    mediaIndexPath = currentPath
+    mediaIndexPromise = null
+  }
+
+  if (cachedMediaIndex !== undefined) {
     return cachedMediaIndex
   }
 
-  // Load and cache
-  cachedMediaIndex = await loadMediaIndex({
-    localPath: config.mediaLibraryPath
-  })
-  mediaIndexPath = currentPath
+  if (!mediaIndexPromise) {
+    mediaIndexPromise = loadMediaIndex({
+      localPath: config.mediaLibraryPath
+    }).then((index) => {
+      cachedMediaIndex = index
+      return index
+    })
+  }
 
-  return cachedMediaIndex
+  try {
+    return await mediaIndexPromise
+  } finally {
+    mediaIndexPromise = null
+  }
 }
 
 /**
  * Clear cached media index (useful for testing).
  */
 export function clearMediaIndexCache(): void {
-  cachedMediaIndex = null
+  cachedMediaIndex = undefined
   mediaIndexPath = null
+  mediaIndexPromise = null
 }
 
 /**

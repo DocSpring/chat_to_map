@@ -36,6 +36,7 @@ export interface GeocodedActivity extends ClassifiedActivity {
   readonly latitude?: number | undefined
   readonly longitude?: number | undefined
   readonly formattedAddress?: string | undefined
+  readonly matchedPlaceName?: string | undefined
   readonly placeId?: string | undefined
   readonly placeLookupSource?: PlaceLookupSource | undefined
   /** True if placeId is for a specific venue (not just a city/region) */

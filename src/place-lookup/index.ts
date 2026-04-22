@@ -25,6 +25,12 @@ import {
   type Result
 } from '../types'
 
+export {
+  calculateCenter,
+  countWithCoordinates,
+  filterWithCoordinates
+} from './coordinates'
+
 /** Result from looking up a single activity including usage */
 export interface LookupActivityResult {
   readonly activity: GeocodedActivity
@@ -132,6 +138,14 @@ function wrapNetworkError(error: unknown): Result<PlaceLookupResult> {
     ok: false,
     error: { type: 'network', message: `Network error: ${message}` }
   }
+}
+
+function logLookupFailure(stage: string, query: string, result: Result<PlaceLookupResult>): void {
+  if (result.ok || result.error.type === 'invalid_response') {
+    return
+  }
+
+  console.warn(`[place-lookup] ${stage} failed for "${query}": ${result.error.message}`)
 }
 
 /**
@@ -360,6 +374,7 @@ export async function lookupActivityPlace(
           latitude: result.value.latitude,
           longitude: result.value.longitude,
           formattedAddress: result.value.formattedAddress,
+          matchedPlaceName: result.value.name,
           placeId: result.value.placeId,
           placeLookupSource: 'places_api',
           isVenuePlaceId: true
@@ -367,6 +382,8 @@ export async function lookupActivityPlace(
         usage
       }
     }
+
+    logLookupFailure('places search', location, result)
   }
 
   // Fall back to Geocoding API (better for addresses/cities)
@@ -390,6 +407,8 @@ export async function lookupActivityPlace(
     }
   }
 
+  logLookupFailure('geocoding', location, geocode.result)
+
   // If location lookup fails, try searching the activity text as a place
   const activitySearch = await searchPlace(activity.activity, config, cache)
   if (!activitySearch.cacheHit) {
@@ -403,6 +422,7 @@ export async function lookupActivityPlace(
         latitude: activitySearch.result.value.latitude,
         longitude: activitySearch.result.value.longitude,
         formattedAddress: activitySearch.result.value.formattedAddress,
+        matchedPlaceName: activitySearch.result.value.name,
         placeId: activitySearch.result.value.placeId,
         placeLookupSource: 'places_api',
         isVenuePlaceId: true
@@ -410,6 +430,8 @@ export async function lookupActivityPlace(
       usage
     }
   }
+
+  logLookupFailure('activity fallback search', activity.activity, activitySearch.result)
 
   // Could not look up - return without coordinates
   return { activity, usage }
@@ -447,42 +469,4 @@ export async function lookupPlace(
 ): Promise<Result<PlaceLookupResult>> {
   const { result } = await searchPlace(query, config)
   return result
-}
-
-/**
- * Count activities with coordinates.
- */
-export function countWithCoordinates(activities: readonly GeocodedActivity[]): number {
-  return activities.filter((a) => a.latitude !== undefined && a.longitude !== undefined).length
-}
-
-/**
- * Filter to only activities with coordinates.
- */
-export function filterWithCoordinates(activities: readonly GeocodedActivity[]): GeocodedActivity[] {
-  return activities.filter(
-    (a): a is GeocodedActivity & { latitude: number; longitude: number } =>
-      a.latitude !== undefined && a.longitude !== undefined
-  )
-}
-
-/**
- * Calculate the center point of activities with coordinates.
- */
-export function calculateCenter(
-  activities: readonly GeocodedActivity[]
-): { lat: number; lng: number } | null {
-  const withCoords = filterWithCoordinates(activities)
-
-  if (withCoords.length === 0) {
-    return null
-  }
-
-  const sumLat = withCoords.reduce((sum, a) => sum + (a.latitude as number), 0)
-  const sumLng = withCoords.reduce((sum, a) => sum + (a.longitude as number), 0)
-
-  return {
-    lat: sumLat / withCoords.length,
-    lng: sumLng / withCoords.length
-  }
 }
