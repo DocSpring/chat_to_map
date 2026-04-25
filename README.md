@@ -23,40 +23,7 @@ ChatToMap supports multilingual chats across heuristic extraction, semantic sear
 AI classification. It can process mixed-language conversations and preserves proper nouns,
 venues, media titles, and place names in their original script when appropriate.
 
-Current first-class language coverage:
-
-- English
-- Spanish
-- German
-- Japanese
-- French
-- Portuguese
-- Russian
-- Italian
-- Dutch
-- Polish
-- Turkish
-- Chinese (Simplified)
-- Chinese (Traditional)
-- Persian
-- Vietnamese
-- Czech
-- Indonesian
-- Korean
-- Ukrainian
-- Hungarian
-- Arabic
-- Swedish
-- Romanian
-- Greek
-- Danish
-- Finnish
-- Hebrew
-- Slovak
-- Thai
-- Bulgarian
-- Norwegian Bokmål
-- Hindi
+Current first-class language coverage: Arabic, Bulgarian, Chinese (Simplified), Chinese (Traditional), Czech, Danish, Dutch, English, Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Norwegian Bokmål, Persian, Polish, Portuguese, Romanian, Russian, Slovak, Spanish, Swedish, Thai, Turkish, Ukrainian, Vietnamese
 
 ## Installation
 
