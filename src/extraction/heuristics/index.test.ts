@@ -76,7 +76,19 @@ describe('Candidate Extractor', () => {
         ['Japanese', 'あのレストランに行ってみたい'],
         ['Korean', '그 식당에 가자'],
         ['Chinese Simplified', '我们应该去那家餐厅'],
-        ['Chinese Traditional', '我們應該去那家餐廳']
+        ['Chinese Traditional', '我們應該去那家餐廳'],
+        ['Persian', 'باید برویم آن رستوران'],
+        ['Vietnamese', 'chúng ta nên đi chỗ đó'],
+        ['Czech', 'Měli bychom jít do té kavárny'],
+        ['Ukrainian', 'Нам варто піти в цей ресторан'],
+        ['Hungarian', 'El kellene mennünk abba az étterembe'],
+        ['Romanian', 'Ar trebui să mergem la restaurantul acela'],
+        ['Greek', 'Πρέπει να πάμε σε εκείνο το εστιατόριο'],
+        ['Finnish', 'Meidän pitäisi mennä siihen ravintolaan'],
+        ['Hebrew', 'כדאי שנלך למסעדה הזאת'],
+        ['Slovak', 'Mali by sme ísť do tej kaviarne'],
+        ['Thai', 'เราควรไปที่ร้านอาหารนั้น'],
+        ['Bulgarian', 'Трябва да отидем в онзи ресторант']
       ] as const
 
       it.each(multilingualSuggestionCases)('matches %s suggestion patterns', (_name, content) => {
@@ -84,6 +96,30 @@ describe('Candidate Extractor', () => {
 
         expect(result.candidates).toHaveLength(1)
         expect(result.candidates[0]?.candidateType).toBe('suggestion')
+        expect(result.candidates[0]?.source.type).toBe('regex')
+      })
+
+      const multilingualAgreementCases = [
+        ['Spanish', 'Suena bien!'],
+        ['Persian', 'به نظر خوبه'],
+        ['Vietnamese', 'nghe hay đó'],
+        ['Czech', 'zní to dobře'],
+        ['Ukrainian', 'звучить добре'],
+        ['Hungarian', 'jól hangzik'],
+        ['Romanian', 'sună bine'],
+        ['Greek', 'ακούγεται καλό'],
+        ['Finnish', 'kuulostaa hyvältä'],
+        ['Hebrew', 'נשמע טוב'],
+        ['Slovak', 'znie to dobre'],
+        ['Thai', 'ฟังดูดี'],
+        ['Bulgarian', 'звучи добре']
+      ] as const
+
+      it.each(multilingualAgreementCases)('matches %s agreement patterns', (_name, content) => {
+        const result = extractCandidatesByHeuristics([createMessage(0, content)])
+
+        expect(result.candidates).toHaveLength(1)
+        expect(result.candidates[0]?.candidateType).toBe('agreement')
         expect(result.candidates[0]?.source.type).toBe('regex')
       })
 

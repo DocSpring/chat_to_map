@@ -227,6 +227,23 @@ describe('extractActivityLinks', () => {
       expect(link.inferredType).toBe('place')
     })
 
+    it('detects SaaS locale intent keywords around links', () => {
+      const messages = [
+        createMessage(0, 'เราควรไปที่ร้านอาหารนั้น', 'Alice', []),
+        createMessage(1, 'https://instagram.com/reel/xyz', 'Bob', [
+          'https://instagram.com/reel/xyz'
+        ]),
+        createMessage(2, 'ฟังดูดี', 'Alice', [])
+      ]
+
+      const result = extractActivityLinks(messages)
+
+      expect(result.links).toHaveLength(1)
+      const link = getFirstLink(result)
+      expect(link.intent.keywords).toEqual(expect.arrayContaining(['เราควรไป', 'ฟังดูดี']))
+      expect(link.inferredType).toBe('place')
+    })
+
     it('detects high-signal emojis', () => {
       const messages = [
         createMessage(0, 'This restaurant looks incredible! \u{1F525}\u{1F60D}', 'Alice', []),

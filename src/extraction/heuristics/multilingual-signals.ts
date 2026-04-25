@@ -1,15 +1,20 @@
-import type { QueryType } from '../../types'
 import type { ActivityPattern } from './patterns'
+import {
+  type LocalePhraseGroup,
+  SAAS_LOCALE_ACTIVITY_TYPE_KEYWORDS,
+  SAAS_LOCALE_AGREEMENT_GROUPS,
+  SAAS_LOCALE_EVENT_KEYWORDS,
+  SAAS_LOCALE_EXCLAMATION_KEYWORDS,
+  SAAS_LOCALE_EXCLUSION_PHRASES,
+  SAAS_LOCALE_IDEA_KEYWORDS,
+  SAAS_LOCALE_PLACE_KEYWORDS,
+  SAAS_LOCALE_SUGGESTION_GROUPS
+} from './saas-locale-signals'
 
-interface PhraseGroup {
-  readonly lang: string
-  readonly confidence: number
-  readonly candidateType: QueryType
-  readonly phrases: readonly string[]
-}
+type PhraseGroup = LocalePhraseGroup
 
 const LOOSE_SCRIPT_PATTERN =
-  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Thai}]/u
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -95,7 +100,7 @@ const SUGGESTION_GROUPS: readonly PhraseGroup[] = [
     phrases: ['vi burde', 'skal vi', 'lad os', 'jeg vil gerne til', 'vi skal besøge']
   },
   {
-    lang: 'no',
+    lang: 'nb',
     confidence: 0.85,
     candidateType: 'suggestion',
     phrases: ['vi burde', 'skal vi', 'la oss', 'jeg vil dra', 'vi må besøke']
@@ -206,7 +211,7 @@ const AGREEMENT_GROUPS: readonly PhraseGroup[] = [
     phrases: ['lyder godt', 'jeg er på', 'ser sjovt ud']
   },
   {
-    lang: 'no',
+    lang: 'nb',
     confidence: 0.55,
     candidateType: 'agreement',
     phrases: ['høres bra', 'jeg er med', 'ser gøy ut']
@@ -269,11 +274,11 @@ const AGREEMENT_GROUPS: readonly PhraseGroup[] = [
 
 export const MULTILINGUAL_SUGGESTION_KEYWORDS: readonly string[] = SUGGESTION_GROUPS.flatMap(
   (group) => group.phrases
-)
+).concat(SAAS_LOCALE_SUGGESTION_GROUPS.flatMap((group) => group.phrases))
 
 export const MULTILINGUAL_AGREEMENT_KEYWORDS: readonly string[] = AGREEMENT_GROUPS.flatMap(
   (group) => group.phrases
-)
+).concat(SAAS_LOCALE_AGREEMENT_GROUPS.flatMap((group) => group.phrases))
 
 export const MULTILINGUAL_EXCLAMATION_KEYWORDS: readonly string[] = [
   'increíble',
@@ -290,7 +295,8 @@ export const MULTILINGUAL_EXCLAMATION_KEYWORDS: readonly string[] = [
   'رائع',
   'すごい',
   '대박',
-  '太棒了'
+  '太棒了',
+  ...SAAS_LOCALE_EXCLAMATION_KEYWORDS
 ]
 
 export const MULTILINGUAL_PLACE_KEYWORDS: readonly string[] = [
@@ -325,7 +331,8 @@ export const MULTILINGUAL_PLACE_KEYWORDS: readonly string[] = [
   'ビーチ',
   '해변',
   '海滩',
-  '海灘'
+  '海灘',
+  ...SAAS_LOCALE_PLACE_KEYWORDS
 ]
 
 export const MULTILINGUAL_EVENT_KEYWORDS: readonly string[] = [
@@ -342,7 +349,8 @@ export const MULTILINGUAL_EVENT_KEYWORDS: readonly string[] = [
   '演唱會',
   'festival',
   'фестиваль',
-  'फेस्टिवल'
+  'फेस्टिवल',
+  ...SAAS_LOCALE_EVENT_KEYWORDS
 ]
 
 export const MULTILINGUAL_ACTIVITY_TYPE_KEYWORDS: readonly string[] = [
@@ -367,7 +375,8 @@ export const MULTILINGUAL_ACTIVITY_TYPE_KEYWORDS: readonly string[] = [
   'reise',
   'voyage',
   'podróż',
-  'यात्रा'
+  'यात्रा',
+  ...SAAS_LOCALE_ACTIVITY_TYPE_KEYWORDS
 ]
 
 export const MULTILINGUAL_IDEA_KEYWORDS: readonly string[] = [
@@ -385,7 +394,8 @@ export const MULTILINGUAL_IDEA_KEYWORDS: readonly string[] = [
   'يومًا ما',
   'いつか',
   '언젠가',
-  '有一天'
+  '有一天',
+  ...SAAS_LOCALE_IDEA_KEYWORDS
 ]
 
 const MULTILINGUAL_EXCLUSION_PHRASES = [
@@ -439,12 +449,15 @@ const MULTILINGUAL_EXCLUSION_PHRASES = [
   '의사',
   '병원',
   '医生',
-  '醫生'
+  '醫生',
+  ...SAAS_LOCALE_EXCLUSION_PHRASES
 ] as const
 
 export const MULTILINGUAL_ACTIVITY_PATTERNS: readonly ActivityPattern[] = buildPatterns([
   ...SUGGESTION_GROUPS,
-  ...AGREEMENT_GROUPS
+  ...SAAS_LOCALE_SUGGESTION_GROUPS,
+  ...AGREEMENT_GROUPS,
+  ...SAAS_LOCALE_AGREEMENT_GROUPS
 ])
 
 export const MULTILINGUAL_ACTIVITY_KEYWORDS: readonly RegExp[] = buildKeywordPatterns([

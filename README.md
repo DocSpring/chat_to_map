@@ -27,24 +27,36 @@ Current first-class language coverage:
 
 - English
 - Spanish
-- Portuguese
 - German
+- Japanese
 - French
+- Portuguese
+- Russian
 - Italian
 - Dutch
-- Swedish
-- Danish
-- Norwegian
 - Polish
-- Russian
-- Hindi
-- Indonesian
 - Turkish
-- Arabic
-- Japanese
-- Korean
 - Chinese (Simplified)
 - Chinese (Traditional)
+- Persian
+- Vietnamese
+- Czech
+- Indonesian
+- Korean
+- Ukrainian
+- Hungarian
+- Arabic
+- Swedish
+- Romanian
+- Greek
+- Danish
+- Finnish
+- Hebrew
+- Slovak
+- Thai
+- Bulgarian
+- Norwegian Bokmål
+- Hindi
 
 ## Installation
 
