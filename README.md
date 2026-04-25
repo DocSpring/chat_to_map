@@ -11,11 +11,40 @@ ChatToMap extracts "things to do" from WhatsApp and iMessage exports - restauran
 
 **Features:**
 - Parse WhatsApp (iOS/Android) and iMessage exports
-- Extract suggestions using regex patterns and URL detection
+- Extract suggestions using multilingual regex patterns, embeddings, and URL detection
 - Classify with AI (activity vs errand, mappable vs general)
 - Scrape metadata from TikTok and YouTube links
 - Geocode locations to coordinates
 - Export to CSV, Excel, JSON, PDF, and interactive HTML map
+
+## Supported Languages
+
+ChatToMap supports multilingual chats across heuristic extraction, semantic search queries, and
+AI classification. It can process mixed-language conversations and preserves proper nouns,
+venues, media titles, and place names in their original script when appropriate.
+
+Current first-class language coverage:
+
+- English
+- Spanish
+- Portuguese
+- German
+- French
+- Italian
+- Dutch
+- Swedish
+- Danish
+- Norwegian
+- Polish
+- Russian
+- Hindi
+- Indonesian
+- Turkish
+- Arabic
+- Japanese
+- Korean
+- Chinese (Simplified)
+- Chinese (Traditional)
 
 ## Installation
 
