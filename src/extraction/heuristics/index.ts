@@ -15,7 +15,7 @@ import type {
   QueryType
 } from '../../types'
 import { deduplicateAgreements, getMessageContext, type MessageContext } from '../context-window'
-import { HIGH_SIGNAL_KEYWORDS } from './activity-links'
+import { HIGH_SIGNAL_KEYWORDS } from './intent-signals'
 import {
   ACTIVITY_KEYWORDS,
   ACTIVITY_PATTERNS,
@@ -26,12 +26,14 @@ import { classifyUrl, isActivityUrl, isSocialUrl } from './url-classifier'
 
 export {
   type ActivityLinkOptions,
+  extractActivityLinks
+} from './activity-links'
+export {
   AGREEMENT_KEYWORDS,
   EXCLAMATION_KEYWORDS,
-  extractActivityLinks,
   HIGH_SIGNAL_KEYWORDS,
   SUGGESTION_KEYWORDS
-} from './activity-links'
+} from './intent-signals'
 export {
   ACTIVITY_KEYWORDS,
   ACTIVITY_PATTERNS,

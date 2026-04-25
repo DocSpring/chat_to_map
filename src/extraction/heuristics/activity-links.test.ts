@@ -210,6 +210,23 @@ describe('extractActivityLinks', () => {
       expect(intent.score).toBeGreaterThan(0.2)
     })
 
+    it('detects multilingual intent keywords around links', () => {
+      const messages = [
+        createMessage(0, 'Deberíamos ir a ese restaurante', 'Alice', []),
+        createMessage(1, 'https://instagram.com/reel/xyz', 'Bob', [
+          'https://instagram.com/reel/xyz'
+        ]),
+        createMessage(2, 'Suena bien!', 'Alice', [])
+      ]
+
+      const result = extractActivityLinks(messages)
+
+      expect(result.links).toHaveLength(1)
+      const link = getFirstLink(result)
+      expect(link.intent.keywords).toEqual(expect.arrayContaining(['deberíamos ir', 'suena bien']))
+      expect(link.inferredType).toBe('place')
+    })
+
     it('detects high-signal emojis', () => {
       const messages = [
         createMessage(0, 'This restaurant looks incredible! \u{1F525}\u{1F60D}', 'Alice', []),

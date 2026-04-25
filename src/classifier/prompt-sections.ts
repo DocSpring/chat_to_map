@@ -58,6 +58,13 @@ DON'T use for: generic ("go to movies"), places (use placeName), bands (use wiki
 export const SHARED_CATEGORIES_SECTION = `CATEGORIES: ${VALID_CATEGORIES.join(', ')}
 ("other" should be used only as a last resort. Only use it if no other category applies.)`
 
+export const SHARED_LANGUAGE_SECTION = `LANGUAGE HANDLING:
+- Chats may be in any language or mix multiple languages in one conversation.
+- Treat translated equivalents of "we should", "let's go", "want to visit", enthusiasm, and agreement the same as English.
+- Output JSON field names exactly as specified. Use concise English for generic activity descriptions when natural.
+- Preserve proper nouns, venue names, media titles, addresses, and city/place names in their original script unless a standard English name is obvious.
+- Do not skip a candidate just because the surrounding context is not English.`
+
 export const SHARED_NORMALIZATION = `NORMALIZATION:
 - Distinct categories: cafe≠restaurant, bar≠restaurant
 - KEEP mediaKey specificity: "glow worm cave" not "cave", "hot air balloon" not "balloon"

@@ -6,8 +6,13 @@
  */
 
 import type { QueryType } from '../../types'
+import {
+  MULTILINGUAL_ACTIVITY_KEYWORDS,
+  MULTILINGUAL_ACTIVITY_PATTERNS,
+  MULTILINGUAL_EXCLUSION_PATTERNS
+} from './multilingual-signals'
 
-interface ActivityPattern {
+export interface ActivityPattern {
   readonly name: string
   readonly pattern: RegExp
   readonly confidence: number
@@ -196,8 +201,9 @@ const LOWER_CONFIDENCE_PATTERNS: readonly ActivityPattern[] = [
 export const ACTIVITY_PATTERNS: readonly ActivityPattern[] = [
   ...HIGH_CONFIDENCE_PATTERNS,
   ...MEDIUM_CONFIDENCE_PATTERNS,
-  ...LOWER_CONFIDENCE_PATTERNS
-]
+  ...LOWER_CONFIDENCE_PATTERNS,
+  ...MULTILINGUAL_ACTIVITY_PATTERNS
+].sort((a, b) => b.confidence - a.confidence)
 
 /**
  * Activity/place keywords that boost confidence when combined with activity patterns
@@ -220,7 +226,8 @@ export const ACTIVITY_KEYWORDS: readonly RegExp[] = [
   // Adventure
   /\b(?:ski|snowboard|bungy|bungee|skydive|zipline|jet boat|luge|zorb)\b/i,
   // Travel
-  /\b(?:tour|cruise|trip|getaway|holiday|vacation|road trip|roadie)\b/i
+  /\b(?:tour|cruise|trip|getaway|holiday|vacation|road trip|roadie)\b/i,
+  ...MULTILINGUAL_ACTIVITY_KEYWORDS
 ]
 
 /**
@@ -236,7 +243,8 @@ export const EXCLUSION_PATTERNS: readonly RegExp[] = [
   // Negative constructs
   /\b(?:should not|shouldn't|can't|cannot|won't|wouldn't|don't)\b/i,
   // Past tense indicators
-  /\b(?:we went|we did|we visited|we tried|already been|been there)\b/i
+  /\b(?:we went|we did|we visited|we tried|already been|been there)\b/i,
+  ...MULTILINGUAL_EXCLUSION_PATTERNS
 ]
 
 /**

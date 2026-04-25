@@ -146,6 +146,16 @@ describe('Classifier Prompt', () => {
       expect(prompt).toContain('adult content')
     })
 
+    it('includes multilingual analysis instructions', () => {
+      const candidates = [createCandidate(1, 'あのレストランに行ってみたい')]
+
+      const prompt = buildClassificationPrompt(candidates, TEST_CONTEXT)
+
+      expect(prompt).toContain('Chats may be in any language')
+      expect(prompt).toContain('Preserve proper nouns')
+      expect(prompt).toContain('あのレストランに行ってみたい')
+    })
+
     it('tags agreement candidates with [AGREE]', () => {
       const candidates = [createCandidate(1, 'Sounds great!', [], [], 'agreement')]
 

@@ -16,87 +16,14 @@ import type {
   SocialPlatform,
   UrlType
 } from '../../types'
+import { HIGH_SIGNAL_KEYWORDS } from './intent-signals'
+import {
+  MULTILINGUAL_ACTIVITY_TYPE_KEYWORDS,
+  MULTILINGUAL_EVENT_KEYWORDS,
+  MULTILINGUAL_IDEA_KEYWORDS,
+  MULTILINGUAL_PLACE_KEYWORDS
+} from './multilingual-signals'
 import { classifyUrl } from './url-classifier'
-
-// ============================================================================
-// Intent Detection Constants
-// ============================================================================
-
-/**
- * Exclamation keywords - single-word positive reactions.
- * These are risky for false positives but high signal when near a URL.
- */
-export const EXCLAMATION_KEYWORDS: readonly string[] = [
-  'amazing',
-  'awesome',
-  'beautiful',
-  'delicious',
-  'incredible'
-]
-
-/**
- * Agreement keywords - positive reactions indicating interest in shared content.
- * All phrases are 2+ words to avoid false positives.
- */
-export const AGREEMENT_KEYWORDS: readonly string[] = [
-  'looks fun',
-  'looks good',
-  'looks great',
-  'looks cool',
-  'looks nice',
-  'sounds fun',
-  'sounds good',
-  'sounds great',
-  'so good',
-  'so cool',
-  "i'm keen",
-  "i'm down",
-  "let's book",
-  "let's do it"
-]
-
-/**
- * Suggestion keywords - indicate intent to do an activity.
- * All phrases are 2+ words to avoid false positives.
- */
-export const SUGGESTION_KEYWORDS: readonly string[] = [
-  'we should',
-  'should we',
-  "let's go",
-  "let's try",
-  "let's visit",
-  "let's check",
-  'want to go',
-  'want to try',
-  'want to visit',
-  'wanna go',
-  'wanna try',
-  'wanna visit',
-  'have to go',
-  'have to try',
-  'have to visit',
-  'need to go',
-  'need to try',
-  'gotta try',
-  'gotta go',
-  'must visit',
-  'must try',
-  'check this out',
-  'check it out',
-  'this place',
-  'this spot',
-  'next time',
-  'bucket list',
-  'on my list',
-  'adding to list'
-]
-
-/** All high-signal keywords (exclamation + agreement + suggestion). */
-export const HIGH_SIGNAL_KEYWORDS: readonly string[] = [
-  ...EXCLAMATION_KEYWORDS,
-  ...AGREEMENT_KEYWORDS,
-  ...SUGGESTION_KEYWORDS
-]
 
 /**
  * Agreement emojis - positive reactions indicating interest in shared content.
@@ -303,7 +230,16 @@ function inferActivityType(
   }
 
   // Event indicators
-  const eventKeywords = ['event', 'concert', 'show', 'festival', 'ticket', 'gig', 'performance']
+  const eventKeywords = [
+    'event',
+    'concert',
+    'show',
+    'festival',
+    'ticket',
+    'gig',
+    'performance',
+    ...MULTILINGUAL_EVENT_KEYWORDS
+  ]
   if (eventKeywords.some((kw) => allText.includes(kw))) {
     return 'event'
   }
@@ -319,20 +255,38 @@ function inferActivityType(
     'park',
     'this place',
     'location',
-    'spot'
+    'spot',
+    ...MULTILINGUAL_PLACE_KEYWORDS
   ]
   if (placeKeywords.some((kw) => allText.includes(kw))) {
     return 'place'
   }
 
   // Activity indicators
-  const activityKeywords = ['hike', 'trek', 'ski', 'surf', 'dive', 'climb', 'tour', 'trip']
+  const activityKeywords = [
+    'hike',
+    'trek',
+    'ski',
+    'surf',
+    'dive',
+    'climb',
+    'tour',
+    'trip',
+    ...MULTILINGUAL_ACTIVITY_TYPE_KEYWORDS
+  ]
   if (activityKeywords.some((kw) => allText.includes(kw))) {
     return 'activity'
   }
 
   // Idea indicators (vague future plans)
-  const ideaKeywords = ['one day', 'someday', 'bucket list', 'dream', 'wish']
+  const ideaKeywords = [
+    'one day',
+    'someday',
+    'bucket list',
+    'dream',
+    'wish',
+    ...MULTILINGUAL_IDEA_KEYWORDS
+  ]
   if (ideaKeywords.some((kw) => allText.includes(kw))) {
     return 'idea'
   }

@@ -18,6 +18,7 @@ import {
   SHARED_EXAMPLES,
   SHARED_IMAGE_SECTION,
   SHARED_INCLUDE_RULES,
+  SHARED_LANGUAGE_SECTION,
   SHARED_LINK_SECTION,
   SHARED_NORMALIZATION,
   SHARED_SKIP_RULES,
@@ -186,6 +187,8 @@ ${formatted}
 
 ${buildUserContextSection(context.homeCountry, context.timezone)}
 
+${SHARED_LANGUAGE_SECTION}
+
 WHY THESE MESSAGES:
 You're seeing messages pre-filtered by heuristics (regex patterns like "let's go", "we should try") and semantic search (embeddings). We intentionally cast a wide net - you'll see some false positives. Your job is to identify the real activities worth saving.
 
@@ -249,6 +252,8 @@ ${formatted}
   return `GOAL: Extract activities that the user is agreeing to or expressing enthusiasm about.
 
 ${buildUserContextSection(context.homeCountry, context.timezone)}
+
+${SHARED_LANGUAGE_SECTION}
 
 These are AGREEMENT messages - phrases like "sounds great!", "I'm keen!", "let's do it!". Your job is to find WHAT they are agreeing to by looking at the messages BEFORE the >>> candidate.
 

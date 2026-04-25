@@ -56,6 +56,70 @@ describe('Candidate Extractor', () => {
 
         expect(result.candidates).toHaveLength(1)
       })
+
+      const multilingualSuggestionCases = [
+        ['Spanish', 'Deberíamos ir a ese restaurante'],
+        ['Portuguese', 'Deveríamos ir a esse restaurante'],
+        ['German', 'Wir sollten diesen Biergarten besuchen'],
+        ['French', 'On devrait aller à ce café'],
+        ['Italian', 'Dovremmo andare in quel ristorante'],
+        ['Dutch', 'Laten we naar dat café gaan'],
+        ['Swedish', 'Vi borde gå till den restaurangen'],
+        ['Danish', 'Lad os tage derhen'],
+        ['Norwegian', 'La oss dra dit'],
+        ['Polish', 'Powinniśmy tam pójść'],
+        ['Russian', 'Давай сходим в этот ресторан'],
+        ['Hindi', 'हमें वहाँ जाना चाहिए'],
+        ['Indonesian', 'Ayo pergi ke tempat itu'],
+        ['Turkish', 'Oraya gidelim'],
+        ['Arabic', 'لنذهب إلى ذلك المطعم'],
+        ['Japanese', 'あのレストランに行ってみたい'],
+        ['Korean', '그 식당에 가자'],
+        ['Chinese Simplified', '我们应该去那家餐厅'],
+        ['Chinese Traditional', '我們應該去那家餐廳']
+      ] as const
+
+      it.each(multilingualSuggestionCases)('matches %s suggestion patterns', (_name, content) => {
+        const result = extractCandidatesByHeuristics([createMessage(0, content)])
+
+        expect(result.candidates).toHaveLength(1)
+        expect(result.candidates[0]?.candidateType).toBe('suggestion')
+        expect(result.candidates[0]?.source.type).toBe('regex')
+      })
+
+      it('deduplicates multilingual agreement candidates near suggestions', () => {
+        const messages = [
+          createMessage(1, 'Deberíamos ir a ese restaurante', 'Alice'),
+          createMessage(2, 'Suena bien!', 'Bob')
+        ]
+
+        const result = extractCandidatesByHeuristics(messages)
+
+        expect(result.candidates).toHaveLength(1)
+        expect(result.candidates[0]?.messageId).toBe(1)
+        expect(result.agreementsRemoved).toBe(1)
+      })
+
+      it('excludes multilingual medical errands before suggestion matching', () => {
+        const messages = [createMessage(0, '病院に行きたい')]
+
+        const result = extractCandidatesByHeuristics(messages)
+
+        expect(result.candidates).toHaveLength(0)
+      })
+
+      it('uses multilingual intent phrases to include generic URLs', () => {
+        const messages = [
+          createMessage(0, 'Vamos a ir https://example.com/place', 'User', [
+            'https://example.com/place'
+          ])
+        ]
+
+        const result = extractCandidatesByHeuristics(messages)
+
+        expect(result.candidates).toHaveLength(1)
+        expect(result.urlMatches).toBe(1)
+      })
     })
 
     describe('URL-based matching', () => {
