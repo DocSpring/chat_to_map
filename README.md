@@ -7,10 +7,10 @@ Transform chat exports into geocoded activity suggestions.
 
 ## Overview
 
-ChatToMap extracts "things to do" from WhatsApp, iMessage, and Telegram exports - restaurants to try, places to visit, trips to take. It finds suggestions buried in years of chat history and puts them on a map.
+ChatToMap extracts "things to do" from WhatsApp, iMessage, Telegram, and LINE exports - restaurants to try, places to visit, trips to take. It finds suggestions buried in years of chat history and puts them on a map.
 
 **Features:**
-- Parse WhatsApp (iOS/Android), iMessage, and Telegram Desktop JSON exports
+- Parse WhatsApp (iOS/Android), iMessage, Telegram Desktop JSON, and LINE text exports
 - Extract suggestions using multilingual regex patterns, embeddings, and URL detection
 - Classify with AI (activity vs errand, mappable vs general)
 - Scrape metadata from TikTok and YouTube links
@@ -52,6 +52,9 @@ chat-to-map analyze <input>
 
 # Telegram Desktop exports
 chat-to-map analyze "/path/to/ChatExport_2026-04-26/result.json"
+
+# LINE text exports
+chat-to-map analyze "/path/to/[LINE] Chat with Friends.txt"
 
 # List previously processed chats
 chat-to-map list

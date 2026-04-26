@@ -4,7 +4,7 @@
  * Types for chat parsing and message representation.
  */
 
-export type ChatSource = 'whatsapp' | 'imessage' | 'telegram'
+export type ChatSource = 'whatsapp' | 'imessage' | 'telegram' | 'line'
 
 export type WhatsAppFormat = 'ios' | 'android' | 'auto'
 

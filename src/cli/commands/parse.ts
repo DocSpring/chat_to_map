@@ -19,7 +19,8 @@ import { initContext, stepParse } from '../steps/index'
 function formatSource(source: ChatSource): string {
   if (source === 'whatsapp') return 'WhatsApp'
   if (source === 'imessage') return 'iMessage'
-  return 'Telegram'
+  if (source === 'telegram') return 'Telegram'
+  return 'LINE'
 }
 
 /**
