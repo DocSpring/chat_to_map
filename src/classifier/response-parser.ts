@@ -162,6 +162,22 @@ function parseItem(obj: Record<string, unknown>): ParsedClassification {
   }
 }
 
+function normalizeSingleCandidateIndex(
+  results: ParsedClassification[],
+  expectedIds: readonly number[] | undefined
+): ParsedClassification[] {
+  if (expectedIds?.length !== 1 || results.length !== 1) {
+    return results
+  }
+
+  const expectedId = expectedIds[0]
+  if (expectedId === undefined || results[0]?.msg !== 0 || expectedId === 0) {
+    return results
+  }
+
+  return [{ ...results[0], msg: expectedId }]
+}
+
 /**
  * Parse the classification response from the AI.
  * @param response Raw AI response text
@@ -183,12 +199,14 @@ export function parseClassificationResponse(
     return []
   }
 
-  const results = parsed.map((item: unknown) => {
+  let results = parsed.map((item: unknown) => {
     if (typeof item !== 'object' || item === null) {
       throw new Error('Array item is not an object')
     }
     return parseItem(item as Record<string, unknown>)
   })
+
+  results = normalizeSingleCandidateIndex(results, expectedIds)
 
   // Validate at least one msg matches expected
   if (expectedIds && expectedIds.length > 0) {

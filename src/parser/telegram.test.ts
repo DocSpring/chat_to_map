@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { buildClassificationPrompt } from '../classifier/prompt'
+import { extractCandidatesByHeuristics } from '../extraction'
 import { detectChatSource, parseChat, parseChatStream } from './index'
 import { isTelegramExport, parseTelegramExport } from './telegram'
 
@@ -22,6 +24,25 @@ function telegramMessage(overrides: Record<string, unknown>): Record<string, unk
     text_entities: [],
     ...overrides
   }
+}
+
+function telegramResultJsonWithLateSuggestion(): string {
+  return telegramExport([
+    ...Array.from({ length: 79 }, (_, index) =>
+      telegramMessage({
+        id: 702 + index,
+        date: `2026-04-26T12:${String(index % 60).padStart(2, '0')}:00`,
+        from: 'Jill Bo',
+        text: `OpenClaw access log ${index + 1}.`
+      })
+    ),
+    telegramMessage({
+      id: 5606,
+      date: '2026-04-26T12:33:00',
+      from: 'Jill Bo',
+      text: 'Hello love. We should go to the moon'
+    })
+  ])
 }
 
 describe('Telegram parser', () => {
@@ -124,6 +145,23 @@ describe('Telegram parser', () => {
     expect(messages).toHaveLength(1)
     expect(messages[0]?.sender).toBe('Sam')
     expect(messages[0]?.source).toBe('telegram')
+  })
+
+  it('keeps late Telegram result.json candidate IDs explicit in classifier prompts', () => {
+    const messages = parseChat(telegramResultJsonWithLateSuggestion())
+    const result = extractCandidatesByHeuristics(messages)
+
+    expect(messages).toHaveLength(80)
+    expect(result.candidates.map((candidate) => candidate.messageId)).toEqual([79])
+
+    const prompt = buildClassificationPrompt(result.candidates, {
+      homeCountry: 'New Zealand',
+      timezone: 'Pacific/Auckland'
+    })
+
+    expect(prompt).toContain('ID: 79 |')
+    expect(prompt).toContain('>>> ID: 79 | Jill Bo: Hello love. We should go to the moon')
+    expect(prompt).toContain('"msg": <exact ID from the >>> candidate line>')
   })
 
   it('rejects invalid Telegram JSON in the explicit parser', () => {

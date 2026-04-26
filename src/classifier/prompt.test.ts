@@ -391,6 +391,22 @@ Hope this helps!`
       // Should throw when no IDs match
       expect(() => parseClassificationResponse(response, [999])).toThrow(/no matching message IDs/)
     })
+
+    it('normalizes single-candidate index 0 responses to the expected message ID', () => {
+      const response = `[{"msg": 0, "title": "Moon trip", "fun": 5, "int": 5, "cat": "travel", "image": {"stock": "moon travel", "mediaKey": "moon"}}]`
+
+      const parsed = parseClassificationResponse(response, [79])
+
+      expect(parsed[0]?.msg).toBe(79)
+    })
+
+    it('still rejects index 0 responses for multi-candidate batches without a matching ID', () => {
+      const response = `[{"msg": 0, "title": "Moon trip", "fun": 5, "int": 5, "cat": "travel", "image": {"stock": "moon travel", "mediaKey": "moon"}}]`
+
+      expect(() => parseClassificationResponse(response, [79, 80])).toThrow(
+        /no matching message IDs/
+      )
+    })
   })
 
   describe('injectUrlMetadataIntoText', () => {

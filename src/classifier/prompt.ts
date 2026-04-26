@@ -104,8 +104,9 @@ function formatCandidateWithContext(
     parts.push(candidate.contextBefore.map(formatContextMessage).join('\n'))
   }
 
-  // The target message (marked with >>>)
-  parts.push(`>>> ${candidate.sender}: ${candidate.content}`)
+  // The target message (marked with >>>). Repeat the ID here so single-candidate
+  // prompts do not invite the model to answer with a local array index like 0.
+  parts.push(`>>> ID: ${candidate.messageId} | ${candidate.sender}: ${candidate.content}`)
 
   // Context after the target message (only for suggestions)
   if (includeAfterContext && candidate.contextAfter.length > 0) {
@@ -192,7 +193,7 @@ ${SHARED_LANGUAGE_SECTION}
 WHY THESE MESSAGES:
 You're seeing messages pre-filtered by heuristics (regex patterns like "let's go", "we should try") and semantic search (embeddings). We intentionally cast a wide net - you'll see some false positives. Your job is to identify the real activities worth saving.
 
-Messages marked >>> are candidates. The activity MUST come from the >>> candidate message itself, not from surrounding context.
+Messages marked >>> are candidates. The activity MUST come from the >>> candidate message itself, not from surrounding context. Copy the exact ID shown on the >>> line into the "msg" field.
 
 CRITICAL: Only extract activities that are IN the >>> message itself. Context is for understanding intent, not for finding activities.
 - WRONG: >>> "Just having coffee" with context "Paintball. Saturday?" → extracting paintball (activity is in context, not candidate)
@@ -257,7 +258,7 @@ ${SHARED_LANGUAGE_SECTION}
 
 These are AGREEMENT messages - phrases like "sounds great!", "I'm keen!", "let's do it!". Your job is to find WHAT they are agreeing to by looking at the messages BEFORE the >>> candidate.
 
-The >>> message is the agreement itself. Look at the context BEFORE it to find the activity being agreed to.
+The >>> message is the agreement itself. Look at the context BEFORE it to find the activity being agreed to. Copy the exact ID shown on the >>> line into the "msg" field.
 
 For each activity found, use:
 - "msg": the ID of the >>> agreement message

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { parseChat } from '../../parser'
 import type { ParsedMessage } from '../../types'
 import { extractCandidatesByHeuristics } from './index'
 
@@ -39,6 +40,30 @@ describe('Candidate Extractor', () => {
         const result = extractCandidatesByHeuristics(messages)
 
         expect(result.candidates).toHaveLength(1)
+      })
+
+      it('matches LINE media plans like "Let\'s watch Project Hail Mary"', () => {
+        const messages = parseChat(`[LINE] Chat history with Sarah Bo
+Saved on: 26/04/2026, 04:36PM
+
+Sun, 26/04/2026
+04:35PM\tBill Bo\tWe should go to Disneyland
+04:35PM\tJill Bo\tYay that would be cool
+04:36PM\tJill Bo\tLet’s watch Project Hail Mary tomorrow
+04:36PM\tBill Bo\tOk yeah that’s a great movie
+`)
+
+        const result = extractCandidatesByHeuristics(messages)
+
+        expect(result.candidates).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              content: "Let's watch Project Hail Mary tomorrow",
+              candidateType: 'suggestion',
+              source: expect.objectContaining({ pattern: 'lets_media_activity' })
+            })
+          ])
+        )
       })
 
       it('matches "want to go" pattern', () => {
@@ -238,6 +263,14 @@ describe('Candidate Extractor', () => {
 
       it('excludes messages with "dentist" mentions', () => {
         const messages = [createMessage(0, 'Need to go to the dentist')]
+
+        const result = extractCandidatesByHeuristics(messages)
+
+        expect(result.candidates).toHaveLength(0)
+      })
+
+      it('excludes explicit work project messages without excluding media titles', () => {
+        const messages = [createMessage(0, 'We should finish the project by Friday')]
 
         const result = extractCandidatesByHeuristics(messages)
 

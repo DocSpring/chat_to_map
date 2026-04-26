@@ -61,6 +61,13 @@ const HIGH_CONFIDENCE_PATTERNS: readonly ActivityPattern[] = [
     candidateType: 'suggestion'
   },
   {
+    name: 'lets_media_activity',
+    pattern: /\blet'?s (?:watch|read|play|listen to)\b/i,
+    confidence: 0.85,
+    description: "Let's watch/read/play/listen to...",
+    candidateType: 'suggestion'
+  },
+  {
     name: 'wanna_go',
     pattern: /\b(?:wanna|want to) go\b/i,
     confidence: 0.85,
@@ -235,7 +242,9 @@ export const ACTIVITY_KEYWORDS: readonly RegExp[] = [
  */
 export const EXCLUSION_PATTERNS: readonly RegExp[] = [
   // Work & business
-  /\b(?:work|job|meeting|email|call|pay|bill|tax|deadline|project|boss|office)\b/i,
+  /\b(?:work|job|meeting|email|call|pay|bill|tax|deadline|boss|office)\b/i,
+  /\b(?:finish|deliver|submit|review|scope|estimate|ship|deploy|discuss|talk about|work on|complete)\s+(?:the\s+)?project\b/i,
+  /\bproject\s+(?:deadline|meeting|plan|proposal|status|work|task|update)\b/i,
   // Medical & appointments
   /\b(?:doctor|dentist|hospital|appointment|vet|mechanic|optometrist|physio)\b/i,
   // Chores & errands

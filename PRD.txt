@@ -2,18 +2,18 @@
 
 ## Overview
 
-Extract "things to do" suggestions from a WhatsApp chat history between Nathan and Masha Broadbent, focusing on activities in New Zealand. Surface these suggestions in a spreadsheet and interactive map.
+Extract "things to do" suggestions from a WhatsApp chat history, focusing on activities in New Zealand. Surface these suggestions in a spreadsheet and interactive map.
 
 ## Data Source
 
-- WhatsApp iOS export: `~/Downloads/WhatsApp Chat - Masha Broadbent.zip`
+- WhatsApp iOS export: `~/Downloads/WhatsApp Chat - Jill Gillette.zip`
 - ~15,000 messages spanning Oct 2023 - Dec 2025
 - ~1,540 media files (photos, videos, GIFs, stickers, audio)
 - 362 URLs including TikTok, YouTube, Google Maps, Airbnb, etc.
 
 ## Goals
 
-1. Extract every instance where Nathan or Masha suggested "we should do this" - explicitly or implicitly
+1. Extract every instance where people suggested "we should do this" - explicitly or implicitly
 2. Focus on activities doable in New Zealand
 3. Output to spreadsheet with all relevant data
 4. Visualize on OpenStreetMap with pins for geolocated activities

@@ -103,7 +103,7 @@ Return JSON array with ONLY activities worth saving. Skip non-activities entirel
 \`\`\`json
 [
   {
-    "msg": <message_id>,
+    "msg": <exact ID from the >>> candidate line>,
 ${offsetField}    "title": "<activity description, under 100 chars, fix any typos (e.g., 'ballon'→'balloon')>",
     "fun": <0.0-5.0 how fun/enjoyable>,
     "int": <0.0-5.0 how interesting/unique>,
