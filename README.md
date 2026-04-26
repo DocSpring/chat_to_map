@@ -2,7 +2,6 @@
 
 Transform chat exports into geocoded activity suggestions.
 
-[![npm](https://img.shields.io/npm/v/chat-to-map)](https://www.npmjs.com/package/chat-to-map)
 [![License](https://img.shields.io/badge/License-AGPL--3.0-blue)](LICENSE)
 
 ## Overview
@@ -17,13 +16,7 @@ ChatToMap extracts "things to do" from WhatsApp, iMessage, Telegram, and LINE ex
 - Geocode locations to coordinates
 - Export to CSV, Excel, JSON, PDF, and interactive HTML map
 
-## Supported Languages
-
-ChatToMap supports multilingual chats across heuristic extraction, semantic search queries, and
-AI classification. It can process mixed-language conversations and preserves proper nouns,
-venues, media titles, and place names in their original script when appropriate.
-
-Current first-class language coverage: Arabic, Bulgarian, Chinese (Simplified), Chinese (Traditional), Czech, Danish, Dutch, English, Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Norwegian Bokmål, Persian, Polish, Portuguese, Romanian, Russian, Slovak, Spanish, Swedish, Thai, Turkish, Ukrainian, Vietnamese
+`chat_to_map` is the free and open source engine that powers [ChatToMap.com](https://chattomap.com). If you are not comfortable with command-line tools or managing API tokens, you can use the [ChatToMap web app](https://chattomap.com) and pay a small fee to analyze your chat exports.
 
 ## Installation
 
@@ -248,6 +241,14 @@ if (result.ok) {
 2. Tap ⋮ → More → Export chat
 3. Choose "Without media"
 4. Save the .zip file
+
+## Supported Languages
+
+ChatToMap supports multilingual chats across heuristic extraction, semantic search queries, and
+AI classification. It can process mixed-language conversations and preserves proper nouns,
+venues, media titles, and place names in their original script when appropriate.
+
+Current first-class language coverage: Arabic, Bulgarian, Chinese (Simplified), Chinese (Traditional), Czech, Danish, Dutch, English, Finnish, French, German, Greek, Hebrew, Hindi, Hungarian, Indonesian, Italian, Japanese, Korean, Norwegian Bokmål, Persian, Polish, Portuguese, Romanian, Russian, Slovak, Spanish, Swedish, Thai, Turkish, Ukrainian, Vietnamese
 
 ## Privacy
 
