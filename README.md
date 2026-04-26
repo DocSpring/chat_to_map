@@ -7,10 +7,10 @@ Transform chat exports into geocoded activity suggestions.
 
 ## Overview
 
-ChatToMap extracts "things to do" from WhatsApp and iMessage exports - restaurants to try, places to visit, trips to take. It finds suggestions buried in years of chat history and puts them on a map.
+ChatToMap extracts "things to do" from WhatsApp, iMessage, and Telegram exports - restaurants to try, places to visit, trips to take. It finds suggestions buried in years of chat history and puts them on a map.
 
 **Features:**
-- Parse WhatsApp (iOS/Android) and iMessage exports
+- Parse WhatsApp (iOS/Android), iMessage, and Telegram Desktop JSON exports
 - Extract suggestions using multilingual regex patterns, embeddings, and URL detection
 - Classify with AI (activity vs errand, mappable vs general)
 - Scrape metadata from TikTok and YouTube links
@@ -49,6 +49,9 @@ chat-to-map preview <input>
 
 # Full analysis with exports
 chat-to-map analyze <input>
+
+# Telegram Desktop exports
+chat-to-map analyze "/path/to/ChatExport_2026-04-26/result.json"
 
 # List previously processed chats
 chat-to-map list
@@ -150,7 +153,7 @@ export CHAT_TO_MAP_CONFIG=/path/to/config.json
 
 ```typescript
 import {
-  parseWhatsAppChat,
+  parseChat,
   extractCandidatesByHeuristics,
   extractCandidates,  // combined: heuristics + embeddings
   classifyMessages,
@@ -164,7 +167,7 @@ const scan = quickScan(chatText)
 console.log(`Found ${scan.candidates.length} candidates`)
 
 // Parse messages
-const messages = parseWhatsAppChat(chatText)
+const messages = parseChat(chatText)
 
 // Extract candidates (heuristics only - sync, free)
 const { candidates } = extractCandidatesByHeuristics(messages)

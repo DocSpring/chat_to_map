@@ -7,6 +7,7 @@
 import { writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { VERSION } from '../../index'
+import type { ChatSource } from '../../types'
 import type { CLIArgs } from '../args'
 import { ensureDir } from '../io'
 import type { Logger } from '../logger'
@@ -15,8 +16,10 @@ import { initContext, stepParse } from '../steps/index'
 /**
  * Format chat source for display.
  */
-function formatSource(source: 'whatsapp' | 'imessage'): string {
-  return source === 'whatsapp' ? 'WhatsApp' : 'iMessage'
+function formatSource(source: ChatSource): string {
+  if (source === 'whatsapp') return 'WhatsApp'
+  if (source === 'imessage') return 'iMessage'
+  return 'Telegram'
 }
 
 /**

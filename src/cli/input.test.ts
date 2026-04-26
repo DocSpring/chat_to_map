@@ -47,6 +47,15 @@ describe('getInputMetadata', () => {
     expect(metadata.baseName).toBe('chat')
   })
 
+  it('removes .json extension', async () => {
+    const filePath = join(TEST_DIR, 'result.json')
+    await writeFile(filePath, '{"messages":[]}')
+
+    const metadata = await getInputMetadata(filePath)
+
+    expect(metadata.baseName).toBe('result')
+  })
+
   it('generates different hash for different mtimes', async () => {
     const filePath = join(TEST_DIR, 'chat.txt')
     await writeFile(filePath, 'test')
@@ -118,6 +127,16 @@ describe('readInputFileWithMetadata', () => {
 
     const result = await readInputFileWithMetadata(filePath)
     expect(result.content).toBe('Chat content')
+  })
+
+  it('reads Telegram result.json files', async () => {
+    const filePath = join(TEST_DIR, 'result.json')
+    await writeFile(filePath, '{"messages":[]}')
+
+    const result = await readInputFileWithMetadata(filePath)
+
+    expect(result.content).toBe('{"messages":[]}')
+    expect(result.metadata.baseName).toBe('result')
   })
 })
 

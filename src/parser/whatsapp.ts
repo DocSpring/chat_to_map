@@ -8,7 +8,7 @@
  */
 
 import type { MediaType, ParsedMessage, ParserOptions, WhatsAppFormat } from '../types'
-import { chunkMessage, createChunkedMessages, normalizeApostrophes } from './index'
+import { chunkMessage, createChunkedMessages, extractUrls, normalizeApostrophes } from './index'
 
 // WhatsApp iOS format:
 // - [MM/DD/YY, H:MM:SS AM/PM] Sender: Message
@@ -51,9 +51,6 @@ const SYSTEM_PATTERNS: readonly RegExp[] = [
   /^[\u200E]?You're now an admin$/i,
   /^[\u200E]?.*'s security code changed/i
 ]
-
-// URL extraction pattern
-const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/gi
 
 type DateOrder = 'month-first' | 'day-first'
 
@@ -181,19 +178,6 @@ function detectMediaType(content: string): MediaType | undefined {
 function isSystemMessage(content: string): boolean {
   const trimmed = content.trim()
   return SYSTEM_PATTERNS.some((pattern) => pattern.test(trimmed))
-}
-
-/**
- * Extract all URLs from message content.
- */
-function extractUrls(content: string): string[] {
-  const matches = content.match(URL_PATTERN)
-  if (!matches) {
-    return []
-  }
-
-  // Clean trailing punctuation
-  return matches.map((url) => url.replace(/[.,;:!?]+$/, '')).filter((url) => url.length > 0)
 }
 
 /**

@@ -39,6 +39,7 @@ function sanitizeForDirectory(name: string): string {
   return name
     .replace(/\.zip$/i, '')
     .replace(/\.txt$/i, '')
+    .replace(/\.json$/i, '')
     .replace(/[^a-zA-Z0-9_-]/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '')

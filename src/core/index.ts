@@ -151,11 +151,13 @@ export {
 export {
   detectChatSource,
   detectFormat,
+  isTelegramExport,
   parseChat,
   parseChatStream,
   parseChatWithStats,
   parseIMessageChat,
   parseIMessageChatStream,
+  parseTelegramExport,
   parseWhatsAppChat,
   parseWhatsAppChatStream
 } from '../parser/index'

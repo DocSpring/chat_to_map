@@ -16,14 +16,11 @@
  */
 
 import type { ParsedMessage } from '../types'
-import { chunkMessage, createChunkedMessages, normalizeApostrophes } from './index'
+import { chunkMessage, createChunkedMessages, extractUrls, normalizeApostrophes } from './index'
 
 // Timestamp line pattern: Apr 02, 2025  8:52:29 AM (optional read receipt)
 const TIMESTAMP_PATTERN =
   /^([A-Z][a-z]{2} \d{1,2}, \d{4})\s+(\d{1,2}:\d{2}:\d{2} [AP]M)(?:\s*\(.*\))?$/
-
-// URL extraction pattern
-const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/gi
 
 // Month name to number mapping
 const MONTHS: Record<string, number> = {
@@ -76,18 +73,6 @@ function parseTimestamp(dateStr: string, timeStr: string): Date {
     Number.parseInt(minute ?? '0', 10),
     Number.parseInt(second ?? '0', 10)
   )
-}
-
-/**
- * Extract all URLs from message content.
- */
-function extractUrls(content: string): string[] {
-  const matches = content.match(URL_PATTERN)
-  if (!matches) {
-    return []
-  }
-
-  return matches.map((url) => url.replace(/[.,;:!?]+$/, '')).filter((url) => url.length > 0)
 }
 
 interface MessageBuilder {

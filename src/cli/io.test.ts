@@ -23,6 +23,15 @@ describe('readInputFile', () => {
 
       expect(content).toBe('Hello, world!')
     })
+
+    it('reads a direct Telegram result.json file', async () => {
+      const filePath = join(TEST_DIR, 'result.json')
+      await writeFile(filePath, '{"messages":[]}')
+
+      const content = await readInputFile(filePath)
+
+      expect(content).toBe('{"messages":[]}')
+    })
   })
 
   describe('zip files', () => {
@@ -54,7 +63,21 @@ describe('readInputFile', () => {
       expect(content).toBe('Chat via _chat.txt')
     })
 
-    it('throws when no .txt file found in zip', async () => {
+    it('reads result.json from a Telegram zip archive', async () => {
+      const JSZip = await import('jszip')
+      const zip = new JSZip.default()
+      zip.file('ChatExport/result.json', '{"messages":[]}')
+
+      const zipContent = await zip.generateAsync({ type: 'uint8array' })
+      const filePath = join(TEST_DIR, 'telegram.zip')
+      await writeFile(filePath, zipContent)
+
+      const content = await readInputFile(filePath)
+
+      expect(content).toBe('{"messages":[]}')
+    })
+
+    it('throws when no supported chat file is found in zip', async () => {
       const JSZip = await import('jszip')
       const zip = new JSZip.default()
       zip.file('readme.md', 'Not a chat file')
@@ -78,6 +101,27 @@ describe('readInputFile', () => {
       expect(content).toBe('iMessage content')
     })
 
+    it('reads result.json from a Telegram export directory', async () => {
+      const subDir = join(TEST_DIR, 'telegram-export')
+      await mkdir(subDir, { recursive: true })
+      await writeFile(join(subDir, 'result.json'), '{"messages":[]}')
+
+      const content = await readInputFile(subDir)
+
+      expect(content).toBe('{"messages":[]}')
+    })
+
+    it('prefers Telegram result.json over text files in a directory', async () => {
+      const subDir = join(TEST_DIR, 'telegram-export-with-files')
+      await mkdir(subDir, { recursive: true })
+      await writeFile(join(subDir, 'result.json'), '{"messages":[]}')
+      await writeFile(join(subDir, 'captions.txt'), 'caption attachment')
+
+      const content = await readInputFile(subDir)
+
+      expect(content).toBe('{"messages":[]}')
+    })
+
     it('concatenates multiple .txt files from a directory', async () => {
       const subDir = join(TEST_DIR, 'multi-export')
       await mkdir(subDir, { recursive: true })
@@ -90,19 +134,19 @@ describe('readInputFile', () => {
       expect(content).toBe('First chat\nSecond chat')
     })
 
-    it('throws when directory contains no .txt files', async () => {
+    it('throws when directory contains no supported chat files', async () => {
       const subDir = join(TEST_DIR, 'empty-export')
       await mkdir(subDir, { recursive: true })
       await writeFile(join(subDir, 'readme.md'), 'Not a txt file')
 
-      await expect(readInputFile(subDir)).rejects.toThrow('No .txt files found')
+      await expect(readInputFile(subDir)).rejects.toThrow('No .txt or result.json files found')
     })
 
     it('throws when directory is empty', async () => {
       const subDir = join(TEST_DIR, 'empty-dir')
       await mkdir(subDir, { recursive: true })
 
-      await expect(readInputFile(subDir)).rejects.toThrow('No .txt files found')
+      await expect(readInputFile(subDir)).rejects.toThrow('No .txt or result.json files found')
     })
 
     it('ignores non-.txt files in directory', async () => {

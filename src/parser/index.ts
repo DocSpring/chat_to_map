@@ -1,14 +1,16 @@
 /**
  * Parser Module
  *
- * Parse WhatsApp and iMessage exports into structured messages.
+ * Parse WhatsApp, iMessage, and Telegram exports into structured messages.
  */
 
 import type { ChatSource, MediaType, ParsedMessage, ParseResult, ParserOptions } from '../types'
 import { parseIMessageChat, parseIMessageChatStream } from './imessage'
+import { isTelegramExport, parseTelegramExport } from './telegram'
 import { parseWhatsAppChat, parseWhatsAppChatStream } from './whatsapp'
 
 export { parseIMessageChat, parseIMessageChatStream } from './imessage'
+export { isTelegramExport, parseTelegramExport } from './telegram'
 export {
   detectFormat,
   parseWhatsAppChat,
@@ -20,6 +22,9 @@ export const MAX_CHUNK_LENGTH = 280
 
 /** Minimum characters for a chunk to be worth splitting */
 export const MIN_CHUNK_LENGTH = 32
+
+// URL extraction pattern shared by all chat parsers.
+const URL_PATTERN = /https?:\/\/[^\s<>"')\]]+/gi
 
 /** Common fields for creating chunked messages */
 interface ChunkableMessageData {
@@ -157,9 +162,27 @@ export function normalizeApostrophes(text: string): string {
 }
 
 /**
+ * Extract all URLs from message content.
+ */
+export function extractUrls(content: string): string[] {
+  const matches = content.match(URL_PATTERN)
+  if (!matches) {
+    return []
+  }
+
+  return matches.map((url) => url.replace(/[.,;:!?]+$/, '')).filter((url) => url.length > 0)
+}
+
+/**
  * Detect the chat source from content.
  */
 export function detectChatSource(content: string): ChatSource {
+  const trimmed = content.trimStart()
+
+  if (trimmed.startsWith('{') && isTelegramExport(trimmed)) {
+    return 'telegram'
+  }
+
   // Check for WhatsApp patterns (timestamp in brackets)
   if (/^\[\d{1,2}\/\d{1,2}\/\d{2,4},/.test(content)) {
     return 'whatsapp'
@@ -187,6 +210,10 @@ export function parseChat(raw: string, options?: ParserOptions): ParsedMessage[]
 
   if (source === 'imessage') {
     return parseIMessageChat(raw)
+  }
+
+  if (source === 'telegram') {
+    return parseTelegramExport(raw)
   }
 
   return parseWhatsAppChat(raw, options)
@@ -226,6 +253,8 @@ export async function* parseChatStream(
 ): AsyncIterable<ParsedMessage> {
   if (source === 'imessage') {
     yield* parseIMessageChatStream(lines)
+  } else if (source === 'telegram') {
+    throw new Error('Telegram JSON exports must be parsed with parseChat')
   } else {
     yield* parseWhatsAppChatStream(lines, options)
   }

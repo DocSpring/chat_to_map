@@ -7,14 +7,22 @@
 import { mkdir, readdir, readFile, stat } from 'node:fs/promises'
 import { join } from 'node:path'
 
+function isTelegramResultJson(name: string): boolean {
+  return name === 'result.json' || name.endsWith('/result.json')
+}
+
 /**
- * Find .txt files in a directory (non-recursive).
+ * Find supported chat files in a directory (non-recursive).
  */
-async function findTxtFilesInDir(dirPath: string): Promise<string[]> {
+async function findChatFilesInDir(dirPath: string): Promise<string[]> {
   const entries = await readdir(dirPath)
   const txtFiles: string[] = []
 
   for (const entry of entries) {
+    if (entry === 'result.json') {
+      return [join(dirPath, entry)]
+    }
+
     if (entry.endsWith('.txt')) {
       txtFiles.push(join(dirPath, entry))
     }
@@ -27,25 +35,25 @@ async function findTxtFilesInDir(dirPath: string): Promise<string[]> {
  * Read an input file, handling zip archives and directories.
  *
  * Supports:
- * - .zip files (WhatsApp exports)
- * - Directories containing .txt files (iMessage exports, extracted WhatsApp)
- * - Direct .txt file paths
+ * - .zip files (WhatsApp and Telegram exports)
+ * - Directories containing result.json or .txt files
+ * - Direct file paths
  */
 export async function readInputFile(path: string): Promise<string> {
   const stats = await stat(path)
 
   // Handle directory input
   if (stats.isDirectory()) {
-    const txtFiles = await findTxtFilesInDir(path)
+    const chatFiles = await findChatFilesInDir(path)
 
-    if (txtFiles.length === 0) {
-      throw new Error(`No .txt files found in directory: ${path}`)
+    if (chatFiles.length === 0) {
+      throw new Error(`No .txt or result.json files found in directory: ${path}`)
     }
 
     // If multiple files, concatenate them (common for iMessage exports)
-    if (txtFiles.length > 1) {
+    if (chatFiles.length > 1) {
       const contents: string[] = []
-      for (const file of txtFiles) {
+      for (const file of chatFiles) {
         const content = await readFile(file, 'utf-8')
         contents.push(content)
       }
@@ -53,9 +61,9 @@ export async function readInputFile(path: string): Promise<string> {
     }
 
     // Single file
-    const singleFile = txtFiles[0]
+    const singleFile = chatFiles[0]
     if (!singleFile) {
-      throw new Error(`No .txt files found in directory: ${path}`)
+      throw new Error(`No .txt or result.json files found in directory: ${path}`)
     }
     return readFile(singleFile, 'utf-8')
   }
@@ -66,10 +74,13 @@ export async function readInputFile(path: string): Promise<string> {
     const zipBuffer = await readFile(path)
     const zip = await JSZip.default.loadAsync(new Uint8Array(zipBuffer))
 
+    const fileNames = Object.keys(zip.files)
+
     // Find the chat file in the zip
-    const chatFile = Object.keys(zip.files).find(
-      (name) => name.endsWith('.txt') || name === '_chat.txt'
-    )
+    const chatFile =
+      fileNames.find(isTelegramResultJson) ??
+      fileNames.find((name) => name === '_chat.txt') ??
+      fileNames.find((name) => name.endsWith('.txt'))
 
     if (!chatFile) {
       throw new Error('No chat file found in zip archive')

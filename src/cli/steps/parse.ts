@@ -14,7 +14,7 @@ import type { PipelineContext } from './context'
 export interface ParseResult {
   /** Parsed messages */
   readonly messages: readonly ParsedMessage[]
-  /** Detected chat source (whatsapp or imessage) */
+  /** Detected chat source */
   readonly source: ChatSource
   /** Whether result was from cache */
   readonly fromCache: boolean
