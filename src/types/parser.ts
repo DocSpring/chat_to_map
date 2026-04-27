@@ -22,6 +22,17 @@ export interface ParsedMessage {
   readonly source: ChatSource
   /** Chunk index when a long message is split (0 = first/only, 1+ = continuation) */
   readonly chunkIndex?: number | undefined
+  /** Source chat identifier when the upload bundles multiple chats (iMessage desktop export) */
+  readonly chatId?: string | undefined
+}
+
+/** Metadata for one chat inside a multi-chat upload bundle. */
+export interface ChatMetadata {
+  /** Stable ID within the bundle, e.g. `chat_001`. */
+  readonly id: string
+  readonly name: string
+  readonly identifier: string
+  readonly messageCount: number
 }
 
 export type UrlType =
@@ -52,4 +63,6 @@ export interface ParseResult {
   }
   readonly messageCount: number
   readonly urlCount: number
+  /** Per-chat metadata when the upload was a multi-chat bundle. */
+  readonly chats?: readonly ChatMetadata[]
 }

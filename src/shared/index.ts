@@ -51,6 +51,7 @@ export type {
   ApiErrorType,
   CandidateMessage,
   CandidateSource,
+  ChatMetadata,
   ChatSource,
   CLIOptions,
   ClassifiedActivity,

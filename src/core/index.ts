@@ -148,9 +148,18 @@ export {
 } from '../images/index'
 
 // Parser module
+export type {
+  IMessageJsonChat,
+  IMessageJsonChatEntry,
+  IMessageJsonChatMeta,
+  IMessageJsonManifest,
+  IMessageJsonMessage
+} from '../parser/index'
 export {
   detectChatSource,
   detectFormat,
+  isIMessageJsonChat,
+  isIMessageJsonManifest,
   isLineExport,
   isTelegramExport,
   parseChat,
@@ -158,6 +167,7 @@ export {
   parseChatWithStats,
   parseIMessageChat,
   parseIMessageChatStream,
+  parseIMessageJsonBundle,
   parseLineChat,
   parseLineChatStream,
   parseTelegramExport,

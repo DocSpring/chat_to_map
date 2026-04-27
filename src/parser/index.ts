@@ -11,6 +11,16 @@ import { isTelegramExport, parseTelegramExport } from './telegram'
 import { parseWhatsAppChat, parseWhatsAppChatStream } from './whatsapp'
 
 export { parseIMessageChat, parseIMessageChatStream } from './imessage'
+export {
+  type IMessageJsonChat,
+  type IMessageJsonChatEntry,
+  type IMessageJsonChatMeta,
+  type IMessageJsonManifest,
+  type IMessageJsonMessage,
+  isIMessageJsonChat,
+  isIMessageJsonManifest,
+  parseIMessageJsonBundle
+} from './imessage-json'
 export { isLineExport, parseLineChat, parseLineChatStream } from './line'
 export { isTelegramExport, parseTelegramExport } from './telegram'
 export {
