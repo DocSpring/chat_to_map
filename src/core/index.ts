@@ -161,6 +161,7 @@ export {
   isIMessageJsonChat,
   isIMessageJsonManifest,
   isLineExport,
+  isMessengerExport,
   isTelegramExport,
   parseChat,
   parseChatStream,
@@ -170,6 +171,7 @@ export {
   parseIMessageJsonBundle,
   parseLineChat,
   parseLineChatStream,
+  parseMessengerExport,
   parseTelegramExport,
   parseWhatsAppChat,
   parseWhatsAppChatStream

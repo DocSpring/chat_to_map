@@ -18,6 +18,7 @@
 
 import type { ChatMetadata, ParsedMessage, ParseResult } from '../types'
 import { chunkMessage, createChunkedMessages, extractUrls, normalizeApostrophes } from './index'
+import { isRecord } from './json-helpers'
 
 // ---------------------------------------------------------------------------
 // Public types describing the on-disk format
@@ -62,10 +63,6 @@ export interface IMessageJsonChatEntry {
 // ---------------------------------------------------------------------------
 // Type guards (lenient — they only check shape, not value semantics)
 // ---------------------------------------------------------------------------
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
 
 export function isIMessageJsonManifest(value: unknown): value is IMessageJsonManifest {
   if (!isRecord(value)) return false

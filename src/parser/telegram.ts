@@ -6,6 +6,15 @@
 
 import type { MediaType, ParsedMessage } from '../types'
 import { chunkMessage, createChunkedMessages, extractUrls, normalizeApostrophes } from './index'
+import {
+  applyMediaPlaceholder,
+  dedupeUrls,
+  getString,
+  hasValue,
+  isHttpUrl,
+  isRecord,
+  parseJsonOrThrow
+} from './json-helpers'
 
 interface TextParts {
   readonly content: string
@@ -14,24 +23,6 @@ interface TextParts {
 
 interface TelegramExportData {
   readonly messages: readonly unknown[]
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function getString(record: Record<string, unknown>, key: string): string | undefined {
-  const value = record[key]
-  return typeof value === 'string' ? value : undefined
-}
-
-function hasValue(record: Record<string, unknown>, key: string): boolean {
-  const value = record[key]
-  return value !== undefined && value !== null && value !== ''
-}
-
-function isHttpUrl(value: unknown): value is string {
-  return typeof value === 'string' && /^https?:\/\//i.test(value)
 }
 
 function isTelegramMessageLike(value: unknown): boolean {
@@ -53,14 +44,6 @@ function isTelegramExportData(value: unknown): value is TelegramExportData {
   }
 
   return value.messages.some(isTelegramMessageLike)
-}
-
-function parseJson(raw: string): unknown {
-  try {
-    return JSON.parse(raw) as unknown
-  } catch {
-    throw new Error('Invalid Telegram export JSON')
-  }
 }
 
 /**
@@ -120,20 +103,6 @@ function readEntityHrefs(value: unknown): string[] {
     .filter(isHttpUrl)
 }
 
-function dedupeUrls(urls: readonly string[]): string[] {
-  const seen = new Set<string>()
-  const unique: string[] = []
-
-  for (const url of urls) {
-    if (!seen.has(url)) {
-      unique.push(url)
-      seen.add(url)
-    }
-  }
-
-  return unique
-}
-
 function readUnixSeconds(value: unknown): number | undefined {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return value
@@ -188,12 +157,7 @@ function detectTelegramMediaType(message: Record<string, unknown>): MediaType | 
 }
 
 function buildContent(text: TextParts, mediaType: MediaType | undefined): string {
-  const content = normalizeApostrophes(text.content).trim()
-  if (content.length > 0) {
-    return content
-  }
-
-  return mediaType ? `[${mediaType}]` : ''
+  return applyMediaPlaceholder(normalizeApostrophes(text.content).trim(), mediaType)
 }
 
 function collectUrls(message: Record<string, unknown>, content: string, text: TextParts): string[] {
@@ -232,7 +196,7 @@ function parseTelegramMessage(value: unknown, startId: number): ParsedMessage[] 
  * Parse a Telegram Desktop `result.json` export.
  */
 export function parseTelegramExport(raw: string): ParsedMessage[] {
-  const data = parseJson(raw)
+  const data = parseJsonOrThrow(raw, 'Invalid Telegram export JSON')
   if (!isTelegramExportData(data)) {
     throw new Error('Invalid Telegram export JSON: expected messages array')
   }

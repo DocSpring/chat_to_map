@@ -20,6 +20,7 @@ function formatSource(source: ChatSource): string {
   if (source === 'whatsapp') return 'WhatsApp'
   if (source === 'imessage') return 'iMessage'
   if (source === 'telegram') return 'Telegram'
+  if (source === 'messenger') return 'Messenger'
   return 'LINE'
 }
 

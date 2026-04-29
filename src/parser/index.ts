@@ -1,12 +1,14 @@
 /**
  * Parser Module
  *
- * Parse WhatsApp, iMessage, Telegram, and LINE exports into structured messages.
+ * Parse WhatsApp, iMessage, Telegram, LINE, and Facebook Messenger exports into
+ * structured messages.
  */
 
 import type { ChatSource, MediaType, ParsedMessage, ParseResult, ParserOptions } from '../types'
 import { parseIMessageChat, parseIMessageChatStream } from './imessage'
 import { isLineExport, parseLineChat, parseLineChatStream } from './line'
+import { isMessengerExport, parseMessengerExport } from './messenger'
 import { isTelegramExport, parseTelegramExport } from './telegram'
 import { parseWhatsAppChat, parseWhatsAppChatStream } from './whatsapp'
 
@@ -22,6 +24,7 @@ export {
   parseIMessageJsonBundle
 } from './imessage-json'
 export { isLineExport, parseLineChat, parseLineChatStream } from './line'
+export { isMessengerExport, parseMessengerExport } from './messenger'
 export { isTelegramExport, parseTelegramExport } from './telegram'
 export {
   detectFormat,
@@ -195,6 +198,10 @@ export function detectChatSource(content: string): ChatSource {
     return 'telegram'
   }
 
+  if (trimmed.startsWith('{') && isMessengerExport(trimmed)) {
+    return 'messenger'
+  }
+
   if (isLineExport(content)) {
     return 'line'
   }
@@ -230,6 +237,10 @@ export function parseChat(raw: string, options?: ParserOptions): ParsedMessage[]
 
   if (source === 'telegram') {
     return parseTelegramExport(raw)
+  }
+
+  if (source === 'messenger') {
+    return parseMessengerExport(raw)
   }
 
   if (source === 'line') {
@@ -275,6 +286,8 @@ export async function* parseChatStream(
     yield* parseIMessageChatStream(lines)
   } else if (source === 'telegram') {
     throw new Error('Telegram JSON exports must be parsed with parseChat')
+  } else if (source === 'messenger') {
+    throw new Error('Messenger JSON exports must be parsed with parseChat')
   } else if (source === 'line') {
     yield* parseLineChatStream(lines)
   } else {
