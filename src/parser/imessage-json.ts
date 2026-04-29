@@ -36,6 +36,8 @@ export interface IMessageJsonChatMeta {
   readonly identifier: string
   readonly service: string
   readonly message_count: number
+  /** Number of OTHER participants (excludes device owner). 1 = 1:1 chat. */
+  readonly participant_count?: number
 }
 
 export interface IMessageJsonMessage {
