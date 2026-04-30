@@ -6,10 +6,10 @@ Transform chat exports into geocoded activity suggestions.
 
 ## Overview
 
-ChatToMap extracts "things to do" from WhatsApp, iMessage, Telegram, and LINE exports - restaurants to try, places to visit, trips to take. It finds suggestions buried in years of chat history and puts them on a map.
+ChatToMap extracts "things to do" from WhatsApp, iMessage, Telegram, Facebook Messenger, and LINE exports - restaurants to try, places to visit, trips to take. It finds suggestions buried in years of chat history and puts them on a map.
 
 **Features:**
-- Parse WhatsApp (iOS/Android), iMessage, Telegram Desktop JSON, and LINE text exports
+- Parse WhatsApp (iOS/Android), iMessage, Telegram Desktop JSON, Facebook Messenger JSON, and LINE text exports
 - Extract suggestions using multilingual regex patterns, embeddings, and URL detection
 - Classify with AI (activity vs errand, mappable vs general)
 - Scrape metadata from TikTok and YouTube links
@@ -45,6 +45,9 @@ chat-to-map analyze <input>
 
 # Telegram Desktop exports
 chat-to-map analyze "/path/to/ChatExport_2026-04-26/result.json"
+
+# Facebook Messenger exports (one chat JSON at a time, extracted from messages.zip)
+chat-to-map analyze "/path/to/messages/Friend Name_15.json"
 
 # LINE text exports
 chat-to-map analyze "/path/to/[LINE] Chat with Friends.txt"
@@ -235,12 +238,121 @@ if (result.ok) {
 | Map | Interactive Leaflet.js HTML |
 | PDF | Printable report with summary |
 
-## How to Export WhatsApp
+## How to Export Your Chats
 
-1. Open WhatsApp chat
-2. Tap ⋮ → More → Export chat
-3. Choose "Without media"
-4. Save the .zip file
+Each messaging app has its own export flow. ChatToMap only needs the message **text** —
+always pick the "without media" option when offered, both because ChatToMap doesn't use
+photos/videos and because it keeps the export much smaller.
+
+### WhatsApp
+
+**iPhone / iPad**
+1. Open WhatsApp and tap the chat you want to analyze.
+2. Tap the chat name at the top to open chat info.
+3. Scroll down and tap **Export Chat**.
+4. Choose **Without Media**.
+5. Save or share the resulting `.zip` file.
+
+**Android**
+1. Open the chat in WhatsApp.
+2. Tap the ⋮ menu in the top-right.
+3. Tap **More** → **Export chat**.
+4. Choose **Without media**.
+5. Save or share the resulting `.zip` file.
+
+**Desktop (macOS / Windows)**
+1. Open WhatsApp Desktop and right-click the chat.
+2. Choose **Export chat** from the context menu.
+3. Choose **Without media**.
+4. The `.zip` file is saved to your Downloads folder.
+
+```bash
+chat-to-map analyze "WhatsApp Chat - Friends.zip"
+```
+
+### iMessage
+
+iMessage has no built-in export. The cleanest path is the open-source
+[`imessage-exporter`](https://github.com/ReagentX/imessage-exporter) tool, which reads
+your local iMessage database (or an iPhone backup) and writes one `.txt` file per
+conversation that ChatToMap can parse directly.
+
+1. Install `imessage-exporter` via Homebrew or Cargo:
+   ```bash
+   brew install imessage-exporter
+   # or
+   cargo install imessage-exporter
+   ```
+2. Grant your terminal **Full Disk Access** in System Settings → Privacy & Security so it
+   can read `~/Library/Messages/chat.db`.
+3. Run the exporter in `txt` format:
+   ```bash
+   imessage-exporter -f txt -o ~/imessage_export
+   ```
+   On macOS this reads the local database. To export from an iPhone backup instead:
+   ```bash
+   imessage-exporter -f txt -p ~/iphone_backup_latest -a iOS -o ~/imessage_export
+   ```
+4. The output folder contains one `.txt` file per chat, named after the contact or group.
+   Pass any one of those files to ChatToMap:
+
+```bash
+chat-to-map analyze "~/imessage_export/Friend Name.txt"
+```
+
+Your messages never leave your computer — both `imessage-exporter` and `chat-to-map` run
+locally.
+
+### Telegram
+
+Telegram chat exports are **only available from Telegram Desktop**. Mobile Telegram apps
+(iOS / Android) cannot export chat history. On macOS the App Store version is called
+**Telegram Lite** — install from <https://desktop.telegram.org/>, *not* the older
+`macos.telegram.org` build, which doesn't support export.
+
+1. Open Telegram Desktop and sign in to the account that has the chat.
+2. Open the private chat, group, or channel you want to export.
+3. Use the chat menu → **Export chat history**.
+4. Choose the **machine-readable JSON** format when prompted.
+5. Telegram writes a `result.json` file and any selected media into an export folder. Keep
+   the folder intact or zip it up.
+
+```bash
+chat-to-map analyze "/path/to/ChatExport_2026-04-26/result.json"
+# or a zipped folder
+chat-to-map analyze "telegram-export.zip"
+```
+
+### Facebook Messenger
+
+Messenger exports `messages.zip`, which contains every conversation as separate JSON files.
+Extract it locally and pass one chat at a time.
+
+1. On a computer, visit <https://www.messenger.com/secure_storage/dyi>.
+2. **Uncheck "Media"** — ChatToMap only uses message text and leaving it on makes the
+   export 10× larger.
+3. Pick your date range (e.g. **All time**).
+4. Click **Download file** and wait. Messenger needs to assemble the archive — this can
+   take **5–10 minutes** for large accounts.
+5. When the file is ready, save `messages.zip` to your computer.
+6. Double-click `messages.zip` to extract it. You'll see one `.json` file per conversation,
+   named like `Friend Name_15.json`.
+
+```bash
+chat-to-map analyze "messages/Friend Name_15.json"
+```
+
+### LINE
+
+1. In LINE, open the chat you want to analyze.
+2. Use **Settings → Export chat history** for that conversation.
+3. Save the resulting `.txt` file (or the folder/zip if LINE includes media).
+4. Don't edit the exported text before passing it in — the parser reads LINE's original
+   format.
+
+```bash
+chat-to-map analyze "[LINE] Chat with Friends.txt"
+```
 
 ## Supported Languages
 
