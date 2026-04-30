@@ -4,7 +4,8 @@
 
 import { describe, expect, it } from 'vitest'
 import type { CandidateMessage } from '../types'
-import { extractUrlsFromCandidates, extractUrlsFromText } from './metadata'
+import { extractUrlsFromCandidates, extractUrlsFromText, fetchMetadataForUrls } from './metadata'
+import type { FetchFn } from './types'
 
 describe('extractUrlsFromText', () => {
   it('extracts http URLs', () => {
@@ -91,5 +92,40 @@ describe('extractUrlsFromCandidates', () => {
       makeCandidate('hi', [createContextMessage(0, 'Also https://a.com and https://b.com')])
     ]
     expect(extractUrlsFromCandidates(candidates)).toEqual(['https://a.com', 'https://b.com'])
+  })
+})
+
+describe('fetchMetadataForUrls', () => {
+  it('fetches OG metadata for a bare Omata Kitchen URL', async () => {
+    const url = 'https://www.omata.co.nz/kitchen'
+    const fetch: FetchFn = async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => null },
+      text: async () => `
+        <html>
+          <head>
+            <meta property="og:title" content="Kitchen &mdash; Omata Estate">
+            <meta
+              property="og:description"
+              content="A relaxed style eatery with views overlooking the ocean."
+            >
+            <meta property="og:url" content="${url}">
+          </head>
+        </html>
+      `,
+      json: async () => ({}),
+      arrayBuffer: async () => new ArrayBuffer(0)
+    })
+
+    const metadata = await fetchMetadataForUrls([url], { fetch, concurrency: 1 })
+
+    expect(metadata.get(url)).toEqual(
+      expect.objectContaining({
+        canonicalUrl: url,
+        title: 'Kitchen — Omata Estate',
+        description: 'A relaxed style eatery with views overlooking the ocean.'
+      })
+    )
   })
 })

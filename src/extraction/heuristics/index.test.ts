@@ -250,6 +250,33 @@ Sun, 26/04/2026
 
         expect(result.candidates).toHaveLength(1)
       })
+
+      it('matches a bare generic website URL so OG metadata can be scraped', () => {
+        const url = 'https://www.omata.co.nz/kitchen'
+        const messages = [createMessage(0, url, 'User', [url])]
+
+        const result = extractCandidatesByHeuristics(messages)
+
+        expect(result.urlMatches).toBe(1)
+        expect(result.candidates).toEqual([
+          expect.objectContaining({
+            content: url,
+            confidence: 0.55,
+            source: { type: 'url', urlType: 'website' },
+            urls: [url]
+          })
+        ])
+      })
+
+      it('does not match bare reference URLs without activity context', () => {
+        const url = 'https://en.wikipedia.org/wiki/The_Matrix'
+        const messages = [createMessage(0, url, 'User', [url])]
+
+        const result = extractCandidatesByHeuristics(messages)
+
+        expect(result.candidates).toHaveLength(0)
+        expect(result.urlMatches).toBe(0)
+      })
     })
 
     describe('exclusion patterns', () => {

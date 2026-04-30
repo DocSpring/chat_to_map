@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ScrapedMetadata } from '../scraper/types'
 import { createActivity as createTestActivity } from '../test-support'
 import type { CandidateMessage } from '../types'
 
@@ -269,6 +270,67 @@ describe('Classifier Module', () => {
         expect(result.value.activities[0]?.activity).toBe('Italian Restaurant')
         expect(result.value.activities[0]?.category).toBe('food')
       }
+    })
+
+    it('classifies a bare website URL using scraped OG metadata', async () => {
+      const url = 'https://www.omata.co.nz/kitchen'
+      const metadata: ScrapedMetadata = {
+        canonicalUrl: url,
+        contentId: null,
+        title: 'Kitchen — Omata Estate',
+        description: 'A relaxed style eatery with views overlooking the ocean.',
+        hashtags: [],
+        creator: null,
+        imageUrl: null,
+        categories: ['omata.co.nz'],
+        suggestedKeywords: []
+      }
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          content: [
+            {
+              type: 'text',
+              text: createMockClassifierResponse([
+                {
+                  message_id: 1,
+                  activity: 'Go to Omata Estate',
+                  category: 'food',
+                  confidence: 0.95,
+                  city: 'Russell',
+                  country: 'New Zealand',
+                  action: 'go'
+                }
+              ])
+            }
+          ]
+        })
+      })
+
+      const candidates: CandidateMessage[] = [
+        {
+          ...createCandidate(1, url),
+          source: { type: 'url', urlType: 'website' },
+          confidence: 0.55,
+          urls: [url]
+        }
+      ]
+
+      const result = await classifyMessages(candidates, {
+        ...BASE_CONFIG,
+        provider: 'anthropic',
+        apiKey: 'test-key',
+        urlMetadata: new Map([[url, metadata]])
+      })
+
+      expect(result.ok).toBe(true)
+      if (!result.ok) throw new Error(result.error.message)
+      expect(result.value.activities[0]?.activity).toBe('Go to Omata Estate')
+
+      const call = mockFetch.mock.calls[0] as [string, { body: string }]
+      const body = JSON.parse(call[1].body) as { messages: Array<{ content: string }> }
+      expect(body.messages[0]?.content).toContain('[URL_META:')
+      expect(body.messages[0]?.content).toContain('Kitchen — Omata Estate')
     })
 
     it('handles HTTP errors', async () => {

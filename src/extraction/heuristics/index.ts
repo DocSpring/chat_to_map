@@ -49,6 +49,8 @@ export {
 const DEFAULT_MIN_CONFIDENCE = 0.5
 const ACTIVITY_KEYWORD_BOOST = 0.15
 const URL_SUGGESTION_BOOST = 0.25
+const BARE_WEBSITE_URL_CONFIDENCE = 0.55
+const REFERENCE_WEBSITE_DOMAINS = ['wikipedia.org', 'wikimedia.org']
 
 /**
  * Check if content contains activity-related keywords.
@@ -225,15 +227,49 @@ function findBestUrl(urls: readonly string[]): BestUrl {
   return { type: bestType, confidence: bestConfidence }
 }
 
-function shouldIncludeUrl(firstUrl: string, content: string): boolean {
+function isBareUrlMessage(content: string, urls: readonly string[]): boolean {
+  let remaining = content
+  for (const url of urls) {
+    remaining = remaining.replaceAll(url, ' ')
+  }
+
+  return remaining.replace(/[\s.,;:!?()[\]{}'"“”‘’<>-]/g, '').length === 0
+}
+
+function isReferenceWebsiteUrl(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase()
+    return REFERENCE_WEBSITE_DOMAINS.some(
+      (domain) => hostname === domain || hostname.endsWith(`.${domain}`)
+    )
+  } catch {
+    return false
+  }
+}
+
+function shouldIncludeUrl(firstUrl: string, content: string, urls: readonly string[]): boolean {
   // Skip social media URLs - they could be anything (memes, random videos)
   if (isSocialUrl(firstUrl)) return false
   // Include activity URLs or messages with activity phrases
-  return isActivityUrl(firstUrl) || hasActivityPhrase(content)
+  return (
+    isActivityUrl(firstUrl) ||
+    hasActivityPhrase(content) ||
+    (classifyUrl(firstUrl) === 'website' &&
+      !isReferenceWebsiteUrl(firstUrl) &&
+      isBareUrlMessage(content, urls))
+  )
 }
 
-function applyUrlBoosts(confidence: number, content: string): number {
+function applyUrlBoosts(
+  confidence: number,
+  content: string,
+  urlType: string,
+  urls: readonly string[]
+): number {
   let result = confidence
+  if (urlType === 'website' && isBareUrlMessage(content, urls)) {
+    result = Math.max(result, BARE_WEBSITE_URL_CONFIDENCE)
+  }
   if (hasActivityPhrase(content)) {
     result = Math.min(1.0, result + URL_SUGGESTION_BOOST)
   }
@@ -262,10 +298,10 @@ function findUrlMatches(
     if (!msg || !msg.urls || msg.urls.length === 0) continue
 
     const firstUrl = msg.urls[0] ?? ''
-    if (!shouldIncludeUrl(firstUrl, msg.content)) continue
+    if (!shouldIncludeUrl(firstUrl, msg.content, msg.urls)) continue
 
     const best = findBestUrl(msg.urls)
-    const confidence = applyUrlBoosts(best.confidence, msg.content)
+    const confidence = applyUrlBoosts(best.confidence, msg.content, best.type, msg.urls)
 
     if (confidence >= minConfidence) {
       const ctx = getMessageContext(messages, i)
@@ -276,7 +312,7 @@ function findUrlMatches(
         timestamp: msg.timestamp,
         confidence,
         urlType: best.type,
-        candidateType: 'suggestion', // Sharing a URL = suggesting
+        candidateType: 'suggestion',
         urls: msg.urls,
         contextBefore: ctx.before,
         contextAfter: ctx.after
